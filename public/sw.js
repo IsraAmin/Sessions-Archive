@@ -1,6 +1,13 @@
-const APP_CACHE = 'sessions-archive-app-v3'
-const RUNTIME_CACHE = 'sessions-archive-runtime-v3'
-const APP_SHELL = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png']
+const APP_CACHE = 'sessions-archive-app-v4'
+const RUNTIME_CACHE = 'sessions-archive-runtime-v4'
+const BASE_URL = new URL(self.registration.scope)
+const BASE_PATH = BASE_URL.pathname.endsWith('/') ? BASE_URL.pathname : `${BASE_URL.pathname}/`
+const APP_SHELL = [
+  BASE_PATH,
+  `${BASE_PATH}manifest.webmanifest`,
+  `${BASE_PATH}icon-192.png`,
+  `${BASE_PATH}icon-512.png`,
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(APP_CACHE).then((cache) => cache.addAll(APP_SHELL)))
@@ -20,7 +27,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
 
   const requestUrl = new URL(event.request.url)
-  if (requestUrl.origin !== self.location.origin) return
+  if (requestUrl.origin !== self.location.origin || !requestUrl.pathname.startsWith(BASE_PATH)) return
 
   if (event.request.mode === 'navigate') {
     event.respondWith(
@@ -28,11 +35,11 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response.ok) {
             const copy = response.clone()
-            event.waitUntil(caches.open(APP_CACHE).then((cache) => cache.put('/', copy)))
+            event.waitUntil(caches.open(APP_CACHE).then((cache) => cache.put(BASE_PATH, copy)))
           }
           return response
         })
-        .catch(async () => (await caches.match(event.request)) || (await caches.match('/'))),
+        .catch(async () => (await caches.match(event.request)) || (await caches.match(BASE_PATH))),
     )
     return
   }
@@ -51,6 +58,14 @@ self.addEventListener('fetch', (event) => {
   )
 })
 
+function appTarget(path) {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
+    return self.registration.scope
+  }
+  const relative = path.replace(/^\/+/, '')
+  return new URL(relative, self.registration.scope).href
+}
+
 self.addEventListener('push', (event) => {
   let payload = { title: 'Sessions Archive', body: 'لديك تحديث جديد', url: '/' }
   try {
@@ -59,12 +74,14 @@ self.addEventListener('push', (event) => {
     if (event.data) payload.body = event.data.text()
   }
 
+  const target = appTarget(payload.url)
+
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      data: { url: payload.url || '/' },
+      icon: `${BASE_PATH}icon-192.png`,
+      badge: `${BASE_PATH}icon-192.png`,
+      data: { url: target },
       tag: payload.url || 'sessions-archive-update',
     }),
   )
@@ -72,17 +89,18 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const target = typeof event.notification.data?.url === 'string' ? event.notification.data.url : '/'
-  const safeTarget = target.startsWith('/') && !target.startsWith('//') ? target : '/'
+  const target = typeof event.notification.data?.url === 'string'
+    ? event.notification.data.url
+    : self.registration.scope
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (clients) => {
-      const existing = clients.find((client) => client.url.startsWith(self.location.origin) && 'focus' in client)
+      const existing = clients.find((client) => client.url.startsWith(self.registration.scope) && 'focus' in client)
       if (existing) {
-        if ('navigate' in existing) await existing.navigate(safeTarget)
+        if ('navigate' in existing) await existing.navigate(target)
         return existing.focus()
       }
-      return self.clients.openWindow(safeTarget)
+      return self.clients.openWindow(target)
     }),
   )
 })
