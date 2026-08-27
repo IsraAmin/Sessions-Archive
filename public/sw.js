@@ -1,13 +1,13 @@
-const APP_CACHE = 'sessions-archive-app-v6'
-const RUNTIME_CACHE = 'sessions-archive-runtime-v6'
+const APP_CACHE = 'sessions-archive-app-v7'
+const RUNTIME_CACHE = 'sessions-archive-runtime-v7'
 const BASE_URL = new URL(self.registration.scope)
 const BASE_PATH = BASE_URL.pathname.endsWith('/') ? BASE_URL.pathname : `${BASE_URL.pathname}/`
 const APP_SHELL = [
   BASE_PATH,
-  `${BASE_PATH}manifest.webmanifest?v=3`,
-  `${BASE_PATH}icon-192.png?v=3`,
-  `${BASE_PATH}icon-512.svg?v=3`,
-  `${BASE_PATH}favicon-32x32.png?v=3`,
+  `${BASE_PATH}manifest.webmanifest?v=4`,
+  `${BASE_PATH}icon-192.png?v=4`,
+  `${BASE_PATH}icon-512.svg?v=4`,
+  `${BASE_PATH}favicon-32x32.png?v=4`,
 ]
 
 self.addEventListener('install', (event) => {
@@ -16,11 +16,7 @@ self.addEventListener('install', (event) => {
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(
-      keys.filter((key) => ![APP_CACHE, RUNTIME_CACHE].includes(key)).map((key) => caches.delete(key)),
-    )),
-  )
+  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => ![APP_CACHE, RUNTIME_CACHE].includes(key)).map((key) => caches.delete(key)))))
   self.clients.claim()
 })
 
@@ -67,8 +63,8 @@ self.addEventListener('push', (event) => {
   const target = appTarget(payload.url)
   event.waitUntil(self.registration.showNotification(payload.title, {
     body: payload.body,
-    icon: `${BASE_PATH}icon-192.png?v=3`,
-    badge: `${BASE_PATH}icon-192.png?v=3`,
+    icon: `${BASE_PATH}icon-192.png?v=4`,
+    badge: `${BASE_PATH}icon-192.png?v=4`,
     data: { url: target },
     tag: payload.url || 'sessions-archive-update',
   }))
