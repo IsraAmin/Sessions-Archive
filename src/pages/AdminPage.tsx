@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { publicStorageUrl, supabase } from '../lib/supabase'
 import { StatCard } from '../components/StatCard'
 import type { Category, Profile, Session, SessionSeries, SessionStatus, SessionVideo, Speaker } from '../types/domain'
+import type { Database } from '../types/database'
 import { errorMessage } from '../lib/errors'
 import { extractYouTubeVideoId } from '../lib/youtube'
 import { YouTubePlayer } from '../components/YouTubePlayer'
@@ -13,6 +14,7 @@ import { StarRating } from '../components/StarRating'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { AdminEditorDialog, type EditTarget } from '../components/AdminEditorDialog'
 
+type SessionUpdate = Database['public']['Tables']['sessions']['Update']
 type RegistrationAnalytics = { user_id: string; session_id: string; attendance_status: string; session: { category_id: string | null; speaker_id: string | null } | null }
 type FeedbackAnalytics = { user_id: string; session_id: string; rating: number; session: { category_id: string | null; speaker_id: string | null } | null }
 type ViewAnalytics = { user_id: string; session_id: string }
@@ -102,7 +104,7 @@ export function AdminPage() {
         case 'category': ({ error } = await supabase.from('categories').update(values as Partial<Category>).eq('id', target.item.id)); break
         case 'speaker': ({ error } = await supabase.from('speakers').update(values as Partial<Speaker>).eq('id', target.item.id)); break
         case 'series': ({ error } = await supabase.from('session_series').update(values as Partial<SessionSeries>).eq('id', target.item.id)); break
-        case 'session': ({ error } = await supabase.from('sessions').update(values as Partial<Session>).eq('id', target.item.id)); break
+        case 'session': ({ error } = await supabase.from('sessions').update(values as SessionUpdate).eq('id', target.item.id)); break
         case 'video': ({ error } = await supabase.from('session_videos').update(values as Partial<SessionVideo>).eq('id', target.item.id)); break
       }
       if (error) throw error
