@@ -6,7 +6,7 @@ import { errorMessage } from '../lib/errors'
 import { useUi } from '../hooks/useUi'
 
 export function SessionsPage() {
-  const { t } = useUi()
+  const { language, t } = useUi()
   const [sessions, setSessions] = useState<SearchSession[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [query, setQuery] = useState('')
@@ -34,10 +34,16 @@ export function SessionsPage() {
   return <>
     <section className="hero hero-v2"><div><div className="eyebrow">{t('sessions.eyebrow')}</div><h1>{t('sessions.title')}</h1><p>{t('sessions.subtitle')}</p></div></section>
     <form className="search-panel panel search-panel-v2" onSubmit={submit}>
-      <input aria-label={t('common.search')} placeholder={t('sessions.placeholder')} value={query} onChange={(e) => setQuery(e.target.value)} />
-      <select aria-label={t('sessions.allCategories')} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-        <option value="">{t('sessions.allCategories')}</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-      </select>
+      <label className="form-field">
+        <span className="field-label">{language === 'ar' ? 'البحث عن سيشن' : 'Search sessions'}</span>
+        <input placeholder={t('sessions.placeholder')} value={query} onChange={(e) => setQuery(e.target.value)} />
+      </label>
+      <label className="form-field">
+        <span className="field-label">{language === 'ar' ? 'التصنيف' : 'Category'}</span>
+        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+          <option value="">{t('sessions.allCategories')}</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+        </select>
+      </label>
       <button className="button button-primary">{t('common.search')}</button>
     </form>
     {error && <p className="notice error">{error}</p>}
