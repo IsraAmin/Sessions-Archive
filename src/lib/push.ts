@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
 
+export type PushStatus = 'checking' | 'unsupported' | 'default' | 'denied' | 'enabled'
+
 function urlBase64ToUint8Array(value: string) {
   const padding = '='.repeat((4 - (value.length % 4)) % 4)
   const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/')
@@ -7,17 +9,36 @@ function urlBase64ToUint8Array(value: string) {
   return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)))
 }
 
+async function getRegistration() {
+  const existing = await navigator.serviceWorker.getRegistration()
+  if (existing) return existing
+  return navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+}
+
+export async function getPushNotificationStatus(): Promise<PushStatus> {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'unsupported'
+  if (Notification.permission === 'denied') return 'denied'
+
+  const registration = await navigator.serviceWorker.getRegistration()
+  const subscription = await registration?.pushManager.getSubscription()
+  if (subscription) return 'enabled'
+  return 'default'
+}
+
 export async function enablePushNotifications(userId: string) {
   const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
-  if (!vapidPublicKey) throw new Error('VITE_VAPID_PUBLIC_KEY غير مضبوط')
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    throw new Error('هذا المتصفح لا يدعم Push Notifications')
+  if (!vapidPublicKey) throw new Error('مفتاح الإشعارات العام غير مضبوط في إعدادات التطبيق.')
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+    throw new Error('هذا المتصفح لا يدعم Push Notifications.')
   }
 
   const permission = await Notification.requestPermission()
-  if (permission !== 'granted') throw new Error('لم يتم منح إذن الإشعارات')
+  if (permission === 'denied') throw new Error('الإشعارات محظورة لهذا الموقع. فعّلها من إعدادات المتصفح ثم حاول مرة أخرى.')
+  if (permission !== 'granted') throw new Error('لم يتم تفعيل الإشعارات.')
 
-  const registration = await navigator.serviceWorker.ready
+  const registration = await getRegistration()
+  await navigator.serviceWorker.ready
+
   const existing = await registration.pushManager.getSubscription()
   const subscription = existing ?? await registration.pushManager.subscribe({
     userVisibleOnly: true,
@@ -26,7 +47,7 @@ export async function enablePushNotifications(userId: string) {
 
   const json = subscription.toJSON()
   if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) {
-    throw new Error('بيانات Push Subscription غير مكتملة')
+    throw new Error('تعذر حفظ اشتراك الإشعارات على هذا الجهاز.')
   }
 
   const { error } = await supabase.from('push_subscriptions').upsert({
@@ -53,7 +74,6 @@ export async function disablePushNotifications(userId: string) {
     .eq('user_id', userId)
     .eq('endpoint', subscription.endpoint)
 
-  // Stop browser delivery even if the database cleanup failed.
   await subscription.unsubscribe()
   if (error) throw error
 }

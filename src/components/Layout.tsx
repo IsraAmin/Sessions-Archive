@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { PwaInstallPrompt } from './PwaInstallPrompt'
 
 export function Layout() {
   const { user, isAdmin, signOut } = useAuth()
@@ -16,13 +17,14 @@ export function Layout() {
         </nav>
         <div className="auth-actions">
           {user ? (
-            <button className="button button-ghost" onClick={() => void signOut()}>خروج</button>
+            <button className="button button-ghost" onClick={() => void signOut()}>تسجيل الخروج</button>
           ) : (
-            <NavLink className="button button-primary" to="/auth">دخول</NavLink>
+            <NavLink className="button button-primary" to="/auth">تسجيل الدخول</NavLink>
           )}
         </div>
       </header>
       <main className="container"><Outlet /></main>
+      <PwaInstallPrompt />
       <footer className="footer">منصة طلابية لإدارة واكتشاف السيشنات.</footer>
     </div>
   )

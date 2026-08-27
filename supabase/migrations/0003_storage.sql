@@ -1,7 +1,7 @@
 -- Storage buckets
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
-  ('profile-images', 'profile-images', true, 5242880, array['image/jpeg','image/png','image/webp']),
+  ('profile-images', 'profile-images', true, 51200, array['image/jpeg','image/png','image/webp']),
   ('session-covers', 'session-covers', true, 8388608, array['image/jpeg','image/png','image/webp']),
   ('speaker-images', 'speaker-images', true, 5242880, array['image/jpeg','image/png','image/webp']),
   ('session-resources', 'session-resources', false, 26214400, null)

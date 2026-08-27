@@ -1,0 +1,48 @@
+/* Interaction quality floor from the design brief. */
+:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+
+.profile-hero { display: flex; justify-content: space-between; align-items: center; gap: 1.25rem; margin-bottom: 1.35rem; padding-bottom: 1.35rem; border-bottom: 1px solid #e2e8f0; }
+.profile-hero h1 { margin-bottom: .45rem; }
+.profile-hero p { margin: 0; max-width: 560px; }
+.profile-avatar-wrap { position: relative; flex: 0 0 auto; padding: .4rem; }
+.avatar-large { width: 104px; height: 104px; }
+.avatar-placeholder { display: grid; place-items: center; background: #172554; color: #fff; font-size: 2rem; font-weight: 900; }
+.image-limit-badge { position: absolute; inset-inline-end: -5px; bottom: 2px; background: #172554; color: #fff; border: 3px solid #fff; border-radius: 999px; padding: .28rem .48rem; font: 800 .72rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; box-shadow: 0 6px 16px rgba(15,23,42,.15); }
+.profile-upload-card { display: flex; flex-direction: column; align-items: stretch; justify-content: space-between; gap: 1rem; padding: 1rem; border: 1px dashed #93c5fd; border-radius: 16px; background: #f8fbff; }
+.profile-upload-card strong { color: #172554; }
+.profile-upload-card p { margin: .25rem 0; }
+.profile-upload-card small { display: block; color: #64748b; font: 700 .78rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.profile-upload-button { width: 100%; cursor: pointer; }
+.profile-upload-button input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.notification-card { display: flex; flex-direction: column; gap: .8rem; }
+.notification-card h2 { margin-bottom: .25rem; }
+.notification-card p { margin: 0; }
+
+.pwa-install { position: fixed; inset-inline: 1rem; bottom: 1rem; z-index: 40; display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: .8rem; align-items: center; max-width: 680px; margin-inline: auto; padding: .85rem 3rem .85rem .85rem; border: 1px solid #cbd5e1; border-radius: 18px; background: rgba(255,255,255,.98); box-shadow: 0 18px 50px rgba(15,23,42,.16); backdrop-filter: blur(12px); }
+.pwa-install img { width: 46px; height: 46px; border-radius: 12px; }
+.pwa-install div { min-width: 0; }
+.pwa-install strong, .pwa-install span { display: block; }
+.pwa-install strong { color: #172554; }
+.pwa-install span { margin-top: .15rem; color: #64748b; font-size: .82rem; line-height: 1.45; }
+.pwa-install .button { grid-column: 1 / -1; }
+.pwa-dismiss { position: absolute; inset-inline-end: .55rem; top: .55rem; width: 30px; height: 30px; border: 0; border-radius: 50%; background: #f1f5f9; color: #475569; font-size: 1.1rem; }
+
+@media (min-width: 640px) {
+  .profile-upload-card { flex-direction: row; align-items: center; }
+  .profile-upload-button { width: auto; flex: 0 0 auto; }
+  .notification-card { flex-direction: row; align-items: center; justify-content: space-between; }
+  .notification-card > div:first-child { max-width: 620px; }
+  .pwa-install { grid-template-columns: 46px minmax(0, 1fr) auto; padding-inline-end: 3.1rem; }
+  .pwa-install .button { grid-column: auto; }
+}
+
+@media (max-width: 520px) {
+  .profile-hero { align-items: flex-start; }
+  .avatar-large { width: 82px; height: 82px; }
+  .image-limit-badge { font-size: .64rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  .button:hover { transform: none; }
+}
