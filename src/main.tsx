@@ -6,7 +6,11 @@ import './profile-pwa.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
+    const baseUrl = import.meta.env.BASE_URL
+    void navigator.serviceWorker.register(`${baseUrl}sw.js`, {
+      scope: baseUrl,
+      updateViaCache: 'none',
+    }).then((registration) => {
       void registration.update()
     })
   })
