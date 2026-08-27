@@ -5,9 +5,9 @@ const BASE_PATH = BASE_URL.pathname.endsWith('/') ? BASE_URL.pathname : `${BASE_
 const APP_SHELL = [
   BASE_PATH,
   `${BASE_PATH}manifest.webmanifest?v=3`,
-  `${BASE_PATH}app-logo-192-v2.png`,
-  `${BASE_PATH}app-logo-512-v2.png`,
-  `${BASE_PATH}favicon-v2.png?v=3`,
+  `${BASE_PATH}icon-192.png?v=3`,
+  `${BASE_PATH}icon-512.svg?v=3`,
+  `${BASE_PATH}favicon-32x32.png?v=3`,
 ]
 
 self.addEventListener('install', (event) => {
@@ -37,7 +37,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  const isBrandAsset = /(?:manifest\.webmanifest|app-logo-|brand-logo-|favicon-|apple-touch-icon)/.test(requestUrl.pathname)
+  const isBrandAsset = /(?:manifest\.webmanifest|icon-192|icon-512|favicon-32x32|apple-touch-icon)/.test(requestUrl.pathname)
   if (isBrandAsset) {
     event.respondWith(fetch(event.request).then((response) => {
       if (response.ok) event.waitUntil(caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, response.clone())))
@@ -67,8 +67,8 @@ self.addEventListener('push', (event) => {
   const target = appTarget(payload.url)
   event.waitUntil(self.registration.showNotification(payload.title, {
     body: payload.body,
-    icon: `${BASE_PATH}app-logo-192-v2.png`,
-    badge: `${BASE_PATH}app-logo-192-v2.png`,
+    icon: `${BASE_PATH}icon-192.png?v=3`,
+    badge: `${BASE_PATH}icon-192.png?v=3`,
     data: { url: target },
     tag: payload.url || 'sessions-archive-update',
   }))
