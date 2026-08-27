@@ -13,6 +13,16 @@ export type Speaker = {
   organization: string | null
 }
 
+export type SessionSeries = {
+  id: string
+  title: string
+  description: string | null
+  published: boolean
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type SessionStatus = 'draft' | 'published' | 'cancelled'
 
 export type Session = {
@@ -22,6 +32,8 @@ export type Session = {
   description: string
   category_id: string | null
   speaker_id: string | null
+  series_id: string | null
+  series_position: number | null
   starts_at: string
   ends_at: string | null
   location: string | null
@@ -31,6 +43,7 @@ export type Session = {
   created_at: string
   category?: Category | null
   speaker?: Speaker | null
+  series?: SessionSeries | null
 }
 
 export type SessionResource = {
@@ -47,6 +60,18 @@ export type SessionVideo = {
   title: string
   youtube_video_id: string
   position: number
+  created_at: string
+  updated_at: string
+}
+
+export type VideoProgress = {
+  id: string
+  user_id: string
+  video_id: string
+  seconds: number
+  duration: number
+  percent: number
+  completed_at: string | null
   created_at: string
   updated_at: string
 }

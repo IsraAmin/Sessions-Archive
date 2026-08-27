@@ -1,31 +1,66 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useUi } from '../hooks/useUi'
 import { PwaInstallPrompt } from './PwaInstallPrompt'
+import { NotificationCenter } from './NotificationCenter'
+import { Icon } from './Icon'
 
 export function Layout() {
-  const { user, isAdmin, signOut } = useAuth()
+  const { user, isAdmin, isSuperAdmin, signOut } = useAuth()
+  const { theme, t, toggleLanguage, toggleTheme } = useUi()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const location = useLocation()
 
-  return (
-    <div className="app-shell">
-      <header className="topbar">
-        <NavLink to="/" className="brand">Sessions Archive</NavLink>
-        <nav className="nav-links" aria-label="التنقل الرئيسي">
-          <NavLink to="/">السيشنات</NavLink>
-          {user && <NavLink to="/dashboard">لوحتي</NavLink>}
-          {user && <NavLink to="/profile">الملف الشخصي</NavLink>}
-          {isAdmin && <NavLink to="/admin">الإدارة</NavLink>}
-        </nav>
-        <div className="auth-actions">
-          {user ? (
-            <button className="button button-ghost" onClick={() => void signOut()}>تسجيل الخروج</button>
-          ) : (
-            <NavLink className="button button-primary" to="/auth">تسجيل الدخول</NavLink>
-          )}
+  useEffect(() => setSidebarOpen(false), [location.pathname])
+
+  const navClass = ({ isActive }: { isActive: boolean }) => `sidebar-link ${isActive ? 'active' : ''}`
+
+  return <div className="workspace-shell">
+    {sidebarOpen && <button className="sidebar-scrim" aria-label={t('common.close')} onClick={() => setSidebarOpen(false)} />}
+
+    <aside className={`app-sidebar ${sidebarOpen ? 'is-open' : ''}`}>
+      <div className="sidebar-brand">
+        <NavLink to="/" className="brand-lockup"><span className="brand-mark">S</span><span><strong>Sessions</strong><small>Archive</small></span></NavLink>
+        <button className="sidebar-close" aria-label={t('common.close')} onClick={() => setSidebarOpen(false)}><Icon name="close" /></button>
+      </div>
+
+      <nav className="sidebar-nav" aria-label={t('nav.explore')}>
+        <span className="sidebar-label">{t('nav.explore')}</span>
+        <NavLink end to="/" className={navClass}><Icon name="home" /><span>{t('nav.sessions')}</span></NavLink>
+        {user && <NavLink to="/dashboard" className={navClass}><Icon name="dashboard" /><span>{t('nav.dashboard')}</span></NavLink>}
+
+        {isAdmin && <>
+          <span className="sidebar-label sidebar-label-spaced">{t('admin.content')}</span>
+          <NavLink end to="/admin" className={navClass}><Icon name="shield" /><span>{t('nav.admin')}</span>{isSuperAdmin && <em className="mini-badge">SUPER</em>}</NavLink>
+          <NavLink to="/admin/analytics" className={navClass}><Icon name="chart" /><span>{t('admin.analytics')}</span></NavLink>
+        </>}
+      </nav>
+
+      <div className="sidebar-bottom">
+        {user ? <>
+          <NavLink to="/profile" className={navClass}><Icon name="user" /><span>{t('nav.profile')}</span></NavLink>
+          <button className="sidebar-link sidebar-button" onClick={() => void signOut()}><Icon name="logout" /><span>{t('common.signOut')}</span></button>
+          <div className="sidebar-user"><span className="sidebar-user-avatar">{(user.user_metadata?.full_name || user.email || 'U').slice(0, 1).toUpperCase()}</span><span><strong>{user.user_metadata?.full_name || user.email}</strong><small>{isSuperAdmin ? t('admin.superAdmin') : isAdmin ? t('admin.roleAdmin') : t('admin.roleStudent')}</small></span></div>
+        </> : <NavLink className="button button-primary full" to="/auth">{t('common.signIn')}</NavLink>}
+      </div>
+    </aside>
+
+    <div className="workspace-main">
+      <header className="workspace-topbar">
+        <div className="topbar-start">
+          <button className="top-control mobile-menu" aria-label={t('common.menu')} onClick={() => setSidebarOpen(true)}><Icon name="menu" /></button>
+          <div className="mobile-brand">Sessions Archive</div>
+        </div>
+        <div className="topbar-controls">
+          {user && <NotificationCenter />}
+          <button className="top-control control-with-label" onClick={toggleLanguage} title={t('common.language')}><Icon name="language" /><span>{t('common.language')}</span></button>
+          <button className="top-control" onClick={toggleTheme} title={theme === 'dark' ? t('common.light') : t('common.dark')} aria-label={theme === 'dark' ? t('common.light') : t('common.dark')}><Icon name={theme === 'dark' ? 'sun' : 'moon'} /></button>
         </div>
       </header>
-      <main className="container"><Outlet /></main>
+
+      <main className="workspace-content"><Outlet /></main>
       <PwaInstallPrompt />
-      <footer className="footer">منصة طلابية لإدارة واكتشاف السيشنات.</footer>
     </div>
-  )
+  </div>
 }

@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './styles.css'
 import './profile-pwa.css'
+import './app-v2.css'
+import './app-v2-extras.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

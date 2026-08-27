@@ -8,6 +8,7 @@ type AuthContextValue = {
   user: User | null
   loading: boolean
   isAdmin: boolean
+  isSuperAdmin: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, fullName: string) => Promise<void>
   signOut: () => Promise<void>
@@ -42,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: session?.user ?? null,
     loading,
     isAdmin: session?.user?.app_metadata?.role === 'admin',
+    isSuperAdmin: session?.user?.app_metadata?.super_admin === true,
     signIn: async (email, password) => {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
