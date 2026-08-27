@@ -14,7 +14,7 @@ export function Layout() {
   const [logoutConfirm, setLogoutConfirm] = useState(false)
   const [logoutBusy, setLogoutBusy] = useState(false)
   const location = useLocation()
-  const logoUrl = `${import.meta.env.BASE_URL}brand-logo-v2.png`
+  const logoUrl = `${import.meta.env.BASE_URL}icon-192.png?v=3`
   const ar = language === 'ar'
 
   useEffect(() => setSidebarOpen(false), [location.pathname])
