@@ -6,6 +6,7 @@ import './profile-pwa.css'
 import './app-v2.css'
 import './app-v2-extras.css'
 import './refinements.css'
+import './branding.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

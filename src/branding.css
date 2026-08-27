@@ -1,0 +1,28 @@
+/* Provisional Sessions Archive brand mark. Imported last so it cleanly replaces the text placeholder mark. */
+.brand-mark {
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: hidden;
+  border-radius: 11px;
+}
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.mobile-brand {
+  align-items: center;
+  gap: 7px;
+  font-weight: 800;
+}
+.mobile-brand img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex: none;
+}
+
+@media (max-width: 960px) {
+  .mobile-brand { display: flex; }
+}
