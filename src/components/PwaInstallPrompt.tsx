@@ -52,7 +52,7 @@ export function PwaInstallPrompt() {
   }
 
   return <aside className="pwa-install" aria-label={copy.label}>
-    <img src={`${import.meta.env.BASE_URL}app-logo-192-v2.png`} alt="" aria-hidden="true" />
+    <img src={`${import.meta.env.BASE_URL}icon-192.png?v=3`} alt="" aria-hidden="true" />
     <div><strong>{copy.title}</strong><span>{copy.hint}</span></div>
     {installPrompt && <button className="button button-primary" type="button" onClick={() => void install()}>{copy.install}</button>}
     <button className="pwa-dismiss" type="button" onClick={dismiss} aria-label={copy.dismiss}>×</button>
