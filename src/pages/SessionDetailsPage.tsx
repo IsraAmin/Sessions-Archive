@@ -9,6 +9,7 @@ import { YouTubePlayer } from '../components/YouTubePlayer'
 import { useToast } from '../components/ToastProvider'
 import { downloadSessionIcs, googleCalendarUrl } from '../lib/calendar'
 import { Icon } from '../components/Icon'
+import { StarRating } from '../components/StarRating'
 
 type SeriesSession = { id: string; title: string; series_position: number | null }
 
@@ -137,9 +138,20 @@ export function SessionDetailsPage() {
           else { const { error } = await supabase.from('bookmarks').insert({ session_id: session.id, user_id: user.id, note: null }); if (error) throw error }
         }, bookmarked ? t('details.unsavedToast') : t('details.savedToast'))}>{bookmarked ? t('details.unbookmark') : t('details.bookmark')}</button>
 
-        <div className="feedback-box"><h3>{t('details.rating')}</h3><label>{t('details.stars')}<select value={rating} onChange={(e) => setRating(Number(e.target.value))}>{[5,4,3,2,1].map((n) => <option key={n} value={n}>{n}</option>)}</select></label><label>{t('details.comment')}<textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={4} /></label><button className="button button-primary full" disabled={busy} onClick={() => void action(async () => {
-          const { error } = await supabase.from('feedback').upsert({ user_id: user.id, session_id: session.id, rating, comment: comment.trim() || null }, { onConflict: 'user_id,session_id' }); if (error) throw error
-        }, t('details.feedbackToast'))}>{t('details.saveRating')}</button></div>
+        <div className="feedback-box">
+          <h3>{t('details.rating')}</h3>
+          <label className="form-field">
+            <span className="field-label">{t('details.stars')}</span>
+            <StarRating value={rating} onChange={setRating} label={t('details.stars')} disabled={busy} />
+          </label>
+          <label className="form-field">
+            <span className="field-label">{t('details.comment')}</span>
+            <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={4} />
+          </label>
+          <button className="button button-primary full" disabled={busy} onClick={() => void action(async () => {
+            const { error } = await supabase.from('feedback').upsert({ user_id: user.id, session_id: session.id, rating, comment: comment.trim() || null }, { onConflict: 'user_id,session_id' }); if (error) throw error
+          }, t('details.feedbackToast'))}>{t('details.saveRating')}</button>
+        </div>
       </>}
     </aside>
   </section>
