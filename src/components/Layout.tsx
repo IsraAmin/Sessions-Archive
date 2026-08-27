@@ -4,18 +4,30 @@ import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
 import { PwaInstallPrompt } from './PwaInstallPrompt'
 import { NotificationCenter } from './NotificationCenter'
+import { ConfirmDialog } from './ConfirmDialog'
 import { Icon } from './Icon'
 
 export function Layout() {
   const { user, isAdmin, isSuperAdmin, signOut } = useAuth()
-  const { theme, t, toggleLanguage, toggleTheme } = useUi()
+  const { theme, t, language, toggleLanguage, toggleTheme } = useUi()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [logoutConfirm, setLogoutConfirm] = useState(false)
+  const [logoutBusy, setLogoutBusy] = useState(false)
   const location = useLocation()
-  const logoUrl = `${import.meta.env.BASE_URL}icon-192.png`
+  const logoUrl = `${import.meta.env.BASE_URL}brand-logo-v2.png`
+  const ar = language === 'ar'
 
   useEffect(() => setSidebarOpen(false), [location.pathname])
 
   const navClass = ({ isActive }: { isActive: boolean }) => `sidebar-link ${isActive ? 'active' : ''}`
+
+  async function confirmLogout() {
+    setLogoutBusy(true)
+    try {
+      await signOut()
+      setLogoutConfirm(false)
+    } finally { setLogoutBusy(false) }
+  }
 
   return <div className="workspace-shell">
     {sidebarOpen && <button className="sidebar-scrim" aria-label={t('common.close')} onClick={() => setSidebarOpen(false)} />}
@@ -41,7 +53,7 @@ export function Layout() {
       <div className="sidebar-bottom">
         {user ? <>
           <NavLink to="/profile" className={navClass}><Icon name="user" /><span>{t('nav.profile')}</span></NavLink>
-          <button className="sidebar-link sidebar-button" onClick={() => void signOut()}><Icon name="logout" /><span>{t('common.signOut')}</span></button>
+          <button className="sidebar-link sidebar-button sidebar-logout" onClick={() => setLogoutConfirm(true)}><Icon name="logout" /><span>{t('common.signOut')}</span></button>
           <div className="sidebar-user"><span className="sidebar-user-avatar">{(user.user_metadata?.full_name || user.email || 'U').slice(0, 1).toUpperCase()}</span><span><strong>{user.user_metadata?.full_name || user.email}</strong><small>{isSuperAdmin ? t('admin.superAdmin') : isAdmin ? t('admin.roleAdmin') : t('admin.roleStudent')}</small></span></div>
         </> : <NavLink className="button button-primary full" to="/auth">{t('common.signIn')}</NavLink>}
       </div>
@@ -63,5 +75,17 @@ export function Layout() {
       <main className="workspace-content"><Outlet /></main>
       <PwaInstallPrompt />
     </div>
+
+    <ConfirmDialog
+      open={logoutConfirm}
+      title={ar ? 'تسجيل الخروج؟' : 'Sign out?'}
+      description={ar ? 'هل أنتِ متأكدة من تسجيل الخروج من حسابك؟ يمكنك تسجيل الدخول مرة أخرى في أي وقت.' : 'Are you sure you want to sign out? You can sign in again at any time.'}
+      confirmLabel={ar ? 'نعم، تسجيل الخروج' : 'Yes, sign out'}
+      cancelLabel={ar ? 'البقاء في الحساب' : 'Stay signed in'}
+      tone="danger"
+      busy={logoutBusy}
+      onCancel={() => !logoutBusy && setLogoutConfirm(false)}
+      onConfirm={() => void confirmLogout()}
+    />
   </div>
 }
