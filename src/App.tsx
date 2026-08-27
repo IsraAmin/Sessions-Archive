@@ -9,9 +9,11 @@ import { ProfilePage } from './pages/ProfilePage'
 import { DashboardPage } from './pages/DashboardPage'
 import { AdminPage } from './pages/AdminPage'
 
+const routerBase = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBase}>
       <AuthProvider>
         <Routes>
           <Route element={<Layout />}>
