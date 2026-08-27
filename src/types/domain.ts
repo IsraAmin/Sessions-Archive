@@ -41,6 +41,16 @@ export type SessionResource = {
   created_at: string
 }
 
+export type SessionVideo = {
+  id: string
+  session_id: string
+  title: string
+  youtube_video_id: string
+  position: number
+  created_at: string
+  updated_at: string
+}
+
 export type Profile = {
   id: string
   full_name: string

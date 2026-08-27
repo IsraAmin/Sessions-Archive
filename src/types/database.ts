@@ -55,6 +55,12 @@ export type Database = {
         Update: { id?: string; session_id?: string; title?: string; file_path?: string; created_at?: string }
         Relationships: [{ foreignKeyName: 'session_resources_session_id_fkey'; columns: ['session_id']; isOneToOne: false; referencedRelation: 'sessions'; referencedColumns: ['id'] }]
       }
+      session_videos: {
+        Row: { id: string; session_id: string; title: string; youtube_video_id: string; position: number; created_at: string; updated_at: string }
+        Insert: { id?: string; session_id: string; title: string; youtube_video_id: string; position?: number; created_at?: string; updated_at?: string }
+        Update: { id?: string; session_id?: string; title?: string; youtube_video_id?: string; position?: number; created_at?: string; updated_at?: string }
+        Relationships: [{ foreignKeyName: 'session_videos_session_id_fkey'; columns: ['session_id']; isOneToOne: false; referencedRelation: 'sessions'; referencedColumns: ['id'] }]
+      }
       push_subscriptions: {
         Row: { id: string; user_id: string; endpoint: string; p256dh: string; auth: string; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; endpoint: string; p256dh: string; auth: string; created_at?: string; updated_at?: string }

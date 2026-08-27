@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase, publicStorageUrl } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import type { Session, SessionResource } from '../types/domain'
+import type { Session, SessionResource, SessionVideo } from '../types/domain'
 import { errorMessage } from '../lib/errors'
+import { YouTubePlayer } from '../components/YouTubePlayer'
 
 export function SessionDetailsPage() {
   const { id } = useParams()
   const { user } = useAuth()
   const [session, setSession] = useState<Session | null>(null)
   const [resources, setResources] = useState<SessionResource[]>([])
+  const [videos, setVideos] = useState<SessionVideo[]>([])
   const [registered, setRegistered] = useState(false)
   const [bookmarked, setBookmarked] = useState(false)
   const [rating, setRating] = useState(5)
@@ -27,8 +29,12 @@ export function SessionDetailsPage() {
     if (error) { setMessage(error.message); return }
     setSession(data as Session)
 
-    const { data: resourceData } = await supabase.from('session_resources').select('*').eq('session_id', id).order('created_at')
-    setResources((resourceData ?? []) as SessionResource[])
+    const [resourceResult, videoResult] = await Promise.all([
+      supabase.from('session_resources').select('*').eq('session_id', id).order('created_at'),
+      supabase.from('session_videos').select('*').eq('session_id', id).order('position').order('created_at'),
+    ])
+    setResources((resourceResult.data ?? []) as SessionResource[])
+    setVideos((videoResult.data ?? []) as SessionVideo[])
 
     if (user) {
       const [reg, mark, feedback] = await Promise.all([
@@ -83,6 +89,29 @@ export function SessionDetailsPage() {
           <div><span>المكان</span><strong>{session.location || 'أونلاين / يحدد لاحقًا'}</strong></div>
           <div><span>السعة</span><strong>{session.capacity}</strong></div>
         </div>
+
+        {videos.length > 0 && (
+          <section className="session-recordings" aria-labelledby="recordings-heading">
+            <div className="recordings-heading">
+              <div>
+                <span className="recording-kicker">التسجيل متاح</span>
+                <h2 id="recordings-heading">شاهد السيشن هنا</h2>
+              </div>
+              <span className="recording-count">{videos.length === 1 ? 'فيديو واحد' : `${videos.length} فيديوهات`}</span>
+            </div>
+            <div className="recording-list">
+              {videos.map((video, index) => (
+                <article className="recording-item" key={video.id}>
+                  <div className="recording-label">
+                    <span>{index === 0 ? 'التسجيل الرئيسي' : `الجزء ${index + 1}`}</span>
+                    <strong>{video.title}</strong>
+                  </div>
+                  <YouTubePlayer videoId={video.youtube_video_id} title={`${session.title} — ${video.title}`} />
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {resources.length > 0 && <div className="resource-list"><h2>المصادر</h2>{user ? resources.map((resource) => (
           <button key={resource.id} className="link-button" onClick={async () => {

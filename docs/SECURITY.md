@@ -35,9 +35,16 @@ Capacity is checked in a `BEFORE INSERT` trigger that locks the target session r
 - Public buckets (`profile-images`, `session-covers`, `speaker-images`) are intentionally publicly readable by URL; Storage RLS protects writes, not public downloads.
 - `session-resources` is private and is delivered with short-lived signed URLs to authenticated users for published sessions.
 - Storage upserts have INSERT + SELECT + UPDATE policies where replacement is supported.
+- `profile-images` has a server-side `file_size_limit` of 51,200 bytes. Client compression is convenience, not the security boundary.
 
 ## Push
 
 Only the VAPID public key belongs in the browser. `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` belong in Supabase secrets.
 
 `send-session-notification` uses `verify_jwt = true`, then checks `public.is_admin()` with the caller-scoped client before reading all subscriptions with the privileged server client. Invalid/stale 404/410 push endpoints are cleaned up after delivery attempts.
+
+## YouTube recordings
+
+`session_videos` stores only YouTube video IDs, not arbitrary iframe HTML or video files. The column has a database check for the 11-character YouTube ID shape. RLS allows public/authenticated reads only when the parent session is published, while insert/update/delete require `public.is_admin()`.
+
+The frontend builds the embed URL itself instead of storing user-provided embed markup, avoiding arbitrary iframe injection through database content.

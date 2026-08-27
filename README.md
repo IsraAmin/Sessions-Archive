@@ -38,7 +38,8 @@ auth.users 1 ─── 1 profiles
      ├──< bookmarks ---------┤
      │                       ├── speakers
      ├──< feedback ----------┤
-     │                       └──< session_resources
+     │                       ├──< session_resources
+     │                       └──< session_videos (YouTube IDs only)
      └──< push_subscriptions
 ```
 
@@ -51,7 +52,7 @@ Current MVP uses one primary speaker per session (`sessions.speaker_id`). A many
 - Registration capacity and published-session status are enforced in PostgreSQL, not in React.
 - A user can create/update/delete only bookmarks whose `user_id = auth.uid()`.
 - A user can create/update/delete only feedback whose `user_id = auth.uid()`.
-- Admin-managed CRUD for categories, speakers, sessions, and session-resource metadata requires `app_metadata.role = 'admin'` in RLS.
+- Admin-managed CRUD for categories, speakers, sessions, session resources, and YouTube recording references requires `app_metadata.role = 'admin'` in RLS.
 - Admin authorization is never stored in user-editable `user_metadata`.
 - RLS is enabled on every exposed `public` table.
 - Storage writes are protected by ownership/admin policies.
@@ -68,13 +69,26 @@ Current MVP uses one primary speaker per session (`sessions.speaker_id`). A many
 
 `pg_trgm` indexes support the MVP. `pgvector` is intentionally not required and can be introduced later for semantic search or AI recommendations.
 
+## Recorded session videos (YouTube)
+
+Recorded video files stay on YouTube. The platform stores only validated 11-character YouTube video IDs in `session_videos`.
+
+- One session can have one or many recordings.
+- Admin pastes a normal YouTube, `youtu.be`, Shorts, Live, or embed URL; the frontend extracts the video ID.
+- Students see a responsive 16:9 YouTube embedded player directly inside the session details page.
+- The first recording is presented as the primary recording and additional parts follow below it.
+- Videos should be Public or Unlisted and allow embedding. Private/non-embeddable videos will not play inside the embedded player.
+- `session_videos` is readable only when its parent session is published (or by an admin); create/update/delete are Admin-only through RLS.
+
+No YouTube API key is required for the MVP because the app does not upload to YouTube or fetch private metadata.
+
 ## Storage
 
 The migration creates four buckets:
 
 | Bucket | Public? | Write access |
 |---|---:|---|
-| `profile-images` | Yes | Authenticated user, own `{user_id}/...` folder only |
+| `profile-images` | Yes | Authenticated user, own `{user_id}/...` folder only; hard limit 50KB |
 | `session-covers` | Yes | Admin only |
 | `speaker-images` | Yes | Admin only |
 | `session-resources` | No | Admin only; authenticated download for published sessions |
@@ -88,12 +102,13 @@ The project uses a small manual PWA setup instead of `vite-plugin-pwa`:
 - `public/manifest.webmanifest`
 - `public/sw.js` (same-origin app assets are cached after first successful load for offline revisits; Supabase/API requests are never cached)
 - install icons
-- service-worker registration in `src/main.tsx`
-- browser Push subscription capture in `src/lib/push.ts`
+- service-worker registration and update check in `src/main.tsx`
+- install prompt for supported browsers plus iOS Add-to-Home-Screen guidance
+- browser Push subscription capture/status in `src/lib/push.ts`
 - `push_subscriptions` with owner RLS
 - `supabase/functions/send-session-notification/` for admin broadcast
 
-Only `VITE_VAPID_PUBLIC_KEY` belongs in the browser. `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` must be Supabase Edge Function secrets.
+Only `VITE_VAPID_PUBLIC_KEY` belongs in the browser. `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` must be Supabase Edge Function secrets. The profile screen never uploads the original avatar directly: it redraws and compresses the image to 50KB or less, then the `profile-images` bucket independently enforces a 51,200-byte server-side limit.
 
 ## Local setup
 
@@ -102,9 +117,9 @@ Only `VITE_VAPID_PUBLIC_KEY` belongs in the browser. `VAPID_PRIVATE_KEY` and `VA
 3. Fill:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
-   - `VITE_VAPID_PUBLIC_KEY` (optional until Push is configured)
+   - `VITE_VAPID_PUBLIC_KEY` (required for browser Push subscriptions)
 4. Install dependencies: `npm install`.
-5. Apply the SQL files in `supabase/migrations/` in filename order (`0001` → `0002` → `0003` → `0004`).
+5. Apply the SQL files in `supabase/migrations/` in filename order. `0003_storage.sql` creates fresh projects with the 50KB profile-image limit; the timestamped migrations add the existing-project 50KB hard limit and YouTube `session_videos` support.
 6. Optionally run `supabase/seed/seed.sql`.
 7. Start the app: `npm run dev`.
 
@@ -170,7 +185,7 @@ Backend: Supabase hosted project with migration + Edge Function deployed.
 ## Current MVP coverage
 
 - Authentication
-- User profile edit + profile image upload
+- User profile edit + automatic profile-image compression to ≤50KB + server-side Storage limit
 - Session listing
 - Real session search/filter
 - Session details
@@ -182,10 +197,11 @@ Backend: Supabase hosted project with migration + Edge Function deployed.
 - Basic statistics chart
 - Admin CRUD for categories, speakers, sessions
 - Admin uploads for session covers, speaker images, session resources
+- Embedded YouTube recordings inside session details + Admin link management
 - Supabase Storage policies
 - PostgreSQL RLS/security
-- PWA baseline
-- Push subscription + admin broadcast Edge Function
+- Installable PWA with offline revisit cache, install prompt, iOS guidance, and service-worker update check
+- Push subscription status + admin broadcast Edge Function
 
 ## Later phases
 

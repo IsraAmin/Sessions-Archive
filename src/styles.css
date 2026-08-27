@@ -110,3 +110,46 @@ p { line-height: 1.75; color: #475569; }
 .speaker-summary p { margin: .25rem 0 0; }
 
 .row-actions-start { justify-content: flex-start; }
+
+/* Session recordings: YouTube is the single visual focus; surrounding UI stays quiet. */
+.session-recordings { margin: 1.7rem 0 1.2rem; padding-top: 1.35rem; border-top: 1px solid #e2e8f0; }
+.recordings-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: .9rem; }
+.recordings-heading h2 { margin: .2rem 0 0; color: #172554; }
+.recording-kicker { color: #b91c1c; font-size: .78rem; font-weight: 850; }
+.recording-count { flex: 0 0 auto; border-radius: 999px; background: #f1f5f9; color: #475569; padding: .35rem .6rem; font-size: .78rem; font-weight: 750; }
+.recording-list { display: grid; gap: 1rem; }
+.recording-item { min-width: 0; }
+.recording-label { display: grid; gap: .18rem; margin-bottom: .55rem; }
+.recording-label span { color: #64748b; font-size: .78rem; }
+.recording-label strong { color: #0f172a; }
+.youtube-frame { position: relative; overflow: hidden; width: 100%; aspect-ratio: 16 / 9; border-radius: 18px; background: #020617; box-shadow: 0 16px 38px rgba(15,23,42,.14); }
+.youtube-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+@media (min-width: 760px) {
+  .recording-list:has(.recording-item:nth-child(2)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .recording-list:has(.recording-item:nth-child(2)) .recording-item:first-child { grid-column: 1 / -1; }
+}
+
+/* Admin recording manager keeps video confirmation visible without turning the dashboard into a media wall. */
+.video-admin-heading { display: flex; flex-direction: column; gap: .65rem; margin-bottom: 1rem; }
+.video-admin-heading h2 { margin: .2rem 0 .35rem; }
+.video-admin-heading p { margin: 0; max-width: 720px; }
+.video-admin-note { width: fit-content; border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; padding: .4rem .65rem; font-size: .78rem; font-weight: 750; }
+.video-admin-layout { display: grid; gap: 1rem; align-items: start; }
+.video-admin-form { display: grid; gap: .75rem; }
+.video-preview { min-width: 0; }
+.video-preview > span { display: block; margin-bottom: .5rem; color: #64748b; font-size: .78rem; font-weight: 750; }
+.video-preview-empty { display: grid; place-items: center; min-height: 220px; padding: 1.2rem; text-align: center; border: 1px dashed #cbd5e1; border-radius: 18px; background: #f8fafc; }
+.video-preview-empty strong { color: #172554; }
+.video-preview-empty p { max-width: 380px; margin: .3rem 0 0; }
+.video-admin-list { margin-top: 1rem; border-top: 1px solid #e2e8f0; }
+.video-admin-list > div > span { display: grid; gap: .18rem; }
+.video-admin-list small { color: #64748b; }
+.video-admin-list .empty-state { display: block; width: 100%; text-align: right; }
+
+@media (min-width: 820px) {
+  .video-admin-heading { flex-direction: row; align-items: flex-start; justify-content: space-between; }
+  .video-admin-layout { grid-template-columns: minmax(0, .85fr) minmax(360px, 1.15fr); }
+  .video-admin-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .video-admin-form .wide { grid-column: 1 / -1; }
+}

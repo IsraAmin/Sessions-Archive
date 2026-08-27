@@ -54,7 +54,8 @@ auth.users 1 ─── 1 profiles
      ├──< bookmarks ---------┤
      │                       ├── speakers
      ├──< feedback ----------┤
-     │                       └──< session_resources
+     │                       ├──< session_resources
+     │                       └──< session_videos
      └──< push_subscriptions
 ```
 
@@ -102,6 +103,7 @@ The Edge Function receives the caller's JWT, verifies the user mode, calls `publ
 | Categories | Read | CRUD |
 | Speakers | Read | CRUD |
 | Session resource metadata | Read for published sessions | CRUD |
+| Session YouTube videos | Read for published sessions | CRUD |
 | Push subscriptions | CRUD own | Broadcast function reads all via privileged server context |
 
 The frontend publishable key is safe to ship only because RLS/Storage policies constrain it. Supabase secret keys and VAPID private keys must never be placed in Vite environment variables.
@@ -126,10 +128,62 @@ SPA rewrite files are included for both Vercel and Netlify. GitHub CI runs type 
 
 These are intentionally separated from the MVP so the initial product remains maintainable.
 
-
 ## 8. Migrations
 
 - `0001_core_schema.sql`: extensions, tables, relationships, indexes, profile trigger, and atomic registration-capacity enforcement.
 - `0002_search_rls.sql`: real session Search RPC and RLS policies.
 - `0003_storage.sql`: Storage buckets and Storage RLS policies.
 - `0004_least_privilege_grants.sql`: least-privilege Data API table grants; RLS remains the row-level authorization boundary.
+- `20260827185514_enforce_profile_image_50kb.sql`: hardens the existing profile bucket to 51,200 bytes.
+- `20260827190100_session_youtube_videos.sql`: adds multi-video YouTube recording references with Admin-only writes.
+
+## Profile image pipeline
+
+```text
+User image (any browser-decodable image)
+        |
+        v
+Canvas redraw -> WebP/JPEG quality + dimension reduction
+        |
+        | guaranteed <= 50 KiB before upload
+        v
+Supabase Storage: profile-images
+        |
+        | bucket file_size_limit = 51,200 bytes
+        v
+profiles.avatar_path
+```
+
+The browser compression improves UX, while the Storage bucket limit is the security boundary and prevents bypassing the frontend.
+
+## PWA / Push flow
+
+```text
+manifest + service worker -> installable app / offline revisits
+          |
+          +-> PushManager subscription -> push_subscriptions (owner RLS)
+                                              |
+Admin JWT -> send-session-notification Edge Function -> Web Push provider
+                                              |
+                                      VAPID secrets stay server-side
+```
+
+## YouTube recording flow
+
+```text
+Admin uploads recording to YouTube
+        |
+        v
+Paste YouTube URL in Admin UI
+        |
+        v
+Client extracts + validates 11-char video ID
+        |
+        v
+session_videos (Admin-only writes via RLS)
+        |
+        v
+Published session details -> responsive YouTube embed player
+```
+
+The database never stores the video file. A session can have multiple ordered recordings. Public users can read video references only when the parent session is published.

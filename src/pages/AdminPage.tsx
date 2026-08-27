@@ -1,28 +1,36 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { StatCard } from '../components/StatCard'
-import type { Category, Session, Speaker } from '../types/domain'
+import type { Category, Session, SessionVideo, Speaker } from '../types/domain'
 import { errorMessage } from '../lib/errors'
+import { extractYouTubeVideoId } from '../lib/youtube'
+import { YouTubePlayer } from '../components/YouTubePlayer'
 
 export function AdminPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [speakers, setSpeakers] = useState<Speaker[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
+  const [videos, setVideos] = useState<SessionVideo[]>([])
+  const [videoSessionId, setVideoSessionId] = useState('')
+  const [videoTitle, setVideoTitle] = useState('')
+  const [videoUrl, setVideoUrl] = useState('')
   const [usersCount, setUsersCount] = useState(0)
   const [registrationsCount, setRegistrationsCount] = useState(0)
   const [message, setMessage] = useState('')
 
   async function load() {
-    const [cat, spk, ses, users, regs] = await Promise.all([
+    const [cat, spk, ses, videoResult, users, regs] = await Promise.all([
       supabase.from('categories').select('*').order('name'),
       supabase.from('speakers').select('*').order('name'),
       supabase.from('sessions').select('*').order('starts_at', { ascending: false }),
+      supabase.from('session_videos').select('*').order('session_id').order('position').order('created_at'),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('registrations').select('*', { count: 'exact', head: true }),
     ])
     setCategories((cat.data ?? []) as Category[])
     setSpeakers((spk.data ?? []) as Speaker[])
     setSessions((ses.data ?? []) as Session[])
+    setVideos((videoResult.data ?? []) as SessionVideo[])
     setUsersCount(users.count ?? 0)
     setRegistrationsCount(regs.count ?? 0)
   }
@@ -130,6 +138,34 @@ export function AdminPage() {
     } catch (error) { setMessage(errorMessage(error)) }
   }
 
+  async function addSessionVideo(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const videoId = extractYouTubeVideoId(videoUrl)
+    if (!videoSessionId) {
+      setMessage('اختر السيشن التي يتبع لها التسجيل.')
+      return
+    }
+    if (!videoTitle.trim()) {
+      setMessage('اكتب عنوانًا واضحًا للتسجيل.')
+      return
+    }
+    if (!videoId) {
+      setMessage('رابط YouTube غير صالح. الصق رابط watch أو youtu.be أو Shorts.')
+      return
+    }
+
+    const nextPosition = videos.filter((video) => video.session_id === videoSessionId).length
+    await run(() => supabase.from('session_videos').insert({
+      session_id: videoSessionId,
+      title: videoTitle.trim(),
+      youtube_video_id: videoId,
+      position: nextPosition,
+    }), 'تمت إضافة تسجيل YouTube إلى السيشن.')
+
+    setVideoTitle('')
+    setVideoUrl('')
+  }
+
   async function sendNotification(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const formElement = event.currentTarget
@@ -190,6 +226,67 @@ export function AdminPage() {
           <button className="button button-primary">إنشاء Session</button>
         </form>
         <div className="admin-list">{sessions.map((session) => <div key={session.id}><span><strong>{session.title}</strong> — {session.status}</span><div className="row-actions"><label className="file-action">غلاف<input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && void uploadSessionCover(session, e.target.files[0])} /></label><label className="file-action">Resource<input type="file" onChange={(e) => e.target.files?.[0] && void uploadSessionResource(session, e.target.files[0])} /></label><button onClick={() => { const title = window.prompt('العنوان الجديد', session.title); if (title) void run(() => supabase.from('sessions').update({ title }).eq('id', session.id)) }}>تعديل</button><button onClick={() => void run(() => supabase.from('sessions').delete().eq('id', session.id))}>حذف</button></div></div>)}</div>
+      </section>
+
+      <section className="panel section-gap video-admin-panel">
+        <div className="video-admin-heading">
+          <div>
+            <div className="eyebrow">YouTube</div>
+            <h2>تسجيلات السيشنات</h2>
+            <p>الصق رابط الفيديو بعد رفعه على YouTube. يظهر للطلاب داخل صفحة السيشن بدون رفع ملف الفيديو للمنصة.</p>
+          </div>
+          <span className="video-admin-note">Public أو Unlisted + Embed مسموح</span>
+        </div>
+
+        <div className="video-admin-layout">
+          <form className="video-admin-form" onSubmit={(e) => void addSessionVideo(e)}>
+            <label>السيشن
+              <select value={videoSessionId} onChange={(e) => setVideoSessionId(e.target.value)} required>
+                <option value="">اختر السيشن</option>
+                {sessions.map((session) => <option key={session.id} value={session.id}>{session.title}</option>)}
+              </select>
+            </label>
+            <label>عنوان التسجيل
+              <input value={videoTitle} onChange={(e) => setVideoTitle(e.target.value)} placeholder="مثال: التسجيل الكامل" required />
+            </label>
+            <label className="wide">رابط YouTube
+              <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtu.be/..." inputMode="url" required />
+            </label>
+            <button className="button button-primary wide">إضافة التسجيل</button>
+          </form>
+
+          <div className="video-preview">
+            {extractYouTubeVideoId(videoUrl) ? (
+              <>
+                <span>معاينة قبل الحفظ</span>
+                <YouTubePlayer videoId={extractYouTubeVideoId(videoUrl)!} title={videoTitle || 'معاينة تسجيل YouTube'} />
+              </>
+            ) : (
+              <div className="video-preview-empty">
+                <strong>معاينة الفيديو</strong>
+                <p>الصق رابط YouTube صحيحًا لتتأكد أن الفيديو المقصود سيظهر داخل المنصة.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="admin-list video-admin-list">
+          {videos.length === 0 ? <div className="empty-state">لا توجد تسجيلات بعد. أضف أول رابط YouTube لسيشن منشورة.</div> : videos.map((video) => {
+            const session = sessions.find((item) => item.id === video.session_id)
+            return (
+              <div key={video.id}>
+                <span><strong>{video.title}</strong><small>{session?.title || 'سيشن'}</small></span>
+                <div className="row-actions">
+                  <button type="button" onClick={() => {
+                    const title = window.prompt('العنوان الجديد', video.title)?.trim()
+                    if (title) void run(() => supabase.from('session_videos').update({ title }).eq('id', video.id), 'تم تحديث عنوان التسجيل.')
+                  }}>تعديل العنوان</button>
+                  <button type="button" onClick={() => void run(() => supabase.from('session_videos').delete().eq('id', video.id), 'تم حذف التسجيل من المنصة.')}>حذف</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </section>
 
       <section className="panel section-gap">
