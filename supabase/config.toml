@@ -1,0 +1,4 @@
+project_id = "sessions-archive"
+
+[functions.send-session-notification]
+verify_jwt = true
