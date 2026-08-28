@@ -63,8 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) throw error
         if (!data.session) throw new Error('تعذر إنشاء جلسة تسجيل الدخول. حاولي مرة أخرى.')
 
-        // Update React immediately from the successful password response instead
-        // of waiting for an auth event before protected routes can render.
         setSession(data.session)
       } finally {
         setLoading(false)
@@ -84,12 +82,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     signOut: async () => {
       const userId = session?.user.id
+
+      // Push cleanup is best-effort and must never block signing out. If the
+      // subscription row cannot be deleted before auth ends, the local browser
+      // subscription is still removed and the server later cleans stale rows.
       if (userId) {
-        try { await disablePushNotifications(userId) }
-        catch (error) { console.warn('Push cleanup during sign out failed', error) }
+        void disablePushNotifications(userId).catch((error) => {
+          console.warn('Push cleanup during sign out failed', error)
+        })
       }
-      const { error } = await supabase.auth.signOut()
+
+      // Sign out only this browser/device. Supabase clears the persisted local
+      // session for this scope while leaving the user's other devices signed in.
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
       if (error) throw error
+
       setSession(null)
       setLoading(false)
     },
