@@ -65,7 +65,7 @@ export function Layout() {
 
     <div className="workspace-main">
       <header className="workspace-topbar">
-        <div className="topbar-start"><button className="top-control mobile-menu" aria-label={t('common.menu')} onClick={() => setSidebarOpen(true)}><Icon name="menu" /></button><div className="mobile-brand"><img src={logoUrl} alt="" aria-hidden="true" /><span>Sessions Archive</span></div></div>
+        <div className="topbar-start"><div className="mobile-brand"><img src={logoUrl} alt="" aria-hidden="true" /><span>Sessions Archive</span></div></div>
         <div className="topbar-controls">
           {user && <NotificationCenter />}
           <button className="top-control control-with-label" onClick={toggleLanguage} title={t('common.language')}><Icon name="language" /><span>{t('common.language')}</span></button>
