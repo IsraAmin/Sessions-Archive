@@ -15,6 +15,12 @@ type PushRow = {
   auth: string
 }
 
+type VapidRow = {
+  public_key: string
+  private_key: string
+  subject: string
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -41,6 +47,54 @@ function validatePayload(value: unknown): NotificationRequest {
 
 export default {
   fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
+    async function getVapidConfig(): Promise<VapidRow> {
+      const { data: existing, error: readError } = await ctx.supabaseAdmin
+        .from('push_vapid_config')
+        .select('public_key, private_key, subject')
+        .eq('id', 'default')
+        .maybeSingle()
+
+      if (readError) throw readError
+      if (existing) return existing as VapidRow
+
+      const generated = webpush.generateVAPIDKeys()
+      const candidate = {
+        id: 'default',
+        public_key: generated.publicKey,
+        private_key: generated.privateKey,
+        subject: 'https://israamin.github.io/Sessions-Archive/',
+      }
+
+      const { data: inserted, error: insertError } = await ctx.supabaseAdmin
+        .from('push_vapid_config')
+        .insert(candidate)
+        .select('public_key, private_key, subject')
+        .single()
+
+      if (!insertError && inserted) return inserted as VapidRow
+
+      const { data: retry, error: retryError } = await ctx.supabaseAdmin
+        .from('push_vapid_config')
+        .select('public_key, private_key, subject')
+        .eq('id', 'default')
+        .single()
+
+      if (retryError || !retry) throw insertError ?? retryError ?? new Error('Unable to initialize push keys')
+      return retry as VapidRow
+    }
+
+    if (req.method === 'GET') {
+      try {
+        const config = await getVapidConfig()
+        return Response.json({ publicKey: config.public_key }, {
+          headers: { 'Cache-Control': 'private, max-age=3600' },
+        })
+      } catch (error) {
+        console.error('Could not initialize Web Push configuration', error)
+        return Response.json({ error: 'Push service unavailable' }, { status: 503 })
+      }
+    }
+
     if (req.method !== 'POST') {
       return Response.json({ error: 'Method not allowed' }, { status: 405 })
     }
@@ -64,16 +118,15 @@ export default {
       )
     }
 
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')
-    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')
-    const vapidSubject = Deno.env.get('VAPID_SUBJECT')
-
-    if (!vapidPublicKey || !vapidPrivateKey || !vapidSubject) {
-      console.error('Missing VAPID secrets')
-      return Response.json({ error: 'Push service is not configured' }, { status: 503 })
+    let vapid: VapidRow
+    try {
+      vapid = await getVapidConfig()
+    } catch (error) {
+      console.error('Could not load Web Push configuration', error)
+      return Response.json({ error: 'Push service unavailable' }, { status: 503 })
     }
 
-    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
+    webpush.setVapidDetails(vapid.subject, vapid.public_key, vapid.private_key)
 
     const { data, error: subscriptionsError } = await ctx.supabaseAdmin
       .from('push_subscriptions')
@@ -117,6 +170,11 @@ export default {
       if (cleanupError) console.error('Could not delete stale subscriptions', cleanupError)
     }
 
-    return Response.json({ sent, failed, removed_stale: staleIds.length })
+    return Response.json({
+      sent,
+      failed,
+      removed_stale: staleIds.length,
+      subscribers: subscriptions.length,
+    })
   }),
 }
