@@ -3,35 +3,265 @@
   --v2-heading: #122033;
 }
 
+/*
+  Dark mode quality pass
+  Palette: Ink #080D15, Slate #0E1622, Raised #131E2D, Line #25354A,
+  Text #D6DEEA, Brand #6EA0FF. Blue is the single luminous accent; everything else stays quiet.
+*/
 :root[data-theme='dark'] {
-  --v2-bg: #070b12;
-  --v2-surface: #0d131d;
-  --v2-surface-2: #121a26;
-  --v2-surface-3: #17202d;
-  --v2-heading: #ffffff;
-  --v2-text: #cbd5e1;
-  --v2-muted: #94a3b8;
-  --v2-border: #263140;
-  --v2-brand: #60a5fa;
-  --v2-brand-deep: #1d3554;
-  --v2-brand-soft: #10243b;
-  --v2-accent: #fbbf24;
-  --v2-danger: #fb7185;
-  --v2-success: #4ade80;
+  color-scheme: dark;
+  --v2-bg: #080d15;
+  --v2-surface: #0e1622;
+  --v2-surface-2: #131e2d;
+  --v2-surface-3: #192638;
+  --v2-heading: #f6f8fc;
+  --v2-text: #d6deea;
+  --v2-muted: #91a2b8;
+  --v2-border: #25354a;
+  --v2-brand: #6ea0ff;
+  --v2-brand-strong: #4f7df3;
+  --v2-brand-deep: #1d3f68;
+  --v2-brand-soft: #172a46;
+  --v2-accent: #f4c76b;
+  --v2-danger: #ff7f93;
+  --v2-success: #58d68d;
+  --v2-shadow: 0 24px 64px rgba(0, 0, 0, .38);
+  --v2-shadow-soft: 0 12px 34px rgba(0, 0, 0, .24);
 }
 
-:root[data-theme='dark'] :where(h1, h2, h3, h4, .section-heading h1, .panel-heading h2, .admin-v3-section-head h2, .session-card h3, .user-detail-identity h2, .notification-popover-head strong) {
+:root[data-theme='dark'] html,
+:root[data-theme='dark'] body,
+:root[data-theme='dark'] .workspace-shell,
+:root[data-theme='dark'] .workspace-main {
+  background: var(--v2-bg);
+  color: var(--v2-text);
+}
+
+:root[data-theme='dark'] ::selection {
+  background: color-mix(in srgb, var(--v2-brand) 35%, transparent);
   color: var(--v2-heading);
 }
 
-:root[data-theme='dark'] :where(p, .lead, .section-heading p, .admin-v3-section-head p, .session-card-body > p, .field-hint, .session-meta, .user-identity small, .notification-copy > span) {
+:root[data-theme='dark'] :where(h1, h2, h3, h4, h5, h6, .section-heading h1, .panel-heading h2, .admin-v3-section-head h2, .session-card h3, .user-detail-identity h2, .notification-popover-head strong, .recordings-heading h2, .video-preview-empty strong, .profile-upload-card strong, .stat-card strong, .brand-lockup strong) {
+  color: var(--v2-heading);
+}
+
+:root[data-theme='dark'] :where(body, label, .field-label, .session-analytics-title, .recording-label strong, .admin-v3-item-copy strong, .admin-comment-author strong, .user-identity strong, .user-data-cell strong, .user-data-cell p) {
+  color: var(--v2-text);
+}
+
+:root[data-theme='dark'] :where(p, .lead, .section-heading p, .admin-v3-section-head p, .session-card-body > p, .field-hint, .session-meta, .user-identity small, .notification-copy > span, .recording-label span, .video-preview > span, .video-admin-list small, .profile-upload-card small, .stat-card span, .info-grid span, .sidebar-user small, .brand-lockup small, .page-state, .empty-state) {
   color: var(--v2-muted);
 }
 
-:root[data-theme='dark'] .eyebrow { color: #9fb5cf; }
+:root[data-theme='dark'] .eyebrow { color: #a8bdd7; }
 :root[data-theme='dark'] .hero-v2 .eyebrow,
-:root[data-theme='dark'] .hero-v2 p { color: rgba(255,255,255,.72); }
+:root[data-theme='dark'] .hero-v2 p { color: rgba(255, 255, 255, .76); }
 :root[data-theme='dark'] .hero-v2 h1 { color: #fff; }
+
+/* Core surfaces: one quiet hierarchy instead of unrelated dark grays. */
+:root[data-theme='dark'] :where(.panel, .session-card, .notification-popover, .app-toast, .confirm-dialog, .admin-editor, .app-sidebar, .top-control, .pwa-install) {
+  background: var(--v2-surface);
+  color: var(--v2-text);
+  border-color: var(--v2-border);
+}
+
+:root[data-theme='dark'] :where(.stat-card, .speaker-summary, .info-grid div, .profile-upload-card, .video-preview-empty, .video-admin-note, .recording-count, .admin-list button, .sidebar-user, .editor-section, .admin-v3-item, .admin-comment-card, .user-management-row, .user-data-cell, .calendar-day.outside, .calendar-empty, .funnel-stage) {
+  background: var(--v2-surface-2);
+  color: var(--v2-text);
+  border-color: var(--v2-border);
+}
+
+:root[data-theme='dark'] :where(.workspace-topbar, .topbar) {
+  background: color-mix(in srgb, var(--v2-bg) 88%, transparent);
+  border-color: color-mix(in srgb, var(--v2-border) 78%, transparent);
+}
+
+:root[data-theme='dark'] .app-sidebar {
+  box-shadow: 14px 0 38px rgba(0, 0, 0, .16);
+}
+:root[data-theme='dark'][dir='rtl'] .app-sidebar,
+:root[data-theme='dark'] [dir='rtl'] .app-sidebar {
+  box-shadow: -14px 0 38px rgba(0, 0, 0, .16);
+}
+
+/* Inputs must look readable before, during and after interaction. */
+:root[data-theme='dark'] :where(input, select, textarea) {
+  background: #101a28;
+  color: var(--v2-heading);
+  border-color: #2a3a50;
+  caret-color: var(--v2-brand);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .02);
+}
+:root[data-theme='dark'] :where(input, select, textarea):hover {
+  border-color: #354861;
+}
+:root[data-theme='dark'] :where(input, select, textarea):focus {
+  border-color: color-mix(in srgb, var(--v2-brand) 66%, var(--v2-border));
+  background: #111d2c;
+}
+:root[data-theme='dark'] :where(input, textarea)::placeholder {
+  color: #74879f;
+  opacity: 1;
+}
+:root[data-theme='dark'] select option {
+  background: var(--v2-surface-2);
+  color: var(--v2-text);
+}
+:root[data-theme='dark'] :where(input, select, textarea):disabled {
+  background: #0c1420;
+  color: #6f8095;
+  border-color: #1d2a3a;
+}
+
+/* Buttons: blue is the only dominant action color. */
+:root[data-theme='dark'] .button-primary {
+  background: var(--v2-brand-strong);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(79, 125, 243, .2);
+}
+:root[data-theme='dark'] .button-primary:hover {
+  background: #5a86f4;
+}
+:root[data-theme='dark'] .button-secondary {
+  background: var(--v2-brand-soft);
+  color: #bad1ff;
+  border: 1px solid color-mix(in srgb, var(--v2-brand) 24%, var(--v2-border));
+}
+:root[data-theme='dark'] .button-secondary:hover {
+  background: #1d3455;
+  color: #d6e3ff;
+}
+:root[data-theme='dark'] .button-ghost {
+  background: var(--v2-surface-2);
+  color: var(--v2-text);
+  border: 1px solid var(--v2-border);
+}
+:root[data-theme='dark'] .button-ghost:hover {
+  background: var(--v2-surface-3);
+  color: var(--v2-heading);
+}
+:root[data-theme='dark'] .button-danger {
+  background: color-mix(in srgb, var(--v2-danger) 12%, var(--v2-surface));
+  color: #ff9bac;
+  border: 1px solid color-mix(in srgb, var(--v2-danger) 24%, var(--v2-border));
+}
+:root[data-theme='dark'] .link-button,
+:root[data-theme='dark'] .text-action,
+:root[data-theme='dark'] .file-action {
+  color: #8cb4ff;
+}
+:root[data-theme='dark'] .file-action {
+  background: var(--v2-brand-soft);
+}
+
+/* Legacy light-mode components that still carried hard-coded dark text. */
+:root[data-theme='dark'] .notice {
+  background: color-mix(in srgb, var(--v2-brand) 10%, var(--v2-surface));
+  color: #b9d1ff;
+  border: 1px solid color-mix(in srgb, var(--v2-brand) 20%, var(--v2-border));
+}
+:root[data-theme='dark'] .notice.error {
+  background: color-mix(in srgb, var(--v2-danger) 10%, var(--v2-surface));
+  color: #ffadba;
+  border-color: color-mix(in srgb, var(--v2-danger) 22%, var(--v2-border));
+}
+:root[data-theme='dark'] .recording-kicker { color: #ff9bab; }
+:root[data-theme='dark'] .recording-count,
+:root[data-theme='dark'] .video-admin-note { color: var(--v2-muted); }
+:root[data-theme='dark'] .bar-row > div,
+:root[data-theme='dark'] .session-analytics-bar { background: #223247; }
+:root[data-theme='dark'] .bar-row i,
+:root[data-theme='dark'] .session-analytics-bar i { background: var(--v2-brand); }
+:root[data-theme='dark'] .footer {
+  background: var(--v2-surface);
+  color: var(--v2-muted);
+  border-color: var(--v2-border);
+}
+:root[data-theme='dark'] .avatar { border-color: #29415e; }
+:root[data-theme='dark'] .avatar-placeholder { background: #19375d; color: #fff; }
+:root[data-theme='dark'] .image-limit-badge {
+  background: #14263d;
+  color: #eef4ff;
+  border-color: var(--v2-surface);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .26);
+}
+:root[data-theme='dark'] .profile-hero,
+:root[data-theme='dark'] .subsection,
+:root[data-theme='dark'] .feedback-box,
+:root[data-theme='dark'] .resource-list,
+:root[data-theme='dark'] .session-recordings,
+:root[data-theme='dark'] .video-admin-list {
+  border-color: var(--v2-border);
+}
+:root[data-theme='dark'] .profile-upload-card {
+  border-color: color-mix(in srgb, var(--v2-brand) 46%, var(--v2-border));
+  background: linear-gradient(135deg, #111d2c, #101a28);
+}
+:root[data-theme='dark'] .video-preview-empty {
+  border-color: #334761;
+}
+:root[data-theme='dark'] .pwa-install {
+  background: color-mix(in srgb, var(--v2-surface) 96%, transparent);
+  box-shadow: var(--v2-shadow);
+}
+:root[data-theme='dark'] .pwa-install strong { color: var(--v2-heading); }
+:root[data-theme='dark'] .pwa-install span { color: var(--v2-muted); }
+:root[data-theme='dark'] .pwa-dismiss {
+  background: var(--v2-surface-2);
+  color: var(--v2-muted);
+  border: 1px solid var(--v2-border);
+}
+
+/* Navigation and interactive states keep enough contrast without glowing everywhere. */
+:root[data-theme='dark'] .sidebar-link { color: #9aabc0; }
+:root[data-theme='dark'] .sidebar-link:hover {
+  background: #131f2f;
+  color: var(--v2-heading);
+}
+:root[data-theme='dark'] .sidebar-link.active,
+:root[data-theme='dark'] .mobile-bottom-link.active {
+  color: #8eb7ff;
+  background: #172a46;
+}
+:root[data-theme='dark'] .top-control {
+  color: #9aabc0;
+  box-shadow: none;
+}
+:root[data-theme='dark'] .top-control:hover,
+:root[data-theme='dark'] .top-control.is-active {
+  color: #a9c7ff;
+  background: var(--v2-brand-soft);
+  border-color: color-mix(in srgb, var(--v2-brand) 34%, var(--v2-border));
+}
+:root[data-theme='dark'] .notification-item:hover,
+:root[data-theme='dark'] .session-analytics-row:hover {
+  background: #142132;
+}
+:root[data-theme='dark'] .notification-item.is-unread {
+  background: color-mix(in srgb, var(--v2-brand-soft) 72%, var(--v2-surface));
+}
+
+/* Status surfaces stay semantic, not neon. */
+:root[data-theme='dark'] .funnel-stage.primary {
+  background: var(--v2-brand-soft);
+  color: #9fc0ff;
+}
+:root[data-theme='dark'] .funnel-stage.success {
+  background: color-mix(in srgb, var(--v2-success) 9%, var(--v2-surface));
+  color: #78dfa2;
+}
+:root[data-theme='dark'] .session-card-rating {
+  background: color-mix(in srgb, var(--v2-accent) 7%, var(--v2-surface));
+  border-color: color-mix(in srgb, var(--v2-accent) 24%, var(--v2-border));
+  color: var(--v2-text);
+}
+
+/* Focus is visible but disciplined. */
+:root[data-theme='dark'] :where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--v2-brand) 48%, transparent);
+  outline-offset: 2px;
+}
 
 /* Slugs are an internal compatibility detail and are never user-editable. */
 .form-field:has(input[name='slug']) { display: none !important; }
@@ -107,7 +337,7 @@
     border: 1px solid color-mix(in srgb, var(--v2-border) 90%, transparent);
     border-radius: 20px;
     background: color-mix(in srgb, var(--v2-surface) 94%, transparent);
-    box-shadow: 0 16px 40px rgba(2, 8, 23, .2);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .28);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
   }
