@@ -26,25 +26,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true
+    let unsubscribe: (() => void) | null = null
 
-    // The Supabase client initializes persisted auth automatically and emits
-    // INITIAL_SESSION. Avoid an extra getSession() during mount because it can
-    // queue behind a stale browser auth lock left by an older tab/build.
-    const fallbackTimer = window.setTimeout(() => {
-      if (active) setLoading(false)
-    }, 1500)
+    const bootstrapAuth = async () => {
+      try {
+        // Initialize first, then subscribe. Keeping these steps serialized avoids
+        // a startup race where auth methods can wait forever on initialization.
+        const { data, error } = await supabase.auth.initialize()
+        if (!active) return
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!active) return
-      window.clearTimeout(fallbackTimer)
-      setSession(nextSession)
-      setLoading(false)
-    })
+        if (error) {
+          console.warn('Unable to initialize auth session', error)
+        }
+
+        setSession(data.session ?? null)
+
+        const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+          if (!active) return
+          setSession(nextSession)
+          setLoading(false)
+        })
+
+        unsubscribe = () => listener.subscription.unsubscribe()
+      } catch (error) {
+        if (active) console.warn('Auth initialization failed', error)
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    void bootstrapAuth()
 
     return () => {
       active = false
-      window.clearTimeout(fallbackTimer)
-      listener.subscription.unsubscribe()
+      unsubscribe?.()
     }
   }, [])
 
@@ -61,9 +76,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) throw error
         if (!data.session) throw new Error('تعذر إنشاء جلسة تسجيل الدخول. حاولي مرة أخرى.')
 
-        // Do not wait for a secondary auth event before allowing protected
-        // routes to render. The successful password response already contains
-        // the authoritative session.
         setSession(data.session)
       } finally {
         setLoading(false)
@@ -84,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut: async () => {
       const userId = session?.user.id
 
-      // Push cleanup is best-effort and must never block signing out.
       if (userId) {
         void disablePushNotifications(userId).catch((error) => {
           console.warn('Push cleanup during sign out failed', error)
