@@ -26,25 +26,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true
-    let pendingTimer = 0
 
-    // Supabase emits INITIAL_SESSION after the client has loaded the persisted
-    // session. Keeping the callback synchronous and deferring React state work
-    // ensures downstream effects cannot issue Supabase calls while the auth
-    // client is still holding its internal lock.
+    // Resolve persisted auth explicitly so the UI never depends on receiving
+    // INITIAL_SESSION at exactly the right moment during React mounting.
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return
+      if (error) console.warn('Unable to restore auth session', error)
+      setSession(data.session ?? null)
+      setLoading(false)
+    })
+
+    // Keep the context synchronized with future sign-in, sign-out and token
+    // refresh events. The callback stays synchronous as recommended by Supabase.
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!active) return
-      if (pendingTimer) window.clearTimeout(pendingTimer)
-      pendingTimer = window.setTimeout(() => {
-        if (!active) return
-        setSession(nextSession)
-        setLoading(false)
-      }, 0)
+      setSession(nextSession)
+      setLoading(false)
     })
 
     return () => {
       active = false
-      if (pendingTimer) window.clearTimeout(pendingTimer)
       listener.subscription.unsubscribe()
     }
   }, [])
@@ -56,14 +57,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin: session?.user?.app_metadata?.role === 'admin',
     isSuperAdmin: session?.user?.app_metadata?.super_admin === true,
     signIn: async (email, password) => {
-      // Do not race this promise against a UI-only timeout. A rejected race did
-      // not cancel the underlying auth request and could leave the browser auth
-      // lock occupied, making every later Supabase request appear to hang.
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw error
+      setLoading(true)
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+        if (!data.session) throw new Error('تعذر إنشاء جلسة تسجيل الدخول. حاولي مرة أخرى.')
+
+        // Update React immediately from the successful password response instead
+        // of waiting for an auth event before protected routes can render.
+        setSession(data.session)
+      } finally {
+        setLoading(false)
+      }
     },
     signUp: async (email, password, fullName) => {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -72,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       })
       if (error) throw error
+      if (data.session) setSession(data.session)
     },
     signOut: async () => {
       const userId = session?.user.id
@@ -81,6 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const { error } = await supabase.auth.signOut()
       if (error) throw error
+      setSession(null)
+      setLoading(false)
     },
   }), [session, loading])
 
