@@ -16,7 +16,7 @@ type SeriesSession = { id: string; title: string; series_position: number | null
 export function SessionDetailsPage() {
   const { id } = useParams()
   const { user } = useAuth()
-  const { locale, t } = useUi()
+  const { locale, t, language } = useUi()
   const { showToast } = useToast()
   const [session, setSession] = useState<Session | null>(null)
   const [series, setSeries] = useState<SessionSeries | null>(null)
@@ -24,7 +24,6 @@ export function SessionDetailsPage() {
   const [resources, setResources] = useState<SessionResource[]>([])
   const [videos, setVideos] = useState<SessionVideo[]>([])
   const [progress, setProgress] = useState<VideoProgress[]>([])
-  const [registered, setRegistered] = useState(false)
   const [bookmarked, setBookmarked] = useState(false)
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
@@ -35,16 +34,15 @@ export function SessionDetailsPage() {
     if (!id) return
     setMessage('')
     const { data, error } = await supabase.from('sessions').select('*, category:categories(*), speaker:speakers(*), series:session_series(*)').eq('id', id).single()
-    if (error) { setMessage(error.message); return }
+    if (error) { setMessage(errorMessage(error)); return }
     const current = data as unknown as Session & { series?: SessionSeries | null }
     setSession(current)
     setSeries(current.series ?? null)
 
-    const queries = [
+    const [resourceResult, videoResult] = await Promise.all([
       supabase.from('session_resources').select('*').eq('session_id', id).order('created_at'),
       supabase.from('session_videos').select('*').eq('session_id', id).order('position').order('created_at'),
-    ] as const
-    const [resourceResult, videoResult] = await Promise.all(queries)
+    ])
     const nextVideos = (videoResult.data ?? []) as SessionVideo[]
     setResources((resourceResult.data ?? []) as SessionResource[])
     setVideos(nextVideos)
@@ -56,13 +54,13 @@ export function SessionDetailsPage() {
 
     if (user) {
       await supabase.from('session_views').upsert({ user_id: user.id, session_id: id, viewed_at: new Date().toISOString() }, { onConflict: 'user_id,session_id' })
-      const [reg, mark, feedback, progressResult] = await Promise.all([
-        supabase.from('registrations').select('id').eq('session_id', id).eq('user_id', user.id).maybeSingle(),
+      const [mark, feedback, progressResult] = await Promise.all([
         supabase.from('bookmarks').select('id').eq('session_id', id).eq('user_id', user.id).maybeSingle(),
         supabase.from('feedback').select('rating, comment').eq('session_id', id).eq('user_id', user.id).maybeSingle(),
         nextVideos.length ? supabase.from('video_progress').select('*').eq('user_id', user.id).in('video_id', nextVideos.map((video) => video.id)) : Promise.resolve({ data: [], error: null }),
       ])
-      setRegistered(Boolean(reg.data)); setBookmarked(Boolean(mark.data)); setProgress((progressResult.data ?? []) as VideoProgress[])
+      setBookmarked(Boolean(mark.data))
+      setProgress((progressResult.data ?? []) as VideoProgress[])
       if (feedback.data) { setRating(feedback.data.rating); setComment(feedback.data.comment ?? '') }
     } else setProgress([])
   }
@@ -72,9 +70,12 @@ export function SessionDetailsPage() {
   async function action(task: () => Promise<void>, success: string) {
     setBusy(true)
     try {
-      await task(); await load(); showToast({ kind: 'success', title: t('common.success'), message: success })
-    } catch (error) { showToast({ kind: 'error', title: t('common.error'), message: errorMessage(error) }) }
-    finally { setBusy(false) }
+      await task()
+      await load()
+      showToast({ kind: 'success', title: t('common.success'), message: success })
+    } catch (error) {
+      showToast({ kind: 'error', title: t('common.error'), message: errorMessage(error) })
+    } finally { setBusy(false) }
   }
 
   const progressByVideo = useMemo(() => new Map(progress.map((row) => [row.video_id, row])), [progress])
@@ -82,6 +83,7 @@ export function SessionDetailsPage() {
   if (!session) return <div className="page-state">{message || t('common.loading')}</div>
   const cover = publicStorageUrl('session-covers', session.cover_path)
   const speakerImage = publicStorageUrl('speaker-images', session.speaker?.image_path ?? null)
+  const ar = language === 'ar'
 
   return <section className="details-layout details-layout-v2">
     <div className="panel details-main">
@@ -121,18 +123,13 @@ export function SessionDetailsPage() {
 
       {resources.length > 0 && <div className="resource-list"><h2>{t('details.resources')}</h2>{user ? resources.map((resource) => <button key={resource.id} className="link-button" onClick={async () => {
         const { data, error } = await supabase.storage.from('session-resources').createSignedUrl(resource.file_path, 60)
-        if (error) showToast({ kind: 'error', title: t('common.error'), message: error.message })
+        if (error) showToast({ kind: 'error', title: t('common.error'), message: errorMessage(error) })
         else window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
       }}>{resource.title}</button>) : <p>{t('details.resourceLogin')}</p>}</div>}
     </div>
 
     <aside className="panel action-panel action-panel-v2">
-      {!user ? <><p>{t('details.signInHint')}</p><Link className="button button-primary full" to="/auth">{t('common.signIn')}</Link></> : <>
-        <button className={`button full ${registered ? 'button-danger' : 'button-primary'}`} disabled={busy} onClick={() => void action(async () => {
-          if (registered) { const { error } = await supabase.from('registrations').delete().eq('session_id', session.id).eq('user_id', user.id); if (error) throw error }
-          else { const { error } = await supabase.from('registrations').insert({ session_id: session.id, user_id: user.id }); if (error) throw error }
-        }, registered ? t('details.unregisteredToast') : t('details.registeredToast'))}>{registered ? t('details.unregister') : t('details.register')}</button>
-
+      {!user ? <><p>{ar ? 'سجّلي الدخول لحفظ السيشن وإضافة تقييم أو تعليق.' : 'Sign in to save this session and leave a rating or comment.'}</p><Link className="button button-primary full" to="/auth">{t('common.signIn')}</Link></> : <>
         <button className="button button-secondary full" disabled={busy} onClick={() => void action(async () => {
           if (bookmarked) { const { error } = await supabase.from('bookmarks').delete().eq('session_id', session.id).eq('user_id', user.id); if (error) throw error }
           else { const { error } = await supabase.from('bookmarks').insert({ session_id: session.id, user_id: user.id, note: null }); if (error) throw error }
@@ -140,16 +137,11 @@ export function SessionDetailsPage() {
 
         <div className="feedback-box">
           <h3>{t('details.rating')}</h3>
-          <label className="form-field">
-            <span className="field-label">{t('details.stars')}</span>
-            <StarRating value={rating} onChange={setRating} label={t('details.stars')} disabled={busy} />
-          </label>
-          <label className="form-field">
-            <span className="field-label">{t('details.comment')}</span>
-            <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={4} />
-          </label>
+          <label className="form-field"><span className="field-label">{t('details.stars')}</span><StarRating value={rating} onChange={setRating} label={t('details.stars')} disabled={busy} /></label>
+          <label className="form-field"><span className="field-label">{t('details.comment')}</span><textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={4} /></label>
           <button className="button button-primary full" disabled={busy} onClick={() => void action(async () => {
-            const { error } = await supabase.from('feedback').upsert({ user_id: user.id, session_id: session.id, rating, comment: comment.trim() || null }, { onConflict: 'user_id,session_id' }); if (error) throw error
+            const { error } = await supabase.from('feedback').upsert({ user_id: user.id, session_id: session.id, rating, comment: comment.trim() || null }, { onConflict: 'user_id,session_id' })
+            if (error) throw error
           }, t('details.feedbackToast'))}>{t('details.saveRating')}</button>
         </div>
       </>}
