@@ -1,5 +1,5 @@
-const APP_CACHE = 'sessions-archive-app-v14'
-const RUNTIME_CACHE = 'sessions-archive-runtime-v14'
+const APP_CACHE = 'sessions-archive-app-v15'
+const RUNTIME_CACHE = 'sessions-archive-runtime-v15'
 const BASE_URL = new URL(self.registration.scope)
 const BASE_PATH = BASE_URL.pathname.endsWith('/') ? BASE_URL.pathname : `${BASE_URL.pathname}/`
 const APP_SHELL = [
