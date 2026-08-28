@@ -33,6 +33,9 @@
 :root[data-theme='dark'] .hero-v2 p { color: rgba(255,255,255,.72); }
 :root[data-theme='dark'] .hero-v2 h1 { color: #fff; }
 
+/* Slugs are an internal compatibility detail and are never user-editable. */
+.form-field:has(input[name='slug']) { display: none !important; }
+
 .admin-workspace-stack { display: grid; gap: 20px; }
 .admin-user-directory-panel { margin-top: 0; }
 .user-list-avatar {
