@@ -44,7 +44,9 @@ export default {
     if (authError || !authData.user) return Response.json({ error: 'Authentication required' }, { status: 401 })
 
     const caller = authData.user
-    if (caller.app_metadata?.super_admin !== true) return Response.json({ error: 'Super admin access required' }, { status: 403 })
+    const callerIsAdmin = caller.app_metadata?.role === 'admin'
+    const callerIsSuperAdmin = caller.app_metadata?.super_admin === true
+    if (!callerIsAdmin) return Response.json({ error: 'Admin access required' }, { status: 403 })
 
     let body: RequestBody
     try { body = await req.json() as RequestBody }
@@ -100,6 +102,7 @@ export default {
     if (targetData.user.app_metadata?.super_admin === true) return Response.json({ error: 'Super admin accounts cannot be changed here' }, { status: 403 })
 
     if (action === 'set_role') {
+      if (!callerIsSuperAdmin) return Response.json({ error: 'Super admin access required for role changes' }, { status: 403 })
       if (body.role !== 'admin' && body.role !== 'student') return Response.json({ error: 'Invalid role' }, { status: 400 })
       const nextMetadata = { ...targetData.user.app_metadata, role: body.role }
       const { error } = await ctx.supabaseAdmin.auth.admin.updateUserById(body.user_id, { app_metadata: nextMetadata })
