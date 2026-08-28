@@ -15,13 +15,11 @@ type ActivityRow = {
   created_at: string
 }
 type ProfileName = { id: string; full_name: string }
-type DirectoryName = { id: string; email: string }
 
 export function AdminActivityLog() {
   const { language, locale } = useUi()
   const [rows, setRows] = useState<ActivityRow[]>([])
   const [profiles, setProfiles] = useState<ProfileName[]>([])
-  const [directory, setDirectory] = useState<DirectoryName[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const ar = language === 'ar'
@@ -38,26 +36,23 @@ export function AdminActivityLog() {
     void Promise.all([
       activityQuery,
       supabase.from('profiles').select('id,full_name'),
-      supabase.from('user_directory').select('id,email'),
-    ]).then(([activityResult, profileResult, directoryResult]) => {
-      const firstError = activityResult.error || profileResult.error || directoryResult.error
+    ]).then(([activityResult, profileResult]) => {
+      const firstError = activityResult.error || profileResult.error
       if (firstError) {
         setError(errorMessage(firstError))
         return
       }
       setRows((activityResult.data ?? []) as ActivityRow[])
       setProfiles((profileResult.data ?? []) as ProfileName[])
-      setDirectory((directoryResult.data ?? []) as DirectoryName[])
     }).catch((reason) => setError(errorMessage(reason)))
       .finally(() => setLoading(false))
   }, [])
 
   const actorNames = useMemo(() => {
     const names = new Map<string, string>()
-    for (const account of directory) names.set(account.id, account.email)
     for (const profile of profiles) if (profile.full_name.trim()) names.set(profile.id, profile.full_name.trim())
     return names
-  }, [directory, profiles])
+  }, [profiles])
 
   function actionLabel(action: ActivityAction) {
     const labels: Record<ActivityAction, [string, string]> = {
@@ -90,10 +85,10 @@ export function AdminActivityLog() {
     {loading ? <div className="page-state">{ar ? 'جاري تحميل السجل…' : 'Loading activity…'}</div> : <div className="admin-v3-list">
       {rows.map((row) => <div className="admin-v3-item" key={row.id}>
         <div className="user-identity">
-          <span className="directory-avatar"><Icon name={actionIcon(row.action)} /></span>
+          <span className="directory-avatar"><Icon name={actionIcon(row.action)} width={18} height={18} /></span>
           <span>
             <strong>{actionLabel(row.action)}</strong>
-            <small>{row.entity_label} · {row.actor_user_id ? actorNames.get(row.actor_user_id) || (ar ? 'Admin' : 'Admin') : (ar ? 'النظام' : 'System')}</small>
+            <small>{row.entity_label} · {row.actor_user_id ? actorNames.get(row.actor_user_id) || 'Admin' : (ar ? 'النظام' : 'System')}</small>
           </span>
         </div>
         <time className="field-hint" dateTime={row.created_at}>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(row.created_at))}</time>
