@@ -8,6 +8,7 @@ import './app-v2-extras.css'
 import './refinements.css'
 import './branding.css'
 import './admin-v3.css'
+import './admin-v4.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
