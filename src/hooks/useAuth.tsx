@@ -27,25 +27,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true
 
-    // Resolve persisted auth explicitly so the UI never depends on receiving
-    // INITIAL_SESSION at exactly the right moment during React mounting.
-    void supabase.auth.getSession().then(({ data, error }) => {
-      if (!active) return
-      if (error) console.warn('Unable to restore auth session', error)
-      setSession(data.session ?? null)
-      setLoading(false)
-    })
+    // The Supabase client initializes persisted auth automatically and emits
+    // INITIAL_SESSION. Avoid an extra getSession() during mount because it can
+    // queue behind a stale browser auth lock left by an older tab/build.
+    const fallbackTimer = window.setTimeout(() => {
+      if (active) setLoading(false)
+    }, 1500)
 
-    // Keep the context synchronized with future sign-in, sign-out and token
-    // refresh events. The callback stays synchronous as recommended by Supabase.
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!active) return
+      window.clearTimeout(fallbackTimer)
       setSession(nextSession)
       setLoading(false)
     })
 
     return () => {
       active = false
+      window.clearTimeout(fallbackTimer)
       listener.subscription.unsubscribe()
     }
   }, [])
@@ -63,6 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) throw error
         if (!data.session) throw new Error('تعذر إنشاء جلسة تسجيل الدخول. حاولي مرة أخرى.')
 
+        // Do not wait for a secondary auth event before allowing protected
+        // routes to render. The successful password response already contains
+        // the authoritative session.
         setSession(data.session)
       } finally {
         setLoading(false)
@@ -83,17 +84,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut: async () => {
       const userId = session?.user.id
 
-      // Push cleanup is best-effort and must never block signing out. If the
-      // subscription row cannot be deleted before auth ends, the local browser
-      // subscription is still removed and the server later cleans stale rows.
+      // Push cleanup is best-effort and must never block signing out.
       if (userId) {
         void disablePushNotifications(userId).catch((error) => {
           console.warn('Push cleanup during sign out failed', error)
         })
       }
 
-      // Sign out only this browser/device. Supabase clears the persisted local
-      // session for this scope while leaving the user's other devices signed in.
       const { error } = await supabase.auth.signOut({ scope: 'local' })
       if (error) throw error
 
