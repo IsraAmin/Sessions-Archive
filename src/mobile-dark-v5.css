@@ -33,6 +33,18 @@
 :root[data-theme='dark'] .hero-v2 p { color: rgba(255,255,255,.72); }
 :root[data-theme='dark'] .hero-v2 h1 { color: #fff; }
 
+.admin-workspace-stack { display: grid; gap: 20px; }
+.admin-user-directory-panel { margin-top: 0; }
+.user-list-avatar {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--v2-border);
+  background: var(--v2-surface);
+}
+
 .mobile-bottom-nav,
 .mobile-logout { display: none; }
 
