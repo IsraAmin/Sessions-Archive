@@ -14,6 +14,11 @@ function authErrorMessage(error: unknown, language: 'ar' | 'en') {
       ? 'خدمة إرسال رسائل التأكيد وصلت للحد المؤقت. الحساب لم يكتمل الآن. جرّبي بعد فترة قصيرة؛ وسيتم رفع هذا الحد عند تفعيل خدمة البريد المخصصة للمنصة.'
       : 'The confirmation email service has reached its temporary limit. The account was not completed. Try again shortly; this limit will be lifted once the platform uses custom email delivery.'
   }
+  if (code === 'auth_request_timeout') {
+    return language === 'ar'
+      ? 'تسجيل الدخول استغرق وقتًا أطول من المتوقع. حدّثي الصفحة مرة واحدة ثم حاولي الدخول من جديد.'
+      : 'Sign-in took longer than expected. Refresh the page once, then try signing in again.'
+  }
   return base
 }
 
