@@ -21,7 +21,7 @@ export function ProfilePage() {
   useEffect(() => {
     if (!user) return
     void supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data, error }) => { if (error) setMessage(error.message); else setProfile(data as Profile) })
-    void getPushNotificationStatus().then(setPushStatus)
+    void getPushNotificationStatus().then(setPushStatus).catch(() => setPushStatus('default'))
   }, [user?.id])
 
   function failed(error: unknown) { showToast({ kind: 'error', title: t('common.error'), message: errorMessage(error) }) }
@@ -56,8 +56,15 @@ export function ProfilePage() {
 
   async function turnOnPush() {
     if (!user) return; setBusy(true)
-    try { await enablePushNotifications(user.id); setPushStatus('enabled'); showToast({ kind: 'success', title: t('common.success'), message: t('profile.pushOn') }) }
-    catch (error) { setPushStatus(await getPushNotificationStatus()); failed(error) } finally { setBusy(false) }
+    try {
+      await enablePushNotifications(user.id)
+      setPushStatus('enabled')
+      showToast({ kind: 'success', title: t('common.success'), message: t('profile.pushOn') })
+    } catch (error) {
+      try { setPushStatus(await getPushNotificationStatus()) }
+      catch { setPushStatus('default') }
+      failed(error)
+    } finally { setBusy(false) }
   }
 
   async function turnOffPush() {
