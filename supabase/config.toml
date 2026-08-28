@@ -1,8 +1,4 @@
-project_id = "archive-repeat"
-
-[auth.email.template.confirmation]
-subject = "مرحبًا بك في Archive Repeat — أكّدي بريدك الإلكتروني"
-content_path = "./supabase/templates/confirmation.html"
+project_id = "sessions-archive"
 
 [functions.send-session-notification]
 verify_jwt = true
