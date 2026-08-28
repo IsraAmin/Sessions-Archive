@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
+import { useToast } from './ToastProvider'
 import { PwaInstallPrompt } from './PwaInstallPrompt'
 import { NotificationCenter } from './NotificationCenter'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -10,10 +11,12 @@ import { Icon } from './Icon'
 export function Layout() {
   const { user, isAdmin, isSuperAdmin, signOut } = useAuth()
   const { theme, t, language, toggleLanguage, toggleTheme } = useUi()
+  const { showToast } = useToast()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [logoutConfirm, setLogoutConfirm] = useState(false)
   const [logoutBusy, setLogoutBusy] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
   const logoUrl = `${import.meta.env.BASE_URL}icon-192.png?v=4`
   const ar = language === 'ar'
 
@@ -24,8 +27,20 @@ export function Layout() {
 
   async function confirmLogout() {
     setLogoutBusy(true)
-    try { await signOut(); setLogoutConfirm(false) }
-    finally { setLogoutBusy(false) }
+    try {
+      await signOut()
+      setLogoutConfirm(false)
+      navigate('/', { replace: true })
+    } catch (error) {
+      console.error('Sign out failed', error)
+      showToast({
+        kind: 'error',
+        title: t('common.error'),
+        message: ar ? 'تعذر تسجيل الخروج. حاولي مرة أخرى.' : 'Could not sign out. Please try again.',
+      })
+    } finally {
+      setLogoutBusy(false)
+    }
   }
 
   return <div className="workspace-shell">
