@@ -9,7 +9,7 @@ import { SessionDetailsPage } from './pages/SessionDetailsPage'
 import { AuthPage } from './pages/AuthPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { DashboardPage } from './pages/DashboardPage'
-import { AdminPage } from './pages/AdminPage'
+import { AdminWorkspacePage } from './pages/AdminWorkspacePage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 
 const routerBase = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
@@ -26,7 +26,7 @@ export default function App() {
               <Route path="auth" element={<AuthPage />} />
               <Route path="dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
               <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-              <Route path="admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+              <Route path="admin" element={<AdminRoute><AdminWorkspacePage /></AdminRoute>} />
               <Route path="admin/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
             </Route>
           </Routes>
