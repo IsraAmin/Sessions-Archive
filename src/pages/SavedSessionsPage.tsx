@@ -1,0 +1,64 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { SessionCard } from '../components/SessionCard'
+import { useAuth } from '../hooks/useAuth'
+import { useUi } from '../hooks/useUi'
+import { errorMessage } from '../lib/errors'
+import { supabase } from '../lib/supabase'
+import type { SearchSession } from '../types/domain'
+
+type BookmarkRow = { session_id: string; created_at: string }
+
+export function SavedSessionsPage() {
+  const { user } = useAuth()
+  const { language } = useUi()
+  const [sessions, setSessions] = useState<SearchSession[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const ar = language === 'ar'
+
+  useEffect(() => {
+    if (!user) return
+    setLoading(true)
+    setError('')
+
+    void Promise.all([
+      supabase.from('bookmarks').select('session_id,created_at').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.rpc('search_sessions', { search_text: undefined, category_filter: undefined }),
+    ]).then(([bookmarkResult, sessionResult]) => {
+      const firstError = bookmarkResult.error || sessionResult.error
+      if (firstError) {
+        setError(errorMessage(firstError))
+        setSessions([])
+        return
+      }
+
+      const bookmarks = (bookmarkResult.data ?? []) as BookmarkRow[]
+      const order = new Map(bookmarks.map((bookmark, index) => [bookmark.session_id, index]))
+      const saved = ((sessionResult.data ?? []) as SearchSession[])
+        .filter((session) => order.has(session.id))
+        .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+      setSessions(saved)
+    }).catch((reason) => {
+      setError(errorMessage(reason))
+      setSessions([])
+    }).finally(() => setLoading(false))
+  }, [user?.id])
+
+  return <section>
+    <div className="section-heading">
+      <div>
+        <div className="eyebrow">{ar ? 'مكتبتك' : 'Your library'}</div>
+        <h1>{ar ? 'السيشنات المحفوظة' : 'Saved sessions'}</h1>
+        <p>{ar ? 'كل السيشنات التي حفظتيها موجودة هنا للرجوع إليها بسرعة.' : 'Everything you saved is kept here for quick access.'}</p>
+      </div>
+      <Link className="button button-secondary" to="/">{ar ? 'استكشف السيشنات' : 'Explore sessions'}</Link>
+    </div>
+
+    {error && <p className="notice error" role="alert">{error}</p>}
+    {loading ? <div className="page-state">{ar ? 'جاري تحميل المحفوظات…' : 'Loading saved sessions…'}</div> : <section className="card-grid">
+      {sessions.map((session) => <SessionCard key={session.id} session={session} />)}
+      {!sessions.length && !error && <div className="empty-state">{ar ? 'ما حفظتي أي سيشن لسه. افتحي أي سيشن واضغطي حفظ، وحتظهر هنا.' : 'You have not saved a session yet. Save one from its details page and it will appear here.'}</div>}
+    </section>}
+  </section>
+}
