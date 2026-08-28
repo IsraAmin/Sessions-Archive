@@ -10,6 +10,11 @@ if (!supabaseUrl || !supabasePublishableKey) {
 
 export const supabase = createClient<Database>(supabaseUrl, supabasePublishableKey, {
   auth: {
+    // Use an app-owned storage namespace. This avoids inheriting a stale auth
+    // lock/session namespace from older builds that may still be open in
+    // another browser tab. Users sign in once after this migration and future
+    // tabs continue sharing the same healthy session normally.
+    storageKey: 'sessions-archive-auth-v2',
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
