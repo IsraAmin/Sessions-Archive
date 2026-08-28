@@ -18,11 +18,6 @@ type NotificationRow = {
   created_at: string
 }
 
-type RegistrationWithSession = {
-  session_id: string
-  session: { id: string; title: string; starts_at: string } | null
-}
-
 export function NotificationCenter() {
   const { user } = useAuth()
   const { language, locale, t } = useUi()
@@ -32,46 +27,24 @@ export function NotificationCenter() {
   const [loading, setLoading] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
-  const syncReminders = useCallback(async () => {
-    if (!user) return
-    const { data } = await supabase
-      .from('registrations')
-      .select('session_id, session:sessions(id,title,starts_at)')
-      .eq('user_id', user.id)
-
-    const now = Date.now()
-    const oneHour = now + 60 * 60 * 1000
-    const reminders = ((data ?? []) as unknown as RegistrationWithSession[])
-      .filter((row) => row.session && new Date(row.session.starts_at).getTime() > now && new Date(row.session.starts_at).getTime() <= oneHour)
-      .map((row) => ({
-        user_id: user.id,
-        type: 'session_reminder',
-        title_ar: 'السيشن يبدأ قريبًا',
-        title_en: 'Session starts soon',
-        body_ar: `باقي أقل من ساعة على ${row.session!.title}.`,
-        body_en: `${row.session!.title} starts in less than an hour.`,
-        href: `/sessions/${row.session!.id}`,
-        dedupe_key: `reminder:${row.session!.id}:${row.session!.starts_at}`,
-      }))
-
-    if (reminders.length) {
-      await supabase.from('notifications').upsert(reminders, { onConflict: 'user_id,dedupe_key', ignoreDuplicates: true })
-    }
-  }, [user?.id])
-
   const load = useCallback(async () => {
     if (!user) { setItems([]); return }
     setLoading(true)
-    await syncReminders()
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(30)
-    setItems((data ?? []) as NotificationRow[])
-    setLoading(false)
-  }, [user?.id, syncReminders])
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(30)
+      if (error) throw error
+      setItems((data ?? []) as NotificationRow[])
+    } catch (error) {
+      console.warn('Notification loading failed', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [user?.id])
 
   useEffect(() => {
     void load()
