@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
 import { errorMessage } from '../lib/errors'
@@ -14,6 +14,16 @@ function authErrorMessage(error: unknown, language: 'ar' | 'en') {
       ? 'خدمة إرسال رسائل التأكيد وصلت للحد المؤقت. الحساب لم يكتمل الآن. جرّبي بعد فترة قصيرة؛ وسيتم رفع هذا الحد عند تفعيل خدمة البريد المخصصة للمنصة.'
       : 'The confirmation email service has reached its temporary limit. The account was not completed. Try again shortly; this limit will be lifted once the platform uses custom email delivery.'
   }
+  if (code === 'email_not_confirmed') {
+    return language === 'ar'
+      ? 'البريد الإلكتروني لم يتم تأكيده بعد. افتحي رسالة التأكيد في بريدك ثم حاولي تسجيل الدخول مرة أخرى.'
+      : 'Your email has not been confirmed yet. Open the confirmation email, then try signing in again.'
+  }
+  if (code === 'invalid_credentials') {
+    return language === 'ar'
+      ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
+      : 'The email or password is incorrect.'
+  }
   if (code === 'auth_request_timeout') {
     return language === 'ar'
       ? 'تسجيل الدخول استغرق وقتًا أطول من المتوقع. حدّثي الصفحة مرة واحدة ثم حاولي الدخول من جديد.'
@@ -26,6 +36,7 @@ export function AuthPage() {
   const { user, signIn, signUp } = useAuth()
   const { t, language } = useUi()
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -39,10 +50,11 @@ export function AuthPage() {
     event.preventDefault(); setBusy(true); setMessage('')
     try {
       if (mode === 'signin') {
-        await signIn(email, password)
+        await signIn(email.trim(), password)
         showToast({ kind: 'success', title: t('common.success'), message: t('auth.signIn') })
+        navigate('/dashboard', { replace: true })
       } else {
-        await signUp(email, password, fullName)
+        await signUp(email.trim(), password, fullName.trim())
         setMessage(t('auth.checkEmail'))
         showToast({ kind: 'success', title: t('common.success'), message: t('auth.checkEmail') })
       }
