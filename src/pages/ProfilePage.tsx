@@ -4,7 +4,7 @@ import { useUi } from '../hooks/useUi'
 import { supabase, publicStorageUrl } from '../lib/supabase'
 import type { Profile } from '../types/domain'
 import { errorMessage } from '../lib/errors'
-import { disablePushNotifications, enablePushNotifications, getPushNotificationStatus, type PushStatus } from '../lib/push'
+import { disablePushNotifications, enablePushNotifications, getPushEnvironmentIssue, getPushNotificationStatus, type PushStatus } from '../lib/push'
 import { compressProfileImage, formatBytes } from '../lib/image'
 import { useToast } from '../components/ToastProvider'
 
@@ -16,11 +16,13 @@ export function ProfilePage() {
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [pushStatus, setPushStatus] = useState<PushStatus>('checking')
+  const [pushIssue, setPushIssue] = useState('')
   const [compressionSummary, setCompressionSummary] = useState('')
 
   useEffect(() => {
     if (!user) return
     void supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data, error }) => { if (error) setMessage(error.message); else setProfile(data as Profile) })
+    setPushIssue(getPushEnvironmentIssue())
     void getPushNotificationStatus().then(setPushStatus).catch(() => setPushStatus('default'))
   }, [user?.id])
 
@@ -55,21 +57,26 @@ export function ProfilePage() {
   }
 
   async function turnOnPush() {
-    if (!user) return; setBusy(true)
+    if (!user) return
+    const issue = getPushEnvironmentIssue()
+    setPushIssue(issue)
+    if (issue) { failed(new Error(issue)); return }
+    setBusy(true)
     try {
       await enablePushNotifications(user.id)
       setPushStatus('enabled')
+      setPushIssue('')
       showToast({ kind: 'success', title: t('common.success'), message: t('profile.pushOn') })
     } catch (error) {
-      try { setPushStatus(await getPushNotificationStatus()) }
-      catch { setPushStatus('default') }
+      try { setPushStatus(await getPushNotificationStatus()) } catch { setPushStatus('default') }
+      setPushIssue(errorMessage(error))
       failed(error)
     } finally { setBusy(false) }
   }
 
   async function turnOffPush() {
     if (!user) return; setBusy(true)
-    try { await disablePushNotifications(user.id); setPushStatus(await getPushNotificationStatus()); showToast({ kind: 'success', title: t('common.success'), message: t('profile.pushOff') }) }
+    try { await disablePushNotifications(user.id); setPushStatus(await getPushNotificationStatus()); setPushIssue(getPushEnvironmentIssue()); showToast({ kind: 'success', title: t('common.success'), message: t('profile.pushOff') }) }
     catch (error) { failed(error) } finally { setBusy(false) }
   }
 
@@ -88,6 +95,16 @@ export function ProfilePage() {
       <div className="wide profile-upload-card"><div><strong>{t('profile.photo')}</strong><p>{t('profile.photoHint')}</p>{compressionSummary && <small>{t('profile.lastCompression', { value: compressionSummary })}</small>}</div><label className="button button-secondary profile-upload-button">{busy ? t('profile.preparing') : t('profile.choosePhoto')}<input type="file" accept="image/*" disabled={busy} onChange={(event) => void uploadAvatar(event)} /></label></div>
       <button className="button button-primary" disabled={busy}>{t('common.save')}</button>
     </form>
-    <div className="subsection notification-card"><div><h2>{t('profile.deviceNotifications')}</h2><p>{pushCopy}</p></div><div className="row-actions row-actions-start">{pushStatus !== 'enabled' && pushStatus !== 'unsupported' && <button type="button" className="button button-secondary" disabled={busy || pushStatus === 'denied'} onClick={() => void turnOnPush()}>{t('profile.enablePush')}</button>}{pushStatus === 'enabled' && <button type="button" className="button button-ghost" disabled={busy} onClick={() => void turnOffPush()}>{t('profile.disablePush')}</button>}</div></div>
+    <div className="subsection notification-card">
+      <div>
+        <h2>{t('profile.deviceNotifications')}</h2>
+        <p>{pushCopy}</p>
+        {pushIssue && <p className="push-diagnostic" role="status"><strong>سبب عدم التفعيل:</strong> {pushIssue}</p>}
+      </div>
+      <div className="row-actions row-actions-start">
+        {pushStatus !== 'enabled' && pushStatus !== 'unsupported' && <button type="button" className="button button-secondary" disabled={busy || pushStatus === 'denied'} onClick={() => void turnOnPush()}>{t('profile.enablePush')}</button>}
+        {pushStatus === 'enabled' && <button type="button" className="button button-ghost" disabled={busy} onClick={() => void turnOffPush()}>{t('profile.disablePush')}</button>}
+      </div>
+    </div>
   </section>
 }
