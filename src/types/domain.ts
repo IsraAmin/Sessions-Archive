@@ -89,4 +89,6 @@ export type Profile = {
 export type SearchSession = Session & {
   category_name: string | null
   speaker_name: string | null
+  average_rating: number | string
+  rating_count: number
 }
