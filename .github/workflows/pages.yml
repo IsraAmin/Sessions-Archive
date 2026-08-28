@@ -39,7 +39,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
       - name: Build
-        run: npm run build
+        run: npm run build -- --base "/${{ github.event.repository.name }}/"
       - name: Add SPA fallback
         run: cp dist/index.html dist/404.html
       - name: Upload Pages artifact
