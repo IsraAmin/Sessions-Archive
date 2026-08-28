@@ -41,7 +41,7 @@ export function DashboardPage() {
   const ar = language === 'ar'
 
   return <section>
-    <div className="section-heading"><div><div className="eyebrow">{t('dashboard.eyebrow')}</div><h1>{t('dashboard.title')}</h1></div></div>
+    <div className="section-heading"><div><div className="eyebrow">{t('dashboard.eyebrow')}</div><h1>{t('dashboard.title')}</h1></div><Link className="button button-secondary" to="/saved">{ar ? 'عرض المحفوظات' : 'View saved'}</Link></div>
     {loadError && <p className="notice error" role="alert">{loadError}</p>}
     <div className="stats-grid stats-grid-v2">
       <StatCard label={ar ? 'السيشنات التي شاهدتها' : 'Sessions viewed'} value={views.length} />
