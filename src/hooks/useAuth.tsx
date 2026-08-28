@@ -30,13 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const bootstrapAuth = async () => {
       try {
-        // Initialize first, then subscribe. Keeping these steps serialized avoids
-        // a startup race where auth methods can wait forever on initialization.
-        const { data, error } = await supabase.auth.initialize()
+        // Initialize first, then read the persisted session and only after that
+        // subscribe to future auth events. This prevents startup/listener races.
+        const { error: initializeError } = await supabase.auth.initialize()
         if (!active) return
 
-        if (error) {
-          console.warn('Unable to initialize auth session', error)
+        if (initializeError) {
+          console.warn('Unable to initialize auth session', initializeError)
+        }
+
+        const { data, error: sessionError } = await supabase.auth.getSession()
+        if (!active) return
+
+        if (sessionError) {
+          console.warn('Unable to restore auth session', sessionError)
         }
 
         setSession(data.session ?? null)
