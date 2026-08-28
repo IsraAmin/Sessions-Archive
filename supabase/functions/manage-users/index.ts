@@ -14,6 +14,21 @@ type ProfileRow = {
   created_at: string
   updated_at: string
 }
+type DirectoryRow = {
+  id: string
+  email: string
+  phone: string | null
+  role: 'admin' | 'student'
+  super_admin: boolean
+  banned_until: string | null
+  created_at: string
+  updated_at: string | null
+  last_sign_in_at: string | null
+  email_confirmed_at: string | null
+  phone_confirmed_at: string | null
+  is_anonymous: boolean
+  providers: string[] | null
+}
 
 function countByUser(rows: Array<{ user_id: string }> | null) {
   const counts = new Map<string, number>()
@@ -38,51 +53,42 @@ export default {
     const action = body.action ?? 'list'
 
     if (action === 'list') {
-      const [{ data, error }, registrations, feedback, progress, profiles] = await Promise.all([
-        ctx.supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+      const [directory, registrations, feedback, progress, profiles] = await Promise.all([
+        ctx.supabaseAdmin
+          .from('user_directory')
+          .select('id,email,phone,role,super_admin,banned_until,created_at,updated_at,last_sign_in_at,email_confirmed_at,phone_confirmed_at,is_anonymous,providers')
+          .order('created_at', { ascending: false }),
         ctx.supabaseAdmin.from('registrations').select('user_id'),
         ctx.supabaseAdmin.from('feedback').select('user_id'),
         ctx.supabaseAdmin.from('video_progress').select('user_id'),
         ctx.supabaseAdmin.from('profiles').select('id,full_name,university,department,level,bio,avatar_path,created_at,updated_at'),
       ])
-      if (error) return Response.json({ error: error.message }, { status: 500 })
-      if (profiles.error) return Response.json({ error: profiles.error.message }, { status: 500 })
+
+      const firstError = directory.error || registrations.error || feedback.error || progress.error || profiles.error
+      if (firstError) return Response.json({ error: firstError.message }, { status: 500 })
 
       const registrationsByUser = countByUser(registrations.data)
       const feedbackByUser = countByUser(feedback.data)
       const progressByUser = countByUser(progress.data)
       const profilesByUser = new Map((profiles.data ?? []).map((profile) => [profile.id, profile as ProfileRow]))
 
-      const users = data.users.map((user) => {
-        const profile = profilesByUser.get(user.id) ?? null
+      const users = ((directory.data ?? []) as DirectoryRow[]).map((account) => {
+        const profile = profilesByUser.get(account.id) ?? null
         const activity: Activity = {
-          registrations: registrationsByUser.get(user.id) ?? 0,
-          feedback: feedbackByUser.get(user.id) ?? 0,
-          video_progress: progressByUser.get(user.id) ?? 0,
+          registrations: registrationsByUser.get(account.id) ?? 0,
+          feedback: feedbackByUser.get(account.id) ?? 0,
+          video_progress: progressByUser.get(account.id) ?? 0,
         }
-        const providers = Array.isArray(user.app_metadata?.providers)
-          ? user.app_metadata.providers.filter((value): value is string => typeof value === 'string')
-          : typeof user.app_metadata?.provider === 'string' ? [user.app_metadata.provider] : []
 
         return {
-          id: user.id,
-          email: user.email ?? '',
-          phone: user.phone ?? null,
-          full_name: profile?.full_name || (typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : ''),
-          role: user.app_metadata?.role === 'admin' ? 'admin' : 'student',
-          super_admin: user.app_metadata?.super_admin === true,
-          banned_until: user.banned_until ?? null,
-          created_at: user.created_at,
-          updated_at: user.updated_at ?? null,
-          last_sign_in_at: user.last_sign_in_at ?? null,
-          email_confirmed_at: user.email_confirmed_at ?? null,
-          phone_confirmed_at: user.phone_confirmed_at ?? null,
-          is_anonymous: user.is_anonymous === true,
-          providers,
+          ...account,
+          providers: account.providers ?? [],
+          full_name: profile?.full_name ?? '',
           profile,
           activity,
         }
       })
+
       return Response.json({ users })
     }
 
