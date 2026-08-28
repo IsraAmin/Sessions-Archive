@@ -6,6 +6,7 @@ import { Layout } from './components/Layout'
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute'
 import { SessionsPage } from './pages/SessionsPage'
 import { SessionDetailsPage } from './pages/SessionDetailsPage'
+import { SavedSessionsPage } from './pages/SavedSessionsPage'
 import { AuthPage } from './pages/AuthPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -24,6 +25,7 @@ export default function App() {
               <Route index element={<SessionsPage />} />
               <Route path="sessions/:id" element={<SessionDetailsPage />} />
               <Route path="auth" element={<AuthPage />} />
+              <Route path="saved" element={<ProtectedRoute><SavedSessionsPage /></ProtectedRoute>} />
               <Route path="dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
               <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="admin" element={<AdminRoute><AdminWorkspacePage /></AdminRoute>} />
