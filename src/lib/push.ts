@@ -9,24 +9,72 @@ function urlBase64ToUint8Array(value: string) {
   return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)))
 }
 
+function withTimeout<T>(promise: PromiseLike<T>, milliseconds: number, message: string) {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(message)), milliseconds)
+    Promise.resolve(promise).then(
+      (value) => {
+        window.clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        window.clearTimeout(timer)
+        reject(error)
+      },
+    )
+  })
+}
+
+function pushError(error: unknown) {
+  if (error instanceof DOMException) {
+    if (error.name === 'NotAllowedError') {
+      return new Error('المتصفح منع إشعارات هذا الموقع. افتحي إعدادات الموقع، اسمحي بالإشعارات، ثم حاولي مرة أخرى.')
+    }
+    if (error.name === 'AbortError') {
+      return new Error('تعذر الاتصال بخدمة Push على هذا الجهاز مؤقتًا. تأكدي من الإنترنت ثم حاولي مرة أخرى.')
+    }
+    if (error.name === 'InvalidStateError') {
+      return new Error('خدمة الإشعارات لم تجهز على هذا الجهاز بعد. حدّثي الصفحة مرة واحدة ثم حاولي مرة أخرى.')
+    }
+  }
+
+  if (error instanceof Error && error.message) return error
+  return new Error('تعذر إنشاء اشتراك Push على هذا الجهاز. حدّثي الصفحة ثم حاولي مرة أخرى.')
+}
+
 async function getRegistration() {
   const scope = import.meta.env.BASE_URL
-  const existing = await navigator.serviceWorker.getRegistration(scope)
-  if (existing) return existing
-  return navigator.serviceWorker.register(`${scope}sw.js`, {
-    scope,
-    updateViaCache: 'none',
-  })
+  let registration = await navigator.serviceWorker.getRegistration(scope)
+
+  if (!registration) {
+    registration = await navigator.serviceWorker.register(`${scope}sw.js`, {
+      scope,
+      updateViaCache: 'none',
+    })
+  }
+
+  void registration.update().catch(() => undefined)
+
+  if (registration.active) return registration
+
+  return withTimeout(
+    navigator.serviceWorker.ready,
+    10_000,
+    'خدمة الإشعارات لم تجهز على هذا الجهاز. حدّثي الصفحة مرة واحدة ثم حاولي مرة أخرى.',
+  )
 }
 
 async function getVapidPublicKey() {
   const { data, error } = await supabase.functions.invoke('send-session-notification', {
-    method: 'GET',
+    body: { action: 'get_public_key' },
   })
-  if (error) throw error
+
+  if (error) {
+    throw new Error(`تعذر تجهيز خدمة Push من السيرفر: ${error.message}`)
+  }
 
   const publicKey = typeof data?.publicKey === 'string' ? data.publicKey.trim() : ''
-  if (!publicKey) throw new Error('تعذر تجهيز خدمة إشعارات الجهاز.')
+  if (!publicKey) throw new Error('تعذر تجهيز مفتاح Push العام. حاولي مرة أخرى بعد لحظات.')
   return publicKey
 }
 
@@ -34,48 +82,65 @@ export async function getPushNotificationStatus(): Promise<PushStatus> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'unsupported'
   if (Notification.permission === 'denied') return 'denied'
 
-  const registration = await navigator.serviceWorker.getRegistration(import.meta.env.BASE_URL)
-  const subscription = await registration?.pushManager.getSubscription()
-  if (subscription) return 'enabled'
-  return 'default'
+  try {
+    const registration = await navigator.serviceWorker.getRegistration(import.meta.env.BASE_URL)
+    const subscription = await registration?.pushManager.getSubscription()
+    return subscription ? 'enabled' : 'default'
+  } catch {
+    return 'default'
+  }
 }
 
 export async function enablePushNotifications(userId: string) {
+  if (!window.isSecureContext) {
+    throw new Error('إشعارات الجهاز تحتاج اتصال HTTPS آمن.')
+  }
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
     throw new Error('هذا المتصفح لا يدعم Push Notifications.')
   }
 
   const permission = await Notification.requestPermission()
-  if (permission === 'denied') throw new Error('الإشعارات محظورة لهذا الموقع. فعّلها من إعدادات المتصفح ثم حاول مرة أخرى.')
-  if (permission !== 'granted') throw new Error('لم يتم تفعيل الإشعارات.')
+  if (permission === 'denied') {
+    throw new Error('الإشعارات محظورة لهذا الموقع. افتحي إعدادات الموقع واسمحي بالإشعارات ثم حاولي مرة أخرى.')
+  }
+  if (permission !== 'granted') throw new Error('لم يتم منح إذن الإشعارات لهذا الموقع.')
 
-  const [registration, vapidPublicKey] = await Promise.all([
-    getRegistration(),
-    getVapidPublicKey(),
-  ])
-  await navigator.serviceWorker.ready
+  const registration = await getRegistration()
+  const vapidPublicKey = await getVapidPublicKey()
 
   let subscription = await registration.pushManager.getSubscription()
   if (!subscription) {
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-    })
+    try {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      })
+    } catch (error) {
+      throw pushError(error)
+    }
   }
 
   const json = subscription.toJSON()
   if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) {
-    throw new Error('تعذر حفظ اشتراك الإشعارات على هذا الجهاز.')
+    throw new Error('المتصفح أنشأ اشتراكًا غير مكتمل. أوقفي الإشعارات من إعدادات الموقع ثم فعّليها من جديد.')
   }
 
-  const { error } = await supabase.from('push_subscriptions').upsert({
-    user_id: userId,
-    endpoint: json.endpoint,
-    p256dh: json.keys.p256dh,
-    auth: json.keys.auth,
-  }, { onConflict: 'endpoint' })
+  const { data: saved, error } = await supabase
+    .from('push_subscriptions')
+    .upsert({
+      user_id: userId,
+      endpoint: json.endpoint,
+      p256dh: json.keys.p256dh,
+      auth: json.keys.auth,
+    }, { onConflict: 'endpoint' })
+    .select('id')
+    .single()
 
-  if (error) throw error
+  if (error) {
+    throw new Error(`تم إنشاء اشتراك الجهاز لكن تعذر ربطه بحسابك: ${error.message}`)
+  }
+  if (!saved) throw new Error('تعذر تأكيد حفظ اشتراك الإشعارات لهذا الجهاز.')
+
   return subscription
 }
 
@@ -87,9 +152,6 @@ export async function disablePushNotifications(userId: string) {
   if (!subscription) return
 
   const endpoint = subscription.endpoint
-
-  // Stop this browser from receiving pushes first. Removing the database row is
-  // secondary, so a slow network request cannot keep the device subscribed.
   await subscription.unsubscribe()
 
   const { error } = await supabase
