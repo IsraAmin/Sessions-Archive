@@ -83,7 +83,7 @@ export default {
       return retry as VapidRow
     }
 
-    if (req.method === 'GET') {
+    async function publicKeyResponse() {
       try {
         const config = await getVapidConfig()
         return Response.json({ publicKey: config.public_key }, {
@@ -95,8 +95,20 @@ export default {
       }
     }
 
-    if (req.method !== 'POST') {
-      return Response.json({ error: 'Method not allowed' }, { status: 405 })
+    if (req.method === 'GET') return publicKeyResponse()
+    if (req.method !== 'POST') return Response.json({ error: 'Method not allowed' }, { status: 405 })
+
+    let requestBody: unknown
+    try {
+      requestBody = await req.json()
+    } catch {
+      return Response.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+
+    // Any signed-in user may request the public VAPID key. The private key
+    // remains server-only in push_vapid_config.
+    if (isRecord(requestBody) && requestBody.action === 'get_public_key') {
+      return publicKeyResponse()
     }
 
     const { data: isAdmin, error: adminError } = await ctx.supabase.rpc('is_admin')
@@ -104,13 +116,11 @@ export default {
       console.error('Admin check failed', adminError)
       return Response.json({ error: 'Unable to verify authorization' }, { status: 500 })
     }
-    if (!isAdmin) {
-      return Response.json({ error: 'Admin role required' }, { status: 403 })
-    }
+    if (!isAdmin) return Response.json({ error: 'Admin role required' }, { status: 403 })
 
     let payload: NotificationRequest
     try {
-      payload = validatePayload(await req.json())
+      payload = validatePayload(requestBody)
     } catch (error) {
       return Response.json(
         { error: error instanceof Error ? error.message : 'Invalid request body' },
