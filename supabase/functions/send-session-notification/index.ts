@@ -111,6 +111,10 @@ export default {
       return publicKeyResponse()
     }
 
+    const { data: callerData, error: callerError } = await ctx.supabase.auth.getUser()
+    if (callerError || !callerData.user) return Response.json({ error: 'Authentication required' }, { status: 401 })
+    const caller = callerData.user
+
     const { data: isAdmin, error: adminError } = await ctx.supabase.rpc('is_admin')
     if (adminError) {
       console.error('Admin check failed', adminError)
@@ -179,6 +183,23 @@ export default {
         .in('id', staleIds)
       if (cleanupError) console.error('Could not delete stale subscriptions', cleanupError)
     }
+
+    const { error: activityError } = await ctx.supabaseAdmin
+      .from('admin_activity_log')
+      .insert({
+        actor_user_id: caller.id,
+        action: 'notification_sent',
+        entity_type: 'notification',
+        entity_label: payload.title,
+        details: {
+          url: payload.url ?? '/',
+          sent,
+          failed,
+          subscribers: subscriptions.length,
+          removed_stale: staleIds.length,
+        },
+      })
+    if (activityError) console.error('Could not record admin notification activity', activityError)
 
     return Response.json({
       sent,
