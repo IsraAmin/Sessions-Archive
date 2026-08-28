@@ -15,7 +15,7 @@ export function SessionCard({ session }: { session: Session | SearchSession }) {
   return <article className="session-card session-card-v2">
     <div className="session-cover" style={image ? { backgroundImage: `url(${image})` } : undefined}>{!image && <span>Session</span>}</div>
     <div className="session-card-body">
-      <div className="session-card-topline"><div className="eyebrow">{category || t('sessions.general')}</div>{ratingCount > 0 && <div className="session-card-rating" aria-label={`${language === 'ar' ? 'متوسط التقييم' : 'Average rating'} ${rating.toFixed(1)} ${language === 'ar' ? 'من 5' : 'out of 5'}`}><StarRating value={Math.round(rating)} label={language === 'ar' ? 'متوسط التقييم' : 'Average rating'} readOnly /><strong>{rating.toFixed(1)}</strong><small>({ratingCount})</small></div>}</div>
+      <div className="session-card-topline"><div className="eyebrow">{category || t('sessions.general')}</div>{ratingCount > 0 && <div className="session-card-rating" aria-label={`${language === 'ar' ? 'متوسط التقييم' : 'Average rating'} ${rating.toFixed(1)} ${language === 'ar' ? 'من 5' : 'out of 5'}`}><StarRating value={Math.round(rating)} label={language === 'ar' ? 'متوسط التقييم' : 'Average rating'} readOnly /><strong>{rating.toFixed(1)}</strong></div>}</div>
       <h3>{session.title}</h3>
       <p>{session.description.slice(0, 130)}{session.description.length > 130 ? '…' : ''}</p>
       <div className="session-meta"><span>{speaker || t('sessions.speakerLater')}</span><span>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(session.starts_at))}</span></div>
