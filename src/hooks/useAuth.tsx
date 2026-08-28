@@ -25,17 +25,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
+    let active = true
+
+    async function hydrateSession() {
+      const { data } = await supabase.auth.getSession()
+      if (!active) return
+
+      if (!data.session) {
+        setSession(null)
+        setLoading(false)
+        return
+      }
+
+      const { data: refreshed, error } = await supabase.auth.refreshSession()
+      if (!active) return
+      setSession(error ? data.session : refreshed.session)
       setLoading(false)
-    })
+    }
+
+    void hydrateSession()
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!active) return
       setSession(nextSession)
       setLoading(false)
     })
 
-    return () => listener.subscription.unsubscribe()
+    return () => {
+      active = false
+      listener.subscription.unsubscribe()
+    }
   }, [])
 
   const value = useMemo<AuthContextValue>(() => ({
