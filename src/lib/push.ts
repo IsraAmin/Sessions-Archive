@@ -86,12 +86,17 @@ export async function disablePushNotifications(userId: string) {
   const subscription = await registration?.pushManager.getSubscription()
   if (!subscription) return
 
+  const endpoint = subscription.endpoint
+
+  // Stop this browser from receiving pushes first. Removing the database row is
+  // secondary, so a slow network request cannot keep the device subscribed.
+  await subscription.unsubscribe()
+
   const { error } = await supabase
     .from('push_subscriptions')
     .delete()
     .eq('user_id', userId)
-    .eq('endpoint', subscription.endpoint)
+    .eq('endpoint', endpoint)
 
-  await subscription.unsubscribe()
   if (error) throw error
 }
