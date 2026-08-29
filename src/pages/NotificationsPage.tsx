@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
@@ -29,7 +29,6 @@ function phoneViewport() {
 export function NotificationsPage() {
   const { user } = useAuth()
   const { language, locale } = useUi()
-  const navigate = useNavigate()
   const [isPhone, setIsPhone] = useState(phoneViewport)
   const [items, setItems] = useState<NotificationRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -81,8 +80,15 @@ export function NotificationsPage() {
     if (user) void loadChunk(0, true)
   }, [loadChunk, user?.id])
 
-  function openItem(item: NotificationRow) {
-    if (item.href?.startsWith('/') && !item.href.startsWith('//')) navigate(item.href)
+  async function openItem(item: NotificationRow) {
+    if (item.read_at || !user) return
+    const now = new Date().toISOString()
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read_at: now })
+      .eq('id', item.id)
+      .eq('user_id', user.id)
+    if (!error) setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: now } : entry))
   }
 
   if (!isPhone) return <Navigate to="/" replace />
@@ -103,22 +109,18 @@ export function NotificationsPage() {
       {loading && !items.length && <div className="mobile-notifications-state">{ar ? 'جاري تحميل الإشعارات…' : 'Loading notifications…'}</div>}
       {!loading && !items.length && !loadError && <div className="mobile-notifications-state mobile-notifications-empty"><Icon name="bell" /><strong>{ar ? 'لا توجد إشعارات بعد' : 'No notifications yet'}</strong><span>{ar ? 'أي تحديث يصلك سيظهر هنا.' : 'New updates will appear here.'}</span></div>}
 
-      {items.map((item) => {
-        const canOpen = Boolean(item.href?.startsWith('/') && !item.href.startsWith('//'))
-        return <button
-          type="button"
-          key={item.id}
-          className="mobile-notification-row"
-          disabled={!canOpen}
-          onClick={() => openItem(item)}
-        >
-          <span className="mobile-notification-row-copy">
-            <strong>{ar ? item.title_ar : item.title_en}</strong>
-            <span>{ar ? item.body_ar : item.body_en}</span>
-            <time dateTime={item.created_at}>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at))}</time>
-          </span>
-        </button>
-      })}
+      {items.map((item) => <button
+        type="button"
+        key={item.id}
+        className={`mobile-notification-row ${item.read_at ? '' : 'is-unread'}`}
+        onClick={() => void openItem(item)}
+      >
+        <span className="mobile-notification-row-copy">
+          <strong>{ar ? item.title_ar : item.title_en}</strong>
+          <span>{ar ? item.body_ar : item.body_en}</span>
+          <time dateTime={item.created_at}>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at))}</time>
+        </span>
+      </button>)}
     </div>
 
     {hasMore && <button
