@@ -38,6 +38,15 @@ export type Database = {
           { foreignKeyName: 'sessions_speaker_id_fkey'; columns: ['speaker_id']; isOneToOne: false; referencedRelation: 'speakers'; referencedColumns: ['id'] },
         ]
       }
+      session_speakers: {
+        Row: { session_id: string; speaker_id: string; position: number; created_at: string }
+        Insert: { session_id: string; speaker_id: string; position?: number; created_at?: string }
+        Update: { session_id?: string; speaker_id?: string; position?: number; created_at?: string }
+        Relationships: [
+          { foreignKeyName: 'session_speakers_session_id_fkey'; columns: ['session_id']; isOneToOne: false; referencedRelation: 'sessions'; referencedColumns: ['id'] },
+          { foreignKeyName: 'session_speakers_speaker_id_fkey'; columns: ['speaker_id']; isOneToOne: false; referencedRelation: 'speakers'; referencedColumns: ['id'] },
+        ]
+      }
       registrations: {
         Row: { id: string; user_id: string; session_id: string; attendance_status: string; attended_at: string | null; created_at: string }
         Insert: { id?: string; user_id: string; session_id: string; attendance_status?: string; attended_at?: string | null; created_at?: string }
@@ -105,7 +114,7 @@ export type Database = {
       is_super_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       search_sessions: {
         Args: { search_text?: string | null; category_filter?: string | null }
-        Returns: Array<{ id: string; title: string; slug: string; description: string; category_id: string | null; speaker_id: string | null; starts_at: string; ends_at: string | null; location: string | null; capacity: number; cover_path: string | null; status: string; created_at: string; category_name: string | null; speaker_name: string | null }>
+        Returns: Array<{ id: string; title: string; slug: string; description: string; category_id: string | null; speaker_id: string | null; starts_at: string; ends_at: string | null; location: string | null; capacity: number; cover_path: string | null; status: string; created_at: string; category_name: string | null; speaker_name: string | null; average_rating: number; rating_count: number }>
       }
     }
     Enums: { [_ in never]: never }
