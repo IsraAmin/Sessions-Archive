@@ -10,6 +10,7 @@ import './branding.css'
 import './admin-v3.css'
 import './admin-v4.css'
 import './mobile-dark-v5.css'
+import './mobile-notifications.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
