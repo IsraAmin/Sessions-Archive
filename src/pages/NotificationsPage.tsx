@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
@@ -29,6 +29,7 @@ function phoneViewport() {
 export function NotificationsPage() {
   const { user } = useAuth()
   const { language, locale } = useUi()
+  const navigate = useNavigate()
   const [isPhone, setIsPhone] = useState(phoneViewport)
   const [items, setItems] = useState<NotificationRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -81,14 +82,17 @@ export function NotificationsPage() {
   }, [loadChunk, user?.id])
 
   async function openItem(item: NotificationRow) {
-    if (item.read_at || !user) return
-    const now = new Date().toISOString()
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read_at: now })
-      .eq('id', item.id)
-      .eq('user_id', user.id)
-    if (!error) setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: now } : entry))
+    if (!user) return
+    if (!item.read_at) {
+      const now = new Date().toISOString()
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read_at: now })
+        .eq('id', item.id)
+        .eq('user_id', user.id)
+      if (!error) setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: now } : entry))
+    }
+    if (item.href) navigate(item.href)
   }
 
   if (!isPhone) return <Navigate to="/" replace />
