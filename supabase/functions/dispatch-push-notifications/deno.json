@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "strict": true
+  },
+  "imports": {
+    "@supabase/server": "npm:@supabase/server@1.4.1",
+    "web-push": "npm:web-push@3.6.7"
+  }
+}
