@@ -54,6 +54,31 @@ export function NotificationCenter() {
   }, [load, user?.id])
 
   useEffect(() => {
+    if (!user) return
+
+    const channel = supabase
+      .channel(`notifications:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const item = payload.new as NotificationRow
+          setItems((current) => [item, ...current.filter((entry) => entry.id !== item.id)].slice(0, 30))
+        },
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [user?.id])
+
+  useEffect(() => {
     function closeOutside(event: MouseEvent) {
       if (open && rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false)
     }
