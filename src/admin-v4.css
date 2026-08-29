@@ -68,6 +68,37 @@
 .admin-form-grid button:disabled { cursor: wait; opacity: .68; }
 .admin-form-grid[aria-busy="true"] { opacity: .92; }
 
+.speaker-multi-select {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 240px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--v2-border);
+  border-radius: 14px;
+  background: var(--v2-surface-2);
+  overscroll-behavior: contain;
+}
+.speaker-choice {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 1px solid var(--v2-border);
+  border-radius: 12px;
+  background: var(--v2-surface);
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease;
+}
+.speaker-choice:hover { border-color: color-mix(in srgb, var(--v2-brand) 35%, var(--v2-border)); }
+.speaker-choice:has(input:checked) { border-color: color-mix(in srgb, var(--v2-brand) 55%, var(--v2-border)); background: var(--v2-brand-soft); }
+.speaker-choice input { width: 18px; height: 18px; margin: 0; flex: none; accent-color: var(--v2-brand); }
+.speaker-choice > span { min-width: 0; display: grid; gap: 2px; }
+.speaker-choice strong { color: var(--v2-text); font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.speaker-choice small { color: var(--v2-muted); font-size: .67rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .directory-avatar:focus-visible,
 .admin-comment-card:focus-visible { outline: 3px solid color-mix(in srgb, var(--v2-brand) 35%, transparent); outline-offset: 2px; }
 
@@ -78,6 +109,7 @@
 @media (max-width: 640px) {
   .admin-activity-entry { grid-template-columns: 36px minmax(0, 1fr); }
   .admin-activity-entry > time { grid-column: 2; padding-top: 0; }
+  .speaker-multi-select { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
