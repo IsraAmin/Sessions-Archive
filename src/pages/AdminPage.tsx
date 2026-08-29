@@ -103,6 +103,7 @@ export function AdminPage() {
   const [videoSessionId, setVideoSessionId] = useState('')
   const [videoTitle, setVideoTitle] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
+  const [videoPartNumber, setVideoPartNumber] = useState(1)
   const [sessionSpeakerSlots, setSessionSpeakerSlots] = useState<number[]>([0])
   const [busyUsers, setBusyUsers] = useState(false)
   const [savingContent, setSavingContent] = useState(false)
@@ -121,7 +122,7 @@ export function AdminPage() {
         supabase.from('speakers').select('*').order('name'),
         supabase.from('sessions').select('*').order('starts_at', { ascending: false }),
         supabase.from('session_series').select('*').order('created_at', { ascending: false }),
-        supabase.from('session_videos').select('*').order('session_id').order('position'),
+        supabase.from('session_videos').select('*').order('session_id').order('part_number').order('position'),
         supabase.from('profiles').select('*'),
         supabase.from('feedback').select('id,user_id,session_id,rating,comment,created_at,session:sessions(id,title,category_id,speaker_id)').order('created_at', { ascending: false }),
         supabase.from('session_views').select('user_id,session_id,session:sessions(category_id,speaker_id)'),
@@ -320,13 +321,15 @@ export function AdminPage() {
   async function addSessionVideo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const videoId = extractYouTubeVideoId(videoUrl)
+    const partNumber = Math.max(1, Math.floor(Number(videoPartNumber || 1)))
     if (!videoSessionId || !videoTitle.trim() || !videoId) { fail(new Error(ar ? 'اختاري السيشن واكتبي عنوانًا والصقي رابط YouTube صالحًا.' : 'Choose a session, add a title, and paste a valid YouTube URL.')); return }
-    const nextPosition = videos.filter(video => video.session_id === videoSessionId).length
+    const videosInPart = videos.filter(video => video.session_id === videoSessionId && Math.max(1, Number(video.part_number || 1)) === partNumber)
+    const nextPosition = videosInPart.length ? Math.max(...videosInPart.map(video => video.position)) + 1 : 0
     setSavingContent(true)
     try {
       await run(
-        () => supabase.from('session_videos').insert({ session_id: videoSessionId, title: videoTitle.trim(), youtube_video_id: videoId, position: nextPosition }).select('id').single(),
-        ar ? 'تمت إضافة التسجيل.' : 'Recording added.',
+        () => (supabase.from('session_videos') as any).insert({ session_id: videoSessionId, title: videoTitle.trim(), youtube_video_id: videoId, part_number: partNumber, position: nextPosition }).select('id').single(),
+        ar ? `تمت إضافة التسجيل إلى Part ${partNumber}.` : `Recording added to Part ${partNumber}.`,
       )
       setVideoTitle('')
       setVideoUrl('')
@@ -578,9 +581,9 @@ export function AdminPage() {
     </section>
 
     <section className="panel section-gap video-admin-panel">
-      <div className="video-admin-heading"><div><div className="eyebrow">YouTube</div><h2>{t('admin.youtube')}</h2><p>{t('admin.youtubeHint')}</p></div></div>
-      <div className="video-admin-layout"><form className="video-admin-form" onSubmit={event => void addSessionVideo(event)}><FormField label={t('admin.videoSession')}><select value={videoSessionId} onChange={event => setVideoSessionId(event.target.value)} required><option value="">{t('admin.videoSession')}</option>{sessions.map(session => <option key={session.id} value={session.id}>{session.title}</option>)}</select></FormField><FormField label={t('admin.videoTitle')}><input value={videoTitle} onChange={event => setVideoTitle(event.target.value)} required /></FormField><FormField label={t('admin.youtubeUrl')} wide><input value={videoUrl} onChange={event => setVideoUrl(event.target.value)} inputMode="url" placeholder="https://youtu.be/..." required /></FormField><button className="button button-primary wide" disabled={savingContent}>{t('admin.addRecording')}</button></form><div className="video-preview">{extractYouTubeVideoId(videoUrl) ? <YouTubePlayer videoId={extractYouTubeVideoId(videoUrl)!} title={videoTitle || t('admin.preview')} /> : <div className="video-preview-empty"><strong>{t('admin.preview')}</strong><span>{ar ? 'الصقي رابط YouTube صالحًا لرؤية المعاينة.' : 'Paste a valid YouTube URL to preview it.'}</span></div>}</div></div>
-      <div className="admin-v3-list">{videos.map(item => <div className="admin-v3-item" key={item.id}><span className="admin-v3-item-copy"><strong>{item.title}</strong><small>{sessions.find(session => session.id === item.session_id)?.title || '—'}</small></span><div className="admin-v3-actions"><button className="button button-ghost" onClick={() => setEditing({ type: 'video', item })}>{t('common.edit')}</button><button className="button danger" onClick={() => confirmDelete(ar ? 'التسجيل' : 'recording', item.title, async () => { await run(() => supabase.from('session_videos').delete().eq('id', item.id), ar ? 'تم حذف التسجيل.' : 'Recording deleted.') })}>{t('common.delete')}</button></div></div>)}</div>
+      <div className="video-admin-heading"><div><div className="eyebrow">YouTube</div><h2>{t('admin.youtube')}</h2><p>{ar ? 'أضيفي أكثر من رابط لنفس السيشن وحددي لكل فيديو الـPart الخاص به. يمكن أن يحتوي الـPart الواحد على أكثر من فيديو.' : 'Add multiple links to one session and assign each video to a part. A part can contain multiple videos.'}</p></div></div>
+      <div className="video-admin-layout"><form className="video-admin-form" onSubmit={event => void addSessionVideo(event)}><FormField label={t('admin.videoSession')}><select value={videoSessionId} onChange={event => setVideoSessionId(event.target.value)} required><option value="">{t('admin.videoSession')}</option>{sessions.map(session => <option key={session.id} value={session.id}>{session.title}</option>)}</select></FormField><FormField label={t('admin.videoTitle')}><input value={videoTitle} onChange={event => setVideoTitle(event.target.value)} required /></FormField><FormField label="Part" hint={ar ? 'مثلاً 1 أو 2 أو 3. كل الفيديوهات بنفس الرقم ستظهر داخل نفس الجزء.' : 'For example 1, 2, or 3. Videos with the same number appear in the same part.'}><input type="number" min="1" step="1" value={videoPartNumber} onChange={event => setVideoPartNumber(Math.max(1, Math.floor(Number(event.target.value) || 1)))} required /></FormField><FormField label={t('admin.youtubeUrl')}><input value={videoUrl} onChange={event => setVideoUrl(event.target.value)} inputMode="url" placeholder="https://youtu.be/..." required /></FormField><button className="button button-primary wide" disabled={savingContent}>{savingContent ? (ar ? 'جارٍ إضافة الفيديو…' : 'Adding video…') : t('admin.addRecording')}</button></form><div className="video-preview">{extractYouTubeVideoId(videoUrl) ? <><span className="video-part-preview-badge">Part {videoPartNumber}</span><YouTubePlayer videoId={extractYouTubeVideoId(videoUrl)!} title={videoTitle || t('admin.preview')} /></> : <div className="video-preview-empty"><strong>{t('admin.preview')}</strong><span>{ar ? 'الصقي رابط YouTube صالحًا لرؤية المعاينة.' : 'Paste a valid YouTube URL to preview it.'}</span></div>}</div></div>
+      <div className="admin-v3-list">{videos.map(item => <div className="admin-v3-item" key={item.id}><span className="admin-v3-item-copy"><strong>{item.title}</strong><small>Part {item.part_number ?? 1} · {sessions.find(session => session.id === item.session_id)?.title || '—'}</small></span><div className="admin-v3-actions"><button className="button button-ghost" onClick={() => setEditing({ type: 'video', item })}>{t('common.edit')}</button><button className="button danger" onClick={() => confirmDelete(ar ? 'التسجيل' : 'recording', item.title, async () => { await run(() => supabase.from('session_videos').delete().eq('id', item.id), ar ? 'تم حذف التسجيل.' : 'Recording deleted.') })}>{t('common.delete')}</button></div></div>)}</div>
     </section>
 
     <section className="panel section-gap notification-admin-panel"><h2>{t('admin.push')}</h2><form className="notification-form" onSubmit={sendNotification}><FormField label={t('admin.pushTitle')}><input name="title" required /></FormField><FormField label={t('admin.pushBody')}><textarea name="body" required /></FormField><FormField label={ar ? 'الرابط داخل المنصة' : 'App link'}><input name="url" defaultValue="/" /></FormField><button className="button button-primary">{t('admin.sendPush')}</button></form></section>
