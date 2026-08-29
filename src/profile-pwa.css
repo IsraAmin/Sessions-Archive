@@ -18,6 +18,27 @@
 .notification-card h2 { margin-bottom: .25rem; }
 .notification-card p { margin: 0; }
 
+.notification-settings { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; }
+.notification-card { padding: 1rem; border: 1px solid #dbeafe; border-radius: 18px; background: linear-gradient(135deg, #f8fbff 0%, #eff6ff 100%); }
+.push-status-pill { display: inline-flex; align-items: center; gap: .35rem; margin-top: .7rem; padding: .32rem .62rem; border-radius: 999px; background: #e2e8f0; color: #475569; font-size: .78rem; font-weight: 800; }
+.push-status-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.push-status-pill.is-enabled { background: #dcfce7; color: #166534; }
+.notification-environment-note { margin: .75rem 0 0; padding: .8rem .9rem; border: 1px solid #fde68a; border-radius: 14px; background: #fffbeb; color: #92400e; font-size: .88rem; line-height: 1.65; }
+.notification-settings-list { margin-top: 1rem; display: grid; border: 1px solid #e2e8f0; border-radius: 18px; overflow: hidden; background: #fff; }
+.notification-setting-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem; cursor: pointer; }
+.notification-setting-row + .notification-setting-row { border-top: 1px solid #e2e8f0; }
+.notification-setting-copy { display: grid; gap: .2rem; min-width: 0; }
+.notification-setting-copy strong { color: #172554; }
+.notification-setting-copy small { color: #64748b; line-height: 1.5; }
+.notification-setting-row input[type='checkbox'] { appearance: none; flex: 0 0 auto; width: 46px; height: 26px; margin: 0; border: 1px solid #cbd5e1; border-radius: 999px; background: #e2e8f0; position: relative; cursor: pointer; transition: background .18s ease, border-color .18s ease; }
+.notification-setting-row input[type='checkbox']::after { content: ''; position: absolute; top: 3px; inset-inline-start: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(15,23,42,.2); transition: transform .18s ease; }
+.notification-setting-row input[type='checkbox']:checked { background: #2563eb; border-color: #2563eb; }
+.notification-setting-row input[type='checkbox']:checked::after { transform: translateX(20px); }
+[dir='rtl'] .notification-setting-row input[type='checkbox']:checked::after { transform: translateX(-20px); }
+.notification-setting-row input[type='checkbox']:disabled { opacity: .6; cursor: wait; }
+.notification-reminder-row { background: #f8fafc; }
+.notification-reminder-select { min-width: 132px; padding: .6rem .7rem; border: 1px solid #cbd5e1; border-radius: 12px; background: #fff; color: #172554; font: inherit; font-weight: 700; }
+
 .pwa-install { position: fixed; inset-inline: 1rem; bottom: 1rem; z-index: 40; display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: .8rem; align-items: center; max-width: 680px; margin-inline: auto; padding: .85rem 3rem .85rem .85rem; border: 1px solid #cbd5e1; border-radius: 18px; background: rgba(255,255,255,.98); box-shadow: 0 18px 50px rgba(15,23,42,.16); backdrop-filter: blur(12px); }
 .pwa-install img { width: 46px; height: 46px; border-radius: 12px; }
 .pwa-install div { min-width: 0; }
@@ -40,6 +61,9 @@
   .profile-hero { align-items: flex-start; }
   .avatar-large { width: 82px; height: 82px; }
   .image-limit-badge { font-size: .64rem; }
+  .notification-setting-row { align-items: flex-start; }
+  .notification-reminder-row { flex-direction: column; align-items: stretch; }
+  .notification-reminder-select { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
