@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { supabase, publicStorageUrl } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
-import type { Session, SessionResource, SessionSeries, SessionVideo, VideoProgress } from '../types/domain'
+import type { Session, SessionResource, SessionSeries, SessionVideo, Speaker, VideoProgress } from '../types/domain'
 import { errorMessage } from '../lib/errors'
 import { YouTubePlayer } from '../components/YouTubePlayer'
 import { useToast } from '../components/ToastProvider'
@@ -36,6 +36,20 @@ export function SessionDetailsPage() {
     const { data, error } = await supabase.from('sessions').select('*, category:categories(*), speaker:speakers(*), series:session_series(*)').eq('id', id).single()
     if (error) { setMessage(errorMessage(error)); return }
     const current = data as unknown as Session & { series?: SessionSeries | null }
+
+    const speakerIds = current.speaker_ids?.length ? current.speaker_ids : current.speaker_id ? [current.speaker_id] : []
+    if (speakerIds.length) {
+      const { data: speakerData, error: speakerError } = await supabase.from('speakers').select('*').in('id', speakerIds)
+      if (!speakerError) {
+        const speakersById = new Map(((speakerData ?? []) as Speaker[]).map((speaker) => [speaker.id, speaker]))
+        current.speakers = speakerIds.flatMap((speakerId) => {
+          const speaker = speakersById.get(speakerId)
+          return speaker ? [speaker] : []
+        })
+      }
+    }
+    if (!current.speakers?.length && current.speaker) current.speakers = [current.speaker]
+
     setSession(current)
     setSeries(current.series ?? null)
 
@@ -82,7 +96,7 @@ export function SessionDetailsPage() {
 
   if (!session) return <div className="page-state">{message || t('common.loading')}</div>
   const cover = publicStorageUrl('session-covers', session.cover_path)
-  const speakerImage = publicStorageUrl('speaker-images', session.speaker?.image_path ?? null)
+  const sessionSpeakers = session.speakers?.length ? session.speakers : session.speaker ? [session.speaker] : []
   const ar = language === 'ar'
 
   return <section className="details-layout details-layout-v2">
@@ -91,13 +105,18 @@ export function SessionDetailsPage() {
       <div className="eyebrow">{session.category?.name || t('sessions.general')}</div>
       <h1>{session.title}</h1><p className="lead">{session.description}</p>
 
-      {session.speaker && <div className="speaker-summary">
-        {speakerImage && <img src={speakerImage} alt={session.speaker.name} />}
-        <div><span>{t('details.speaker')}</span><strong>{session.speaker.name}</strong>{session.speaker.organization && <p>{session.speaker.organization}</p>}{session.speaker.bio && <p>{session.speaker.bio}</p>}</div>
+      {sessionSpeakers.length > 0 && <div className="speaker-summary-list">
+        {sessionSpeakers.map((speaker) => {
+          const speakerImage = publicStorageUrl('speaker-images', speaker.image_path)
+          return <div className="speaker-summary" key={speaker.id}>
+            {speakerImage && <img src={speakerImage} alt={speaker.name} />}
+            <div><span>{sessionSpeakers.length > 1 ? (ar ? 'متحدث' : 'Speaker') : t('details.speaker')}</span><strong>{speaker.name}</strong>{speaker.organization && <p>{speaker.organization}</p>}{speaker.bio && <p>{speaker.bio}</p>}</div>
+          </div>
+        })}
       </div>}
 
       <div className="info-grid">
-        <div><span>{t('details.speaker')}</span><strong>{session.speaker?.name || t('sessions.speakerLater')}</strong></div>
+        <div><span>{sessionSpeakers.length > 1 ? (ar ? 'المتحدثون' : 'Speakers') : t('details.speaker')}</span><strong>{sessionSpeakers.length ? sessionSpeakers.map((speaker) => speaker.name).join('، ') : t('sessions.speakerLater')}</strong></div>
         <div><span>{t('details.date')}</span><strong>{new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeStyle: 'short' }).format(new Date(session.starts_at))}</strong></div>
         <div><span>{t('details.location')}</span><strong>{session.location || t('details.online')}</strong></div>
         <div><span>{t('details.capacity')}</span><strong>{session.capacity}</strong></div>
