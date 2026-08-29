@@ -23,6 +23,7 @@ export function SessionDetailsPage() {
   const [seriesSessions, setSeriesSessions] = useState<SeriesSession[]>([])
   const [resources, setResources] = useState<SessionResource[]>([])
   const [videos, setVideos] = useState<SessionVideo[]>([])
+  const [selectedVideoPart, setSelectedVideoPart] = useState(1)
   const [progress, setProgress] = useState<VideoProgress[]>([])
   const [bookmarked, setBookmarked] = useState(false)
   const [rating, setRating] = useState(5)
@@ -55,7 +56,7 @@ export function SessionDetailsPage() {
 
     const [resourceResult, videoResult] = await Promise.all([
       supabase.from('session_resources').select('*').eq('session_id', id).order('created_at'),
-      supabase.from('session_videos').select('*').eq('session_id', id).order('position').order('created_at'),
+      supabase.from('session_videos').select('*').eq('session_id', id).order('part_number').order('position').order('created_at'),
     ])
     const nextVideos = (videoResult.data ?? []) as SessionVideo[]
     setResources((resourceResult.data ?? []) as SessionResource[])
@@ -93,6 +94,25 @@ export function SessionDetailsPage() {
   }
 
   const progressByVideo = useMemo(() => new Map(progress.map((row) => [row.video_id, row])), [progress])
+  const videoParts = useMemo(() => {
+    const grouped = new Map<number, SessionVideo[]>()
+    for (const video of videos) {
+      const part = Math.max(1, Number(video.part_number || 1))
+      const current = grouped.get(part) ?? []
+      current.push(video)
+      grouped.set(part, current)
+    }
+    return [...grouped.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([part, items]) => ({ part, videos: [...items].sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at)) }))
+  }, [videos])
+
+  useEffect(() => {
+    if (!videoParts.length) return
+    if (!videoParts.some((entry) => entry.part === selectedVideoPart)) setSelectedVideoPart(videoParts[0].part)
+  }, [videoParts, selectedVideoPart])
+
+  const activeVideoPart = videoParts.find((entry) => entry.part === selectedVideoPart) ?? videoParts[0]
 
   if (!session) return <div className="page-state">{message || t('common.loading')}</div>
   const cover = publicStorageUrl('session-covers', session.cover_path)
@@ -132,11 +152,26 @@ export function SessionDetailsPage() {
         <div className="series-parts">{seriesSessions.map((item) => <Link key={item.id} to={`/sessions/${item.id}`} className={item.id === session.id ? 'current' : ''}><small>{item.series_position ? t('details.seriesPart', { n: item.series_position }) : ''}</small><span>{item.title}</span></Link>)}</div>
       </section>}
 
-      {videos.length > 0 && <section className="session-recordings" aria-labelledby="recordings-heading">
+      {videos.length > 0 && activeVideoPart && <section className="session-recordings session-recordings-parts" aria-labelledby="recordings-heading">
         <div className="recordings-heading"><div><span className="recording-kicker">{t('details.recordingAvailable')}</span><h2 id="recordings-heading">{t('details.watchHere')}</h2></div><span className="recording-count">{videos.length === 1 ? t('details.oneVideo') : t('details.videos', { n: videos.length })}</span></div>
-        <div className="recording-list">{videos.map((video, index) => {
+
+        <div className="recording-parts-toolbar">
+          <div className="recording-part-current">
+            <span>{ar ? 'الجزء الحالي' : 'Current part'}</span>
+            <strong>Part {activeVideoPart.part}</strong>
+            <small>{activeVideoPart.videos.length} {ar ? (activeVideoPart.videos.length === 1 ? 'فيديو' : 'فيديوهات') : (activeVideoPart.videos.length === 1 ? 'video' : 'videos')}</small>
+          </div>
+          {videoParts.length > 1 ? <label className="recording-part-select">
+            <span>{ar ? 'اختاري الجزء' : 'Choose part'}</span>
+            <select value={activeVideoPart.part} onChange={(event) => setSelectedVideoPart(Number(event.target.value))}>
+              {videoParts.map((entry) => <option key={entry.part} value={entry.part}>Part {entry.part} — {entry.videos.length} {ar ? 'فيديو' : entry.videos.length === 1 ? 'video' : 'videos'}</option>)}
+            </select>
+          </label> : <span className="recording-single-part">Part {activeVideoPart.part}</span>}
+        </div>
+
+        <div className="recording-list recording-part-list">{activeVideoPart.videos.map((video, index) => {
           const saved = progressByVideo.get(video.id)
-          return <article className="recording-item" key={video.id}><div className="recording-label"><span>{index === 0 ? t('details.mainRecording') : t('details.part', { n: index + 1 })}</span><strong>{video.title}</strong></div><YouTubePlayer videoId={video.youtube_video_id} videoDbId={video.id} initialProgress={saved ? { seconds: saved.seconds, percent: saved.percent } : null} title={`${session.title} — ${video.title}`} /></article>
+          return <article className="recording-item" key={video.id}><div className="recording-label"><span>{ar ? `فيديو ${index + 1}` : `Video ${index + 1}`}</span><strong>{video.title}</strong></div><YouTubePlayer videoId={video.youtube_video_id} videoDbId={video.id} initialProgress={saved ? { seconds: saved.seconds, percent: saved.percent } : null} title={`${session.title} — Part ${activeVideoPart.part} — ${video.title}`} /></article>
         })}</div>
       </section>}
 
