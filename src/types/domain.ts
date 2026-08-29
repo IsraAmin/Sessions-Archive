@@ -32,6 +32,7 @@ export type Session = {
   description: string
   category_id: string | null
   speaker_id: string | null
+  speaker_ids?: string[]
   series_id: string | null
   series_position: number | null
   starts_at: string
@@ -43,6 +44,7 @@ export type Session = {
   created_at: string
   category?: Category | null
   speaker?: Speaker | null
+  speakers?: Speaker[]
   series?: SessionSeries | null
 }
 
