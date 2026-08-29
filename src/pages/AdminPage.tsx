@@ -103,6 +103,7 @@ export function AdminPage() {
   const [videoSessionId, setVideoSessionId] = useState('')
   const [videoTitle, setVideoTitle] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
+  const [sessionSpeakerSlots, setSessionSpeakerSlots] = useState<number[]>([0])
   const [busyUsers, setBusyUsers] = useState(false)
   const [savingContent, setSavingContent] = useState(false)
   const [editing, setEditing] = useState<EditTarget | null>(null)
@@ -177,8 +178,11 @@ export function AdminPage() {
     try {
       await run(task, successMessage)
       form.reset()
-    } catch (error) { fail(error) }
-    finally { setSavingContent(false) }
+      return true
+    } catch (error) {
+      fail(error)
+      return false
+    } finally { setSavingContent(false) }
   }
 
   function ask(action: Exclude<Confirmation, null>) { setConfirmation(action) }
@@ -250,6 +254,7 @@ export function AdminPage() {
     const capacity = Number(values.get('capacity') || 30)
     if (!Number.isFinite(capacity) || capacity < 1) { fail(new Error(ar ? 'السعة يجب أن تكون رقمًا أكبر من صفر.' : 'Capacity must be greater than zero.')); return }
 
+    const speakerIds = [...new Set(values.getAll('speaker_ids').map(value => String(value)).filter(Boolean))]
     const seriesId = String(values.get('series_id') || '') || null
     const status = String(values.get('status') || 'published') as SessionStatus
     const slug = adminSlug(String(values.get('slug') || title), 'session')
@@ -262,16 +267,18 @@ export function AdminPage() {
       location: String(values.get('location') || '').trim() || null,
       capacity,
       category_id: String(values.get('category_id') || '') || null,
-      speaker_id: String(values.get('speaker_id') || '') || null,
+      speaker_id: speakerIds[0] ?? null,
+      speaker_ids: speakerIds,
       series_id: seriesId,
       series_position: seriesId ? Math.max(1, Number(values.get('series_position') || 1)) : null,
       status,
     }
-    await createAndReset(
+    const created = await createAndReset(
       form,
-      () => supabase.from('sessions').insert(payload).select('id').single(),
+      () => (supabase.from('sessions') as any).insert(payload).select('id').single(),
       ar ? 'تم إنشاء السيشن.' : 'Session created.',
     )
+    if (created) setSessionSpeakerSlots([0])
   }
 
   async function uploadSpeakerImage(speaker: Speaker, file: File) {
@@ -540,7 +547,28 @@ export function AdminPage() {
         <FormField label={ar ? 'المكان / رابط الحضور' : 'Location / meeting link'}><input name="location" /></FormField>
         <FormField label={t('details.capacity')}><input name="capacity" type="number" min="1" defaultValue="30" required /></FormField>
         <FormField label={ar ? 'التصنيف' : 'Category'}><select name="category_id"><option value="">{t('admin.noCategory')}</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></FormField>
-        <FormField label={ar ? 'المتحدث' : 'Speaker'}><select name="speaker_id"><option value="">{t('admin.noSpeaker')}</option>{speakers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></FormField>
+        <div className="form-field wide">
+          <span className="field-label">{ar ? 'المتحدثون' : 'Speakers'}</span>
+          <div style={{ display: 'grid', gap: '.65rem' }}>
+            {sessionSpeakerSlots.map((slot, index) => <div key={slot} style={{ display: 'grid', gridTemplateColumns: index === 0 ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) auto', gap: '.55rem', alignItems: 'center' }}>
+              <select name="speaker_ids" aria-label={ar ? `المتحدث ${index + 1}` : `Speaker ${index + 1}`}>
+                <option value="">{index === 0 ? t('admin.noSpeaker') : (ar ? 'اختاري متحدثًا إضافيًا' : 'Choose another speaker')}</option>
+                {speakers.map(item => <option key={item.id} value={item.id}>{item.name}{item.organization ? ` — ${item.organization}` : ''}</option>)}
+              </select>
+              {index > 0 && <button type="button" className="button button-ghost" onClick={() => setSessionSpeakerSlots(current => current.filter(item => item !== slot))}>{ar ? 'إزالة' : 'Remove'}</button>}
+            </div>)}
+            <button
+              type="button"
+              className="button button-ghost"
+              disabled={!speakers.length || sessionSpeakerSlots.length >= speakers.length}
+              onClick={() => setSessionSpeakerSlots(current => [...current, (current.at(-1) ?? -1) + 1])}
+              style={{ justifySelf: 'start' }}
+            >
+              <span aria-hidden="true">＋</span>{ar ? 'إضافة متحدث آخر' : 'Add another speaker'}
+            </button>
+          </div>
+          <span className="field-hint">{ar ? 'اختاري المتحدث الأول، واضغطي + فقط إذا كان للسيشن متحدث إضافي.' : 'Choose the first speaker, then use + only when the session has another speaker.'}</span>
+        </div>
         <FormField label={t('admin.series')}><select name="series_id"><option value="">{t('admin.noSeries')}</option>{series.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></FormField>
         <FormField label={t('admin.seriesPosition')}><input name="series_position" type="number" min="1" defaultValue="1" /></FormField>
         <FormField label={ar ? 'الحالة' : 'Status'}><select name="status" defaultValue="published"><option value="draft">{ar ? 'مسودة' : 'Draft'}</option><option value="published">{ar ? 'منشور' : 'Published'}</option><option value="cancelled">{ar ? 'ملغي' : 'Cancelled'}</option></select></FormField>
