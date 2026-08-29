@@ -165,31 +165,32 @@ export default {
         }
       }
 
-      const { data: notificationData, error: notificationError } = await ctx.supabaseAdmin
-        .from('notifications')
-        .select('id, user_id, type, title_ar, title_en, body_ar, body_en, href, created_at')
-        .order('created_at', { ascending: true })
-        .limit(200)
-      if (notificationError) throw notificationError
-
-      const notifications = (notificationData ?? []) as NotificationRow[]
-      if (!notifications.length) return Response.json({ remindersCreated, processed: 0, sent: 0, skipped: 0, failed: 0, staleRemoved: 0 })
-
-      const notificationIds = notifications.map((row) => row.id)
       const { data: deliveryData, error: deliveryError } = await ctx.supabaseAdmin
         .from('notification_push_deliveries')
         .select('notification_id, status, attempts')
-        .in('notification_id', notificationIds)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true })
+        .limit(200)
       if (deliveryError) throw deliveryError
 
-      const deliveries = new Map(((deliveryData ?? []) as DeliveryRow[]).map((row) => [row.notification_id, row]))
-      const pending = notifications.filter((row) => {
-        const delivery = deliveries.get(row.id)
-        return !delivery || delivery.status === 'pending'
+      const pendingDeliveries = (deliveryData ?? []) as DeliveryRow[]
+      if (!pendingDeliveries.length) return Response.json({ remindersCreated, processed: 0, sent: 0, skipped: 0, failed: 0, staleRemoved: 0 })
+
+      const notificationIds = pendingDeliveries.map((row) => row.notification_id)
+      const { data: notificationData, error: notificationError } = await ctx.supabaseAdmin
+        .from('notifications')
+        .select('id, user_id, type, title_ar, title_en, body_ar, body_en, href, created_at')
+        .in('id', notificationIds)
+      if (notificationError) throw notificationError
+
+      const notificationsById = new Map(((notificationData ?? []) as NotificationRow[]).map((row) => [row.id, row]))
+      const pending = pendingDeliveries.flatMap((delivery) => {
+        const notification = notificationsById.get(delivery.notification_id)
+        return notification ? [{ notification, delivery }] : []
       })
       if (!pending.length) return Response.json({ remindersCreated, processed: 0, sent: 0, skipped: 0, failed: 0, staleRemoved: 0 })
 
-      const userIds = [...new Set(pending.map((row) => row.user_id))]
+      const userIds = [...new Set(pending.map(({ notification }) => notification.user_id))]
       const [{ data: preferenceData, error: preferenceError }, { data: subscriptionData, error: subscriptionError }] = await Promise.all([
         ctx.supabaseAdmin
           .from('notification_preferences')
@@ -212,7 +213,7 @@ export default {
       }
 
       let vapid: VapidRow | null = null
-      if (pending.some((row) => shouldPush(row.type, preferences.get(row.user_id) ?? defaults(row.user_id)) && (subscriptionsByUser.get(row.user_id)?.length ?? 0) > 0)) {
+      if (pending.some(({ notification }) => shouldPush(notification.type, preferences.get(notification.user_id) ?? defaults(notification.user_id)) && (subscriptionsByUser.get(notification.user_id)?.length ?? 0) > 0)) {
         const { data: vapidData, error: vapidError } = await ctx.supabaseAdmin
           .from('push_vapid_config')
           .select('public_key, private_key, subject')
@@ -228,20 +229,18 @@ export default {
       let skipped = 0
       let failed = 0
 
-      for (const notification of pending) {
+      for (const { notification, delivery } of pending) {
         const preference = preferences.get(notification.user_id) ?? defaults(notification.user_id)
-        const previousAttempts = deliveries.get(notification.id)?.attempts ?? 0
+        const previousAttempts = delivery.attempts
         const attempts = previousAttempts + 1
 
         if (!shouldPush(notification.type, preference)) {
-          const { error } = await ctx.supabaseAdmin.from('notification_push_deliveries').upsert({
-            notification_id: notification.id,
+          const { error } = await ctx.supabaseAdmin.from('notification_push_deliveries').update({
             status: 'skipped',
-            attempts: previousAttempts,
             last_attempt_at: nowIso,
             delivered_at: nowIso,
             last_error: 'disabled_by_user_preference',
-          }, { onConflict: 'notification_id' })
+          }).eq('notification_id', notification.id)
           if (error) throw error
           skipped += 1
           continue
@@ -249,14 +248,12 @@ export default {
 
         const subscriptions = subscriptionsByUser.get(notification.user_id) ?? []
         if (!subscriptions.length || !vapid) {
-          const { error } = await ctx.supabaseAdmin.from('notification_push_deliveries').upsert({
-            notification_id: notification.id,
+          const { error } = await ctx.supabaseAdmin.from('notification_push_deliveries').update({
             status: 'skipped',
-            attempts: previousAttempts,
             last_attempt_at: nowIso,
             delivered_at: nowIso,
             last_error: 'no_active_push_subscription',
-          }, { onConflict: 'notification_id' })
+          }).eq('notification_id', notification.id)
           if (error) throw error
           skipped += 1
           continue
@@ -285,14 +282,13 @@ export default {
 
         const terminalFailure = successes === 0 && attempts >= 5
         const status = successes > 0 ? 'sent' : terminalFailure ? 'failed' : 'pending'
-        const { error } = await ctx.supabaseAdmin.from('notification_push_deliveries').upsert({
-          notification_id: notification.id,
+        const { error } = await ctx.supabaseAdmin.from('notification_push_deliveries').update({
           status,
           attempts,
           last_attempt_at: nowIso,
           delivered_at: successes > 0 ? nowIso : null,
           last_error: successes > 0 ? null : (lastError || 'Push delivery failed'),
-        }, { onConflict: 'notification_id' })
+        }).eq('notification_id', notification.id)
         if (error) throw error
 
         if (successes > 0) sent += 1
