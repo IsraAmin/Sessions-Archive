@@ -2,11 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
-import { errorMessage } from '../lib/errors'
-import { disablePushNotifications, enablePushNotifications, getPushEnvironmentIssue } from '../lib/push'
 import { supabase } from '../lib/supabase'
 import { Icon } from './Icon'
-import { useToast } from './ToastProvider'
+import { PushResubscribeAction } from './PushResubscribeAction'
 
 const PHONE_QUERY = '(max-width: 680px)'
 
@@ -26,12 +24,10 @@ type NotificationRow = {
 export function NotificationCenter() {
   const { user } = useAuth()
   const { language, locale, t } = useUi()
-  const { showToast } = useToast()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<NotificationRow[]>([])
   const [loading, setLoading] = useState(false)
-  const [resubscribing, setResubscribing] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
@@ -102,30 +98,6 @@ export function NotificationCenter() {
     if (!error) setItems((current) => current.map((item) => ({ ...item, read_at: item.read_at ?? now })))
   }
 
-  async function resubscribePush() {
-    if (!user || resubscribing) return
-    setResubscribing(true)
-    try {
-      const issue = getPushEnvironmentIssue()
-      if (issue) throw new Error(issue)
-      await disablePushNotifications(user.id)
-      await enablePushNotifications(user.id)
-      const { error } = await supabase
-        .from('notification_preferences')
-        .upsert({ user_id: user.id, push_enabled: true }, { onConflict: 'user_id' })
-      if (error) throw error
-      showToast({
-        kind: 'success',
-        title: t('common.success'),
-        message: language === 'ar' ? 'تمت إعادة الاشتراك في إشعارات الجهاز بنجاح.' : 'Device notifications were re-subscribed successfully.',
-      })
-    } catch (error) {
-      showToast({ kind: 'error', title: t('common.error'), message: errorMessage(error) })
-    } finally {
-      setResubscribing(false)
-    }
-  }
-
   async function openItem(item: NotificationRow) {
     if (!user) return
     if (!item.read_at) {
@@ -178,13 +150,7 @@ export function NotificationCenter() {
         </button>)}
       </div>
       <div style={{ padding: '.75rem', borderTop: '1px solid #e2e8f0' }}>
-        <button
-          type="button"
-          className="button button-secondary"
-          style={{ width: '100%' }}
-          disabled={resubscribing}
-          onClick={() => void resubscribePush()}
-        >{resubscribing ? (language === 'ar' ? 'جاري إعادة الاشتراك…' : 'Re-subscribing…') : (language === 'ar' ? 'إعادة الاشتراك في الإشعارات' : 'Re-subscribe to notifications')}</button>
+        <PushResubscribeAction fullWidth />
       </div>
     </div>}
   </div>
