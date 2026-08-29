@@ -98,14 +98,18 @@ export function NotificationCenter() {
   }
 
   async function openItem(item: NotificationRow) {
-    if (item.read_at || !user) return
-    const now = new Date().toISOString()
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read_at: now })
-      .eq('id', item.id)
-      .eq('user_id', user.id)
-    if (!error) setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: now } : entry))
+    if (!user) return
+    if (!item.read_at) {
+      const now = new Date().toISOString()
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read_at: now })
+        .eq('id', item.id)
+        .eq('user_id', user.id)
+      if (!error) setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: now } : entry))
+    }
+    setOpen(false)
+    navigate(item.href || '/notifications')
   }
 
   function handleTrigger() {
