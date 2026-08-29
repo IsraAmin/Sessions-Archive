@@ -39,7 +39,7 @@
 .notification-reminder-row { background: #f8fafc; }
 .notification-reminder-select { min-width: 132px; padding: .6rem .7rem; border: 1px solid #cbd5e1; border-radius: 12px; background: #fff; color: #172554; font: inherit; font-weight: 700; }
 
-.pwa-install { position: fixed; inset-inline: 1rem; bottom: 1rem; z-index: 40; display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: .8rem; align-items: center; max-width: 680px; margin-inline: auto; padding: .85rem 3rem .85rem .85rem; border: 1px solid #cbd5e1; border-radius: 18px; background: rgba(255,255,255,.98); box-shadow: 0 18px 50px rgba(15,23,42,.16); backdrop-filter: blur(12px); }
+.pwa-install { position: fixed; inset-inline: 1rem; bottom: 1rem; z-index: 80; display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: .8rem; align-items: center; max-width: 680px; margin-inline: auto; padding: .85rem 3rem .85rem .85rem; border: 1px solid #cbd5e1; border-radius: 18px; background: rgba(255,255,255,.98); box-shadow: 0 18px 50px rgba(15,23,42,.16); backdrop-filter: blur(12px); }
 .pwa-install img { width: 46px; height: 46px; border-radius: 12px; }
 .pwa-install div { min-width: 0; }
 .pwa-install strong, .pwa-install span { display: block; }
