@@ -5,6 +5,8 @@ import { useUi } from '../hooks/useUi'
 import { supabase } from '../lib/supabase'
 import { Icon } from './Icon'
 
+const PHONE_QUERY = '(max-width: 680px)'
+
 type NotificationRow = {
   id: string
   user_id: string
@@ -105,10 +107,21 @@ export function NotificationCenter() {
     if (item.href?.startsWith('/') && !item.href.startsWith('//')) navigate(item.href)
   }
 
+  function handleTrigger() {
+    const isPhone = window.matchMedia(PHONE_QUERY).matches
+    if (isPhone && !loading && unread === 0) {
+      setOpen(false)
+      navigate('/notifications')
+      return
+    }
+    setOpen((value) => !value)
+    if (!open) void load()
+  }
+
   if (!user) return null
 
   return <div className="notification-center" ref={rootRef}>
-    <button className={`top-control notification-trigger ${open ? 'is-active' : ''}`} aria-label={t('notifications.open')} aria-expanded={open} onClick={() => { setOpen((value) => !value); if (!open) void load() }}>
+    <button className={`top-control notification-trigger ${open ? 'is-active' : ''}`} aria-label={t('notifications.open')} aria-expanded={open} onClick={handleTrigger}>
       <Icon name="bell" />
       {unread > 0 && <span className="notification-badge">{unread > 99 ? '99+' : unread}</span>}
     </button>
