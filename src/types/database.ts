@@ -74,6 +74,12 @@ export type Database = {
         Update: { id?: string; user_id?: string; type?: string; title_ar?: string; title_en?: string; body_ar?: string; body_en?: string; href?: string | null; dedupe_key?: string | null; read_at?: string | null; created_at?: string }
         Relationships: []
       }
+      notification_preferences: {
+        Row: { user_id: string; push_enabled: boolean; session_reminders: boolean; session_updates: boolean; new_content: boolean; announcements: boolean; reminder_minutes: number; language: string; created_at: string; updated_at: string }
+        Insert: { user_id: string; push_enabled?: boolean; session_reminders?: boolean; session_updates?: boolean; new_content?: boolean; announcements?: boolean; reminder_minutes?: number; language?: string; created_at?: string; updated_at?: string }
+        Update: { user_id?: string; push_enabled?: boolean; session_reminders?: boolean; session_updates?: boolean; new_content?: boolean; announcements?: boolean; reminder_minutes?: number; language?: string; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
       video_progress: {
         Row: { id: string; user_id: string; video_id: string; seconds: number; duration: number; percent: number; completed_at: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; video_id: string; seconds?: number; duration?: number; percent?: number; completed_at?: string | null; created_at?: string; updated_at?: string }
