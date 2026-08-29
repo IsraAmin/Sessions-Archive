@@ -117,7 +117,6 @@ export function NotificationsPage() {
             <span>{ar ? item.body_ar : item.body_en}</span>
             <time dateTime={item.created_at}>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at))}</time>
           </span>
-          {canOpen && <span className="mobile-notification-open" aria-hidden="true">›</span>}
         </button>
       })}
     </div>
