@@ -28,12 +28,13 @@ export function SessionSpeakersManager() {
   const [selected, setSelected] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const sessionsTable = supabase.from('sessions') as any
 
   async function load() {
     setLoading(true)
     try {
       const [sessionResult, speakerResult] = await Promise.all([
-        supabase.from('sessions').select('id,title,speaker_id,speaker_ids').order('starts_at', { ascending: false }),
+        sessionsTable.select('id,title,speaker_id,speaker_ids').order('starts_at', { ascending: false }),
         supabase.from('speakers').select('id,name,organization').order('name'),
       ])
       if (sessionResult.error) throw sessionResult.error
@@ -71,7 +72,7 @@ export function SessionSpeakersManager() {
     if (!sessionId) return
     setSaving(true)
     try {
-      const { error } = await supabase.from('sessions').update({
+      const { error } = await sessionsTable.update({
         speaker_ids: selected,
         speaker_id: selected[0] ?? null,
       }).eq('id', sessionId)
