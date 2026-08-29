@@ -61,6 +61,7 @@ export type SessionVideo = {
   session_id: string
   title: string
   youtube_video_id: string
+  part_number: number
   position: number
   created_at: string
   updated_at: string
