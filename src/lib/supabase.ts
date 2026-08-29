@@ -21,6 +21,18 @@ export const supabase = createClient<Database>(supabaseUrl, supabasePublishableK
   },
 })
 
+// Public catalog reads must not depend on the signed-in user's access token.
+// This keeps sessions/categories available while an authenticated session is
+// refreshing and prevents a transient JWT timing error from hiding public data.
+export const publicSupabase = createClient<Database>(supabaseUrl, supabasePublishableKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    skipAutoInitialize: true,
+  },
+})
+
 export function publicStorageUrl(bucket: string, path: string | null) {
   if (!path) return null
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
