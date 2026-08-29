@@ -89,13 +89,17 @@ export function NotificationCenter() {
     return () => document.removeEventListener('mousedown', closeOutside)
   }, [open])
 
-  const unread = useMemo(() => items.filter((item) => !item.read_at).length, [items])
+  const unreadItems = useMemo(() => items.filter((item) => !item.read_at), [items])
+  const unread = unreadItems.length
 
   async function markAllRead() {
     if (!user || !unread) return
     const now = new Date().toISOString()
     const { error } = await supabase.from('notifications').update({ read_at: now }).eq('user_id', user.id).is('read_at', null)
-    if (!error) setItems((current) => current.map((item) => ({ ...item, read_at: item.read_at ?? now })))
+    if (!error) {
+      setItems((current) => current.map((item) => ({ ...item, read_at: item.read_at ?? now })))
+      setOpen(false)
+    }
   }
 
   async function openItem(item: NotificationRow) {
@@ -138,9 +142,9 @@ export function NotificationCenter() {
         {unread > 0 && <button className="text-action" onClick={() => void markAllRead()}>{t('notifications.markAll')}</button>}
       </div>
       <div className="notification-list">
-        {loading && !items.length && <div className="notification-empty">{t('common.loading')}</div>}
-        {!loading && !items.length && <div className="notification-empty"><Icon name="bell" /><strong>{t('notifications.empty')}</strong></div>}
-        {items.map((item) => <button key={item.id} className={`notification-item ${item.read_at ? '' : 'is-unread'}`} onClick={() => void openItem(item)}>
+        {loading && !unreadItems.length && <div className="notification-empty">{t('common.loading')}</div>}
+        {!loading && !unreadItems.length && <div className="notification-empty"><Icon name="bell" /><strong>{language === 'ar' ? 'لا توجد إشعارات جديدة' : 'No new notifications'}</strong></div>}
+        {unreadItems.map((item) => <button key={item.id} className="notification-item is-unread" onClick={() => void openItem(item)}>
           <span className="notification-dot" />
           <span className="notification-copy">
             <strong>{language === 'ar' ? item.title_ar : item.title_en}</strong>
