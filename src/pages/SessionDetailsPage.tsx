@@ -33,7 +33,7 @@ export function SessionDetailsPage() {
   async function load() {
     if (!id) return
     setMessage('')
-    const { data, error } = await supabase.from('sessions').select('*, category:categories(*), speaker:speakers(*), series:session_series(*)').eq('id', id).single()
+    const { data, error } = await supabase.from('sessions').select('*, category:categories(*), speaker:speakers!sessions_speaker_id_fkey(*), series:session_series(*)').eq('id', id).single()
     if (error) { setMessage(errorMessage(error)); return }
     const current = data as unknown as Session & { series?: SessionSeries | null }
 
