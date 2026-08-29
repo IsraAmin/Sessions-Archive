@@ -1,5 +1,5 @@
-const APP_CACHE = 'sessions-archive-app-v19'
-const RUNTIME_CACHE = 'sessions-archive-runtime-v19'
+const APP_CACHE = 'archive-repeat-app-v20'
+const RUNTIME_CACHE = 'archive-repeat-runtime-v20'
 const BASE_URL = new URL(self.registration.scope)
 const BASE_PATH = BASE_URL.pathname.endsWith('/') ? BASE_URL.pathname : `${BASE_URL.pathname}/`
 const APP_SHELL = [
@@ -57,7 +57,7 @@ function appTarget(path) {
 }
 
 self.addEventListener('push', (event) => {
-  let payload = { title: 'Sessions Archive', body: 'لديك تحديث جديد', url: '/' }
+  let payload = { title: 'Archive Repeat', body: 'لديك تحديث جديد', url: '/' }
   try { if (event.data) payload = { ...payload, ...event.data.json() } }
   catch { if (event.data) payload.body = event.data.text() }
   const target = appTarget(payload.url)
@@ -66,7 +66,7 @@ self.addEventListener('push', (event) => {
     icon: `${BASE_PATH}icon-192.png?v=6`,
     badge: `${BASE_PATH}icon-192.png?v=6`,
     data: { url: target },
-    tag: payload.url || 'sessions-archive-update',
+    tag: payload.url || 'archive-repeat-update',
   }))
 })
 
