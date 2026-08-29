@@ -1,13 +1,13 @@
-const APP_CACHE = 'sessions-archive-app-v17'
-const RUNTIME_CACHE = 'sessions-archive-runtime-v17'
+const APP_CACHE = 'archive-repeat-app-v18'
+const RUNTIME_CACHE = 'archive-repeat-runtime-v18'
 const BASE_URL = new URL(self.registration.scope)
 const BASE_PATH = BASE_URL.pathname.endsWith('/') ? BASE_URL.pathname : `${BASE_URL.pathname}/`
 const APP_SHELL = [
   BASE_PATH,
-  `${BASE_PATH}manifest.webmanifest?v=4`,
-  `${BASE_PATH}icon-192.png?v=4`,
-  `${BASE_PATH}icon-512.svg?v=4`,
-  `${BASE_PATH}favicon-32x32.png?v=4`,
+  `${BASE_PATH}manifest.webmanifest?v=5`,
+  `${BASE_PATH}icon-192.png?v=5`,
+  `${BASE_PATH}icon-512.svg?v=5`,
+  `${BASE_PATH}favicon-32x32.png?v=5`,
 ]
 
 self.addEventListener('install', (event) => {
@@ -57,16 +57,16 @@ function appTarget(path) {
 }
 
 self.addEventListener('push', (event) => {
-  let payload = { title: 'Sessions Archive', body: 'لديك تحديث جديد', url: '/' }
+  let payload = { title: 'Archive Repeat', body: 'لديك تحديث جديد', url: '/' }
   try { if (event.data) payload = { ...payload, ...event.data.json() } }
   catch { if (event.data) payload.body = event.data.text() }
   const target = appTarget(payload.url)
   event.waitUntil(self.registration.showNotification(payload.title, {
     body: payload.body,
-    icon: `${BASE_PATH}icon-192.png?v=4`,
-    badge: `${BASE_PATH}icon-192.png?v=4`,
+    icon: `${BASE_PATH}icon-192.png?v=5`,
+    badge: `${BASE_PATH}icon-192.png?v=5`,
     data: { url: target },
-    tag: payload.url || 'sessions-archive-update',
+    tag: payload.url || 'archive-repeat-update',
   }))
 })
 
