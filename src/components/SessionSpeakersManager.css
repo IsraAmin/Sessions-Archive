@@ -1,0 +1,26 @@
+.session-speakers-manager { padding: clamp(18px, 3vw, 28px); }
+.session-speakers-manager-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.session-speakers-manager-head h2 { margin: 4px 0 6px; }
+.session-speakers-manager-head p { margin: 0; color: var(--v2-muted); line-height: 1.7; max-width: 720px; }
+.speaker-selection-count { flex: 0 0 auto; min-width: 48px; height: 48px; padding-inline: 12px; display: grid; place-items: center; border-radius: 15px; font-size: 1rem; font-weight: 850; color: var(--v2-brand); background: var(--v2-brand-soft); border: 1px solid color-mix(in srgb, var(--v2-brand) 18%, var(--v2-border)); }
+.session-speaker-session-select { max-width: 520px; margin-bottom: 16px; }
+.session-speaker-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.session-speaker-option { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: center; min-width: 0; padding: 13px; border: 1px solid var(--v2-border); border-radius: 15px; background: var(--v2-surface-2); cursor: pointer; transition: border-color .16s ease, background .16s ease, transform .16s ease; }
+.session-speaker-option:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--v2-brand) 30%, var(--v2-border)); }
+.session-speaker-option.is-selected { border-color: color-mix(in srgb, var(--v2-brand) 48%, var(--v2-border)); background: color-mix(in srgb, var(--v2-brand-soft) 70%, var(--v2-surface)); }
+.session-speaker-option input { position: absolute; opacity: 0; pointer-events: none; }
+.session-speaker-check { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 9px; border: 1px solid var(--v2-border); background: var(--v2-surface); color: transparent; font-weight: 900; }
+.session-speaker-option.is-selected .session-speaker-check { color: #fff; background: var(--v2-brand); border-color: var(--v2-brand); }
+.session-speaker-copy { min-width: 0; display: grid; gap: 3px; }
+.session-speaker-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .84rem; }
+.session-speaker-copy small { color: var(--v2-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .7rem; }
+.session-speakers-manager-actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--v2-border); }
+.session-speakers-manager-actions > span { color: var(--v2-muted); font-size: .76rem; font-weight: 700; }
+
+@media (max-width: 900px) { .session-speaker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 580px) {
+  .session-speakers-manager-head { align-items: center; }
+  .session-speaker-grid { grid-template-columns: 1fr; }
+  .session-speakers-manager-actions { align-items: stretch; flex-direction: column; }
+  .session-speakers-manager-actions .button { width: 100%; }
+}
