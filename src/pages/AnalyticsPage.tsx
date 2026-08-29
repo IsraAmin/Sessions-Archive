@@ -12,11 +12,14 @@ type RegistrationRow = { user_id: string; session_id: string; attendance_status:
 type FeedbackRow = { user_id: string; session_id: string; rating: number }
 type ViewRow = { user_id: string; session_id: string }
 type ProgressRow = { user_id: string; video_id: string; video: { session_id: string } | null }
+type VisitStats = { unique_visitors: number; total_visits: number; today_visitors: number; today_visits: number }
 
 type Ranked = { id: string; label: string; value: number }
 function rank(counts: Map<string, number>, labels: Map<string, string>, limit = 7): Ranked[] {
   return [...counts.entries()].map(([id, value]) => ({ id, label: labels.get(id) ?? id, value })).sort((a, b) => b.value - a.value).slice(0, limit)
 }
+
+const EMPTY_VISIT_STATS: VisitStats = { unique_visitors: 0, total_visits: 0, today_visitors: 0, today_visits: 0 }
 
 export function AnalyticsPage() {
   const { language, t } = useUi()
@@ -28,9 +31,11 @@ export function AnalyticsPage() {
   const [feedback, setFeedback] = useState<FeedbackRow[]>([])
   const [views, setViews] = useState<ViewRow[]>([])
   const [progress, setProgress] = useState<ProgressRow[]>([])
+  const [visitStats, setVisitStats] = useState<VisitStats>(EMPTY_VISIT_STATS)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const visitStatsQuery = (supabase as any).rpc('admin_platform_visit_stats')
     void Promise.all([
       supabase.from('sessions').select('id,title,category_id,speaker_id'),
       supabase.from('categories').select('id,name'),
@@ -40,7 +45,8 @@ export function AnalyticsPage() {
       supabase.from('feedback').select('user_id,session_id,rating'),
       supabase.from('session_views').select('user_id,session_id'),
       supabase.from('video_progress').select('user_id,video_id,video:session_videos(session_id)'),
-    ]).then(([sessionResult, categoryResult, speakerResult, profileResult, registrationResult, feedbackResult, viewResult, progressResult]) => {
+      visitStatsQuery,
+    ]).then(([sessionResult, categoryResult, speakerResult, profileResult, registrationResult, feedbackResult, viewResult, progressResult, visitStatsResult]) => {
       setSessions((sessionResult.data ?? []) as SessionRow[])
       setCategories((categoryResult.data ?? []) as CategoryRow[])
       setSpeakers((speakerResult.data ?? []) as SpeakerRow[])
@@ -49,6 +55,16 @@ export function AnalyticsPage() {
       setFeedback((feedbackResult.data ?? []) as FeedbackRow[])
       setViews((viewResult.data ?? []) as ViewRow[])
       setProgress((progressResult.data ?? []) as unknown as ProgressRow[])
+
+      const stats = Array.isArray(visitStatsResult.data) ? visitStatsResult.data[0] : visitStatsResult.data
+      if (stats) {
+        setVisitStats({
+          unique_visitors: Number(stats.unique_visitors ?? 0),
+          total_visits: Number(stats.total_visits ?? 0),
+          today_visitors: Number(stats.today_visitors ?? 0),
+          today_visits: Number(stats.today_visits ?? 0),
+        })
+      }
       setLoading(false)
     })
   }, [])
@@ -104,16 +120,24 @@ export function AnalyticsPage() {
   const maxSessions = Math.max(1, ...report.sessionRanking.map((item) => item.value))
   const maxCategories = Math.max(1, ...report.categoryRanking.map((item) => item.value))
   const maxSpeakers = Math.max(1, ...report.speakerRanking.map((item) => item.value))
+  const ar = language === 'ar'
 
   return <section className="analytics-page">
-    <div className="section-heading analytics-title"><div><div className="eyebrow">{t('admin.analytics')}</div><h1>{language === 'ar' ? 'أداء المنصة' : 'Platform performance'}</h1><p>{language === 'ar' ? 'من مشاهدة صفحة السيشن إلى التسجيل والحضور، مع أكثر المحتوى جذبًا والطلاب نشاطًا.' : 'From session views to registration and attendance, plus the content and students driving engagement.'}</p></div><Icon name="chart" /></div>
+    <div className="section-heading analytics-title"><div><div className="eyebrow">{t('admin.analytics')}</div><h1>{ar ? 'أداء المنصة' : 'Platform performance'}</h1><p>{ar ? 'الزوار الحقيقيون للمنصة، ثم التفاعل مع السيشنات والتسجيل والحضور.' : 'Actual platform visitors, followed by session engagement, registrations, and attendance.'}</p></div><Icon name="chart" /></div>
+
+    <div className="analytics-summary-grid">
+      <div className="panel analytics-summary-card"><span>{ar ? 'إجمالي الزوار' : 'Unique visitors'}</span><strong>{visitStats.unique_visitors}</strong></div>
+      <div className="panel analytics-summary-card"><span>{ar ? 'إجمالي الزيارات' : 'Total visits'}</span><strong>{visitStats.total_visits}</strong></div>
+      <div className="panel analytics-summary-card"><span>{ar ? 'زوار اليوم' : 'Visitors today'}</span><strong>{visitStats.today_visitors}</strong></div>
+      <div className="panel analytics-summary-card"><span>{ar ? 'زيارات اليوم' : 'Visits today'}</span><strong>{visitStats.today_visits}</strong></div>
+    </div>
 
     <div className="funnel-panel panel">
-      <div className="funnel-stage"><span>{t('admin.views')}</span><strong>{report.uniqueViews}</strong><small>100%</small></div>
+      <div className="funnel-stage"><span>{ar ? 'مشاهدات السيشنات' : 'Session views'}</span><strong>{report.uniqueViews}</strong><small>100%</small></div>
       <div className="funnel-arrow">→</div>
       <div className="funnel-stage primary"><span>{t('admin.registrations')}</span><strong>{report.totalRegistrations}</strong><small>{Math.round(report.viewToRegistration)}%</small></div>
       <div className="funnel-arrow">→</div>
-      <div className="funnel-stage success"><span>{language === 'ar' ? 'الحضور' : 'Attendance'}</span><strong>{report.attended}</strong><small>{Math.round(report.registrationToAttendance)}%</small></div>
+      <div className="funnel-stage success"><span>{ar ? 'الحضور' : 'Attendance'}</span><strong>{report.attended}</strong><small>{Math.round(report.registrationToAttendance)}%</small></div>
     </div>
 
     <div className="analytics-summary-grid">
@@ -124,15 +148,15 @@ export function AnalyticsPage() {
     </div>
 
     <section className="panel analytics-detail-panel">
-      <div className="admin-section-heading"><div><span className="eyebrow">{t('admin.sessions')}</span><h2>{language === 'ar' ? 'التسجيلات لكل سيشن' : 'Registrations by session'}</h2></div></div>
+      <div className="admin-section-heading"><div><span className="eyebrow">{t('admin.sessions')}</span><h2>{ar ? 'التسجيلات لكل سيشن' : 'Registrations by session'}</h2></div></div>
       <div className="session-analytics-table">
         {report.sessionRanking.map((item) => <Link key={item.id} to={`/sessions/${item.id}`} className="session-analytics-row">
           <span className="session-analytics-title">{item.label}</span>
           <span className="session-analytics-bar"><i style={{ width: `${item.value / maxSessions * 100}%` }} /></span>
-          <span className="session-analytics-value"><strong>{item.value}</strong><small>{language === 'ar' ? 'تسجيل' : 'registrations'}</small></span>
-          <span className="session-analytics-views"><strong>{report.viewsBySession.get(item.id) ?? 0}</strong><small>{language === 'ar' ? 'مشاهدة' : 'views'}</small></span>
+          <span className="session-analytics-value"><strong>{item.value}</strong><small>{ar ? 'تسجيل' : 'registrations'}</small></span>
+          <span className="session-analytics-views"><strong>{report.viewsBySession.get(item.id) ?? 0}</strong><small>{ar ? 'مشاهدة' : 'views'}</small></span>
         </Link>)}
-        {!report.sessionRanking.length && <div className="empty-state">{language === 'ar' ? 'ستظهر المقارنة بعد أول تسجيل في سيشن.' : 'Session comparisons will appear after the first registration.'}</div>}
+        {!report.sessionRanking.length && <div className="empty-state">{ar ? 'ستظهر المقارنة بعد أول تسجيل في سيشن.' : 'Session comparisons will appear after the first registration.'}</div>}
       </div>
     </section>
 
