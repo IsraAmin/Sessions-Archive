@@ -17,7 +17,7 @@ export function Layout() {
   const [logoutBusy, setLogoutBusy] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const logoUrl = `${import.meta.env.BASE_URL}icon-192.png?v=5`
+  const logoUrl = `${import.meta.env.BASE_URL}icon-192.png?v=6`
   const ar = language === 'ar'
   const savedLabel = ar ? 'المحفوظات' : 'Saved'
 
@@ -48,7 +48,7 @@ export function Layout() {
     {sidebarOpen && <button className="sidebar-scrim" aria-label={t('common.close')} onClick={() => setSidebarOpen(false)} />}
     <aside className={`app-sidebar ${sidebarOpen ? 'is-open' : ''}`}>
       <div className="sidebar-brand">
-        <NavLink to="/" className="brand-lockup"><span className="brand-mark"><img src={logoUrl} alt="" aria-hidden="true" /></span><span><strong>Archive</strong><small>Repeat</small></span></NavLink>
+        <NavLink to="/" className="brand-lockup"><span className="brand-mark"><img src={logoUrl} alt="" aria-hidden="true" /></span><span><strong>Sessions</strong><small>Archive</small></span></NavLink>
         <button className="sidebar-close" aria-label={t('common.close')} onClick={() => setSidebarOpen(false)}><Icon name="close" /></button>
       </div>
       <nav className="sidebar-nav" aria-label={t('nav.explore')}>
@@ -65,7 +65,7 @@ export function Layout() {
 
     <div className="workspace-main">
       <header className="workspace-topbar">
-        <div className="topbar-start"><div className="mobile-brand"><img src={logoUrl} alt="" aria-hidden="true" /><span>Archive Repeat</span></div></div>
+        <div className="topbar-start"><div className="mobile-brand"><img src={logoUrl} alt="" aria-hidden="true" /><span>Sessions Archive</span></div></div>
         <div className="topbar-controls">
           {user && <NotificationCenter />}
           <button className="top-control control-with-label" onClick={toggleLanguage} title={t('common.language')}><Icon name="language" /><span>{t('common.language')}</span></button>
