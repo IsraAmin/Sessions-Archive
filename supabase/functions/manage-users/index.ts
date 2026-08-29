@@ -101,18 +101,38 @@ export default {
     if (targetError || !targetData.user) return Response.json({ error: 'User not found' }, { status: 404 })
     if (targetData.user.app_metadata?.super_admin === true) return Response.json({ error: 'Super admin accounts cannot be changed here' }, { status: 403 })
 
+    const target = targetData.user
+    const targetLabel = target.email || target.phone || target.id
+
+    async function recordActivity(activityAction: 'user_role_changed' | 'user_banned' | 'user_unbanned', details: Record<string, unknown> = {}) {
+      const { error } = await ctx.supabaseAdmin
+        .from('admin_activity_log')
+        .insert({
+          actor_user_id: caller.id,
+          action: activityAction,
+          entity_type: 'user',
+          entity_id: target.id,
+          entity_label: targetLabel,
+          details,
+        })
+      if (error) console.error('Could not record admin user activity', error)
+    }
+
     if (action === 'set_role') {
       if (!callerIsSuperAdmin) return Response.json({ error: 'Super admin access required for role changes' }, { status: 403 })
       if (body.role !== 'admin' && body.role !== 'student') return Response.json({ error: 'Invalid role' }, { status: 400 })
-      const nextMetadata = { ...targetData.user.app_metadata, role: body.role }
+      const previousRole = target.app_metadata?.role === 'admin' ? 'admin' : 'student'
+      const nextMetadata = { ...target.app_metadata, role: body.role }
       const { error } = await ctx.supabaseAdmin.auth.admin.updateUserById(body.user_id, { app_metadata: nextMetadata })
       if (error) return Response.json({ error: error.message }, { status: 500 })
+      await recordActivity('user_role_changed', { previous_role: previousRole, new_role: body.role })
       return Response.json({ ok: true })
     }
 
     if (action === 'ban' || action === 'unban') {
       const { error } = await ctx.supabaseAdmin.auth.admin.updateUserById(body.user_id, { ban_duration: action === 'ban' ? '876000h' : 'none' })
       if (error) return Response.json({ error: error.message }, { status: 500 })
+      await recordActivity(action === 'ban' ? 'user_banned' : 'user_unbanned')
       return Response.json({ ok: true })
     }
 
