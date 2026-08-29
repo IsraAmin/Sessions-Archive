@@ -1,0 +1,103 @@
+.mobile-notifications-page { display: none; }
+
+@media (max-width: 680px) {
+  .mobile-notifications-page {
+    display: block;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .mobile-notifications-head {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    margin-bottom: 18px;
+  }
+
+  .mobile-notifications-icon {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--v2-brand) 24%, var(--v2-border));
+    border-radius: 15px;
+    background: var(--v2-brand-soft);
+    color: var(--v2-brand);
+  }
+
+  .mobile-notifications-icon svg { width: 22px; height: 22px; }
+  .mobile-notifications-head h1 { margin: 2px 0 5px; font-size: clamp(25px, 8vw, 34px); letter-spacing: -.035em; }
+  .mobile-notifications-head p { margin: 0; color: var(--v2-muted); font-size: 12px; line-height: 1.65; }
+
+  .mobile-notifications-list {
+    overflow: hidden;
+    border: 1px solid var(--v2-border);
+    border-radius: 18px;
+    background: var(--v2-surface);
+    box-shadow: var(--v2-shadow-soft);
+  }
+
+  .mobile-notification-row {
+    width: 100%;
+    min-height: 104px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 22px;
+    gap: 12px;
+    align-items: center;
+    padding: 16px;
+    border: 0;
+    border-bottom: 1px solid var(--v2-border);
+    background: var(--v2-surface);
+    color: var(--v2-text);
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .mobile-notification-row:last-child { border-bottom: 0; }
+  .mobile-notification-row:not(:disabled):active { background: var(--v2-surface-2); }
+  .mobile-notification-row:disabled { cursor: default; opacity: 1; }
+
+  .mobile-notification-row-copy { min-width: 0; display: grid; gap: 5px; }
+  .mobile-notification-row-copy strong { font-size: 13px; line-height: 1.5; }
+  .mobile-notification-row-copy > span { color: var(--v2-muted); font-size: 12px; line-height: 1.65; }
+  .mobile-notification-row-copy time { color: color-mix(in srgb, var(--v2-muted) 78%, transparent); font-size: 10px; }
+
+  .mobile-notification-open {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--v2-brand);
+    background: var(--v2-brand-soft);
+    font-size: 21px;
+    line-height: 1;
+  }
+  [dir='rtl'] .mobile-notification-open { transform: scaleX(-1); }
+
+  .mobile-notifications-state {
+    min-height: 150px;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    color: var(--v2-muted);
+    text-align: center;
+    font-size: 12px;
+  }
+
+  .mobile-notifications-empty { align-content: center; gap: 8px; }
+  .mobile-notifications-empty svg { width: 28px; opacity: .55; }
+  .mobile-notifications-empty strong { color: var(--v2-text); font-size: 13px; }
+  .mobile-notifications-empty span { font-size: 11px; }
+
+  .mobile-notifications-more {
+    width: 100%;
+    margin-top: 12px;
+    min-height: 44px;
+  }
+}
+
+@media (min-width: 681px) {
+  .mobile-notifications-page { display: none !important; }
+}
