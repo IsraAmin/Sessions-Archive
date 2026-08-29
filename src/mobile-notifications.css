@@ -41,10 +41,7 @@
   .mobile-notification-row {
     width: 100%;
     min-height: 104px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 22px;
-    gap: 12px;
-    align-items: center;
+    display: block;
     padding: 16px;
     border: 0;
     border-bottom: 1px solid var(--v2-border);
@@ -62,19 +59,6 @@
   .mobile-notification-row-copy strong { font-size: 13px; line-height: 1.5; }
   .mobile-notification-row-copy > span { color: var(--v2-muted); font-size: 12px; line-height: 1.65; }
   .mobile-notification-row-copy time { color: color-mix(in srgb, var(--v2-muted) 78%, transparent); font-size: 10px; }
-
-  .mobile-notification-open {
-    width: 22px;
-    height: 22px;
-    display: grid;
-    place-items: center;
-    border-radius: 999px;
-    color: var(--v2-brand);
-    background: var(--v2-brand-soft);
-    font-size: 21px;
-    line-height: 1;
-  }
-  [dir='rtl'] .mobile-notification-open { transform: scaleX(-1); }
 
   .mobile-notifications-state {
     min-height: 150px;
