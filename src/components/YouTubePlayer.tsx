@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
 import { supabase } from '../lib/supabase'
+import { GoogleDrivePlayer } from './GoogleDrivePlayer'
 
 interface YTPlayer {
   destroy(): void
@@ -61,10 +62,13 @@ export function YouTubePlayer({ videoId, title, videoDbId, initialProgress }: Pr
   const playerRef = useRef<YTPlayer | null>(null)
   const timerRef = useRef<number | null>(null)
   const [percent, setPercent] = useState(initialProgress?.percent ?? 0)
+  const driveFileId = videoId.startsWith('gdrive:') ? videoId.slice(7) : null
 
   useEffect(() => setPercent(initialProgress?.percent ?? 0), [initialProgress?.percent, videoDbId])
 
   useEffect(() => {
+    if (driveFileId) return
+
     let cancelled = false
     let player: YTPlayer | null = null
 
@@ -117,13 +121,15 @@ export function YouTubePlayer({ videoId, title, videoDbId, initialProgress }: Pr
       playerRef.current = null
       player?.destroy()
     }
-  }, [videoId, videoDbId, user?.id])
+  }, [driveFileId, videoId, videoDbId, user?.id])
 
   function continueWatching() {
     if (!playerRef.current || !initialProgress?.seconds) return
     playerRef.current.seekTo(initialProgress.seconds, true)
     playerRef.current.playVideo()
   }
+
+  if (driveFileId) return <GoogleDrivePlayer fileId={driveFileId} title={title} />
 
   return <div className="youtube-player-shell">
     <div className="youtube-frame" aria-label={title}><div ref={hostRef} /></div>
