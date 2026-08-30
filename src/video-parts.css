@@ -105,6 +105,36 @@
   background: #000;
 }
 
+/* Session details category: make the linked category unmistakable. */
+.details-main > .eyebrow {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  margin: .2rem 0 .7rem;
+  padding: .42rem .7rem;
+  border: 1px solid color-mix(in srgb, var(--v2-brand) 28%, var(--v2-border));
+  border-radius: 999px;
+  background: var(--v2-brand-soft);
+  color: var(--v2-brand);
+  font-size: .76rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+[dir='rtl'] .details-main > .eyebrow::before {
+  content: 'التصنيف:';
+  color: var(--v2-muted);
+  font-weight: 700;
+}
+
+[dir='ltr'] .details-main > .eyebrow::before {
+  content: 'Category:';
+  color: var(--v2-muted);
+  font-weight: 700;
+}
+
 @media (max-width: 640px) {
   .recording-parts-toolbar {
     align-items: stretch;
@@ -119,16 +149,11 @@
     align-self: flex-start;
   }
 
-  .session-recordings .recording-item {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-  }
-
+  .recording-item,
   .session-recordings .youtube-player-shell,
   .session-recordings .google-drive-player-shell {
     width: 92%;
-    max-width: 420px;
+    max-width: 92%;
     min-width: 0;
     margin-inline: auto;
   }
@@ -139,10 +164,15 @@
     max-width: 100%;
     min-width: 0;
     aspect-ratio: 16 / 9;
-    min-height: 0 !important;
+    min-height: 0;
   }
 
   .google-drive-video-frame {
     min-height: 0 !important;
+  }
+
+  .details-main > .eyebrow {
+    margin-top: .1rem;
+    font-size: .72rem;
   }
 }
