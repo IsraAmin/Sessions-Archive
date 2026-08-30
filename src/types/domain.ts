@@ -40,8 +40,8 @@ export type Session = {
   location: string | null
   capacity: number
   cover_path: string | null
-  cover_focus_x: number
-  cover_focus_y: number
+  cover_focus_x?: number
+  cover_focus_y?: number
   status: SessionStatus
   created_at: string
   category?: Category | null
