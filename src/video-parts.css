@@ -149,13 +149,14 @@
     align-self: flex-start;
   }
 
+  /* Restore the original mobile presentation: the recording fills the card width. */
   .recording-item,
   .session-recordings .youtube-player-shell,
   .session-recordings .google-drive-player-shell {
-    width: 92%;
-    max-width: 92%;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
-    margin-inline: auto;
+    margin-inline: 0;
   }
 
   .session-recordings .youtube-frame,
