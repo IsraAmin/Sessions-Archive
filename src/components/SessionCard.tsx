@@ -11,9 +11,11 @@ export function SessionCard({ session }: { session: Session | SearchSession }) {
   const speaker = 'speaker_name' in session ? session.speaker_name : session.speaker?.name
   const rating = 'average_rating' in session ? Number(session.average_rating || 0) : 0
   const ratingCount = 'rating_count' in session ? Number(session.rating_count || 0) : 0
+  const coverFocusX = Number.isFinite(Number(session.cover_focus_x)) ? Number(session.cover_focus_x) : 50
+  const coverFocusY = Number.isFinite(Number(session.cover_focus_y)) ? Number(session.cover_focus_y) : 50
 
   return <article className="session-card session-card-v2">
-    <div className="session-cover" style={image ? { backgroundImage: `url(${image})` } : undefined}>{!image && <span>Session</span>}</div>
+    <div className="session-cover" style={image ? { backgroundImage: `url(${image})`, backgroundPosition: `${coverFocusX}% ${coverFocusY}%` } : undefined}>{!image && <span>Session</span>}</div>
     <div className="session-card-body">
       <div className="session-card-topline"><div className="eyebrow">{category || t('sessions.general')}</div>{ratingCount > 0 && <div className="session-card-rating" aria-label={`${language === 'ar' ? 'متوسط التقييم' : 'Average rating'} ${rating.toFixed(1)} ${language === 'ar' ? 'من 5' : 'out of 5'}`}><StarRating value={Math.round(rating)} label={language === 'ar' ? 'متوسط التقييم' : 'Average rating'} readOnly /><strong>{rating.toFixed(1)}</strong></div>}</div>
       <h3>{session.title}</h3>
