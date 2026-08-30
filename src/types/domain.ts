@@ -61,6 +61,7 @@ export type SessionVideo = {
   session_id: string
   title: string
   youtube_video_id: string
+  video_provider: 'youtube' | 'google_drive'
   part_number: number
   position: number
   created_at: string
