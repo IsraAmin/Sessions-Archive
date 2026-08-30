@@ -1,0 +1,119 @@
+name: One-time video UI patch
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-video-ui-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch video labels and mobile sizing
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'Expected text not found in {path}: {old[:120]!r}')
+              p.write_text(text.replace(old, new))
+
+          replace(
+              'src/pages/AdminPage.tsx',
+              "if (!videoSessionId || !videoTitle.trim() || !videoId) { fail(new Error(ar ? 'اختاري السيشن واكتبي عنوانًا والصقي رابط YouTube صالحًا.' : 'Choose a session, add a title, and paste a valid YouTube URL.')); return }",
+              "if (!videoSessionId || !videoTitle.trim() || !videoId) { fail(new Error(ar ? 'اختاري السيشن واكتبي عنوانًا والصقي رابط فيديو صالحًا من YouTube أو Google Drive.' : 'Choose a session, add a title, and paste a valid YouTube or Google Drive URL.')); return }",
+          )
+
+          replace(
+              'src/pages/AdminPage.tsx',
+              '''<div className="video-admin-heading"><div><div className="eyebrow">YouTube</div><h2>{t('admin.youtube')}</h2><p>{ar ? 'أضيفي أكثر من رابط لنفس السيشن وحددي لكل فيديو الـPart الخاص به. يمكن أن يحتوي الـPart الواحد على أكثر من فيديو.' : 'Add multiple links to one session and assign each video to a part. A part can contain multiple videos.'}</p></div></div>''',
+              '''<div className="video-admin-heading"><div><div className="eyebrow">{ar ? 'مصدر الفيديو' : 'Video source'}</div><h2>{ar ? 'تسجيلات الفيديو' : 'Video recordings'}</h2><p>{ar ? 'أضيفي رابط YouTube أو Google Drive، وحددي لكل فيديو الـPart الخاص به. يمكن أن يحتوي الـPart الواحد على أكثر من فيديو.' : 'Add a YouTube or Google Drive link and assign each video to its part. A part can contain multiple videos.'}</p></div></div>''',
+          )
+
+          replace(
+              'src/pages/AdminPage.tsx',
+              '''<FormField label={t('admin.youtubeUrl')}><input value={videoUrl} onChange={event => setVideoUrl(event.target.value)} inputMode="url" placeholder="https://youtu.be/..." required /></FormField>''',
+              '''<FormField label={ar ? 'رابط الفيديو' : 'Video URL'} hint={ar ? 'يقبل رابط YouTube أو Google Drive.' : 'Accepts a YouTube or Google Drive link.'}><input value={videoUrl} onChange={event => setVideoUrl(event.target.value)} inputMode="url" placeholder={ar ? 'الصقي رابط YouTube أو Google Drive' : 'Paste a YouTube or Google Drive link'} required /></FormField>''',
+          )
+
+          replace(
+              'src/pages/AdminPage.tsx',
+              "<span>{ar ? 'الصقي رابط YouTube صالحًا لرؤية المعاينة.' : 'Paste a valid YouTube URL to preview it.'}</span>",
+              "<span>{ar ? 'الصقي رابط فيديو صالحًا من YouTube أو Google Drive لرؤية المعاينة.' : 'Paste a valid YouTube or Google Drive URL to preview it.'}</span>",
+          )
+
+          replace(
+              'src/components/AdminEditorDialog.tsx',
+              "if (!videoId) throw new Error(ar ? 'أدخلي رابط YouTube صالحًا.' : 'Enter a valid YouTube URL.')",
+              "if (!videoId) throw new Error(ar ? 'أدخلي رابط فيديو صالحًا من YouTube أو Google Drive.' : 'Enter a valid YouTube or Google Drive URL.')",
+          )
+
+          replace(
+              'src/components/AdminEditorDialog.tsx',
+              '''<Field label={ar ? 'رابط YouTube' : 'YouTube URL'} wide><input name="youtube_url" defaultValue={`https://youtu.be/${activeTarget.item.youtube_video_id}`} required /></Field>''',
+              '''<Field label={ar ? 'رابط الفيديو' : 'Video URL'} hint={ar ? 'يمكن أن يكون من YouTube أو Google Drive.' : 'Can be a YouTube or Google Drive link.'} wide><input name="youtube_url" defaultValue={activeTarget.item.youtube_video_id.startsWith('gdrive:') ? `https://drive.google.com/file/d/${activeTarget.item.youtube_video_id.slice(7)}/view` : `https://youtu.be/${activeTarget.item.youtube_video_id}`} required /></Field>''',
+          )
+
+          replace(
+              'src/video-parts.css',
+              '''.google-drive-video-frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 240px;
+  border: 0;
+  background: #000;
+}''',
+              '''.google-drive-video-frame {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  aspect-ratio: auto;
+  border: 0;
+  background: #000;
+}''',
+          )
+
+          replace(
+              'src/video-parts.css',
+              '''  .google-drive-video-frame {
+    min-height: 190px;
+  }''',
+              '''  .session-recordings .google-drive-player-shell,
+  .session-recordings .google-drive-frame {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .session-recordings .google-drive-frame {
+    aspect-ratio: 16 / 9;
+    min-height: 0;
+  }
+
+  .google-drive-video-frame {
+    min-height: 0 !important;
+  }''',
+          )
+
+          Path('.github/workflows/patch-video-ui-once.yml').unlink()
+          PY
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "Sessions Archive Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix mobile video sizing and generic video links"
+          git push
