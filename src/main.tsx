@@ -15,6 +15,7 @@ import './mobile-dark-v5.css'
 import './mobile-notifications.css'
 import './admin-scroll-lists.css'
 import './video-parts.css'
+import './cover-focus.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
