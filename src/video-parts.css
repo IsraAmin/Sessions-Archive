@@ -83,15 +83,24 @@
 }
 
 .google-drive-frame {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   background: #000;
 }
 
 .google-drive-video-frame {
+  position: absolute;
+  inset: 0;
   display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: 240px;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto;
   border: 0;
   background: #000;
 }
@@ -110,7 +119,21 @@
     align-self: flex-start;
   }
 
+  .recording-item,
+  .session-recordings .youtube-player-shell,
+  .session-recordings .google-drive-player-shell,
+  .session-recordings .google-drive-frame {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .session-recordings .google-drive-frame {
+    aspect-ratio: 16 / 9;
+    min-height: 0;
+  }
+
   .google-drive-video-frame {
-    min-height: 190px;
+    min-height: 0 !important;
   }
 }
