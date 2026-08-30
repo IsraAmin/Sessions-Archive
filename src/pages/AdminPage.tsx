@@ -301,8 +301,9 @@ export function AdminPage() {
       const { error: uploadError } = await supabase.storage.from('session-covers').upload(path, file, { upsert: true })
       if (uploadError) throw uploadError
       await performMutation(() => supabase.from('sessions').update({ cover_path: path }).eq('id', session.id))
-      success(ar ? 'تم تحديث غلاف السيشن.' : 'Session cover updated.')
+      success(ar ? 'تم تحديث غلاف السيشن. اختاري الآن الجزء الذي يظهر في الكارد.' : 'Session cover updated. Now choose the area shown on the card.')
       await load()
+      setEditing({ type: 'session', item: { ...session, cover_path: path } })
     } catch (error) { fail(error) }
   }
 
@@ -577,7 +578,7 @@ export function AdminPage() {
         <FormField label={ar ? 'الحالة' : 'Status'}><select name="status" defaultValue="published"><option value="draft">{ar ? 'مسودة' : 'Draft'}</option><option value="published">{ar ? 'منشور' : 'Published'}</option><option value="cancelled">{ar ? 'ملغي' : 'Cancelled'}</option></select></FormField>
         <button className="button button-primary" disabled={savingContent}>{savingContent ? (ar ? 'جارٍ الحفظ…' : 'Saving…') : t('admin.createSession')}</button>
       </form>
-      <div className="admin-v3-list">{sessions.map(item => <div className="admin-v3-item" key={item.id}><span className="admin-v3-item-copy"><strong>{item.title}</strong><small>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.starts_at))} · {item.status}</small></span><div className="admin-v3-actions"><label className="file-action">{t('admin.cover')}<input type="file" accept="image/*" onChange={event => event.target.files?.[0] && void uploadSessionCover(item, event.target.files[0])} /></label><label className="file-action">{t('admin.resource')}<input type="file" onChange={event => event.target.files?.[0] && void uploadSessionResource(item, event.target.files[0])} /></label><button className="button button-ghost" onClick={() => setEditing({ type: 'session', item })}>{t('common.edit')}</button><button className="button danger" onClick={() => confirmDelete(ar ? 'السيشن' : 'session', item.title, async () => { await run(() => supabase.from('sessions').delete().eq('id', item.id), ar ? 'تم حذف السيشن.' : 'Session deleted.') })}>{t('common.delete')}</button></div></div>)}</div>
+      <div className="admin-v3-list">{sessions.map(item => <div className="admin-v3-item" key={item.id}><span className="admin-v3-item-copy"><strong>{item.title}</strong><small>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.starts_at))} · {item.status}</small></span><div className="admin-v3-actions"><label className="file-action">{ar ? 'رفع الغلاف' : 'Upload cover'}<input type="file" accept="image/*" onChange={event => event.target.files?.[0] && void uploadSessionCover(item, event.target.files[0])} /></label><label className="file-action">{t('admin.resource')}<input type="file" onChange={event => event.target.files?.[0] && void uploadSessionResource(item, event.target.files[0])} /></label><button className="button button-ghost" onClick={() => setEditing({ type: 'session', item })}>{t('common.edit')}</button><button className="button danger" onClick={() => confirmDelete(ar ? 'السيشن' : 'session', item.title, async () => { await run(() => supabase.from('sessions').delete().eq('id', item.id), ar ? 'تم حذف السيشن.' : 'Session deleted.') })}>{t('common.delete')}</button></div></div>)}</div>
     </section>
 
     <section className="panel section-gap video-admin-panel">
