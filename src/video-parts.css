@@ -82,6 +82,20 @@
   box-shadow: 0 5px 18px rgba(15, 23, 42, .12);
 }
 
+.google-drive-frame {
+  overflow: hidden;
+  background: #000;
+}
+
+.google-drive-video-frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 240px;
+  border: 0;
+  background: #000;
+}
+
 @media (max-width: 640px) {
   .recording-parts-toolbar {
     align-items: stretch;
@@ -94,5 +108,9 @@
 
   .recording-single-part {
     align-self: flex-start;
+  }
+
+  .google-drive-video-frame {
+    min-height: 190px;
   }
 }
