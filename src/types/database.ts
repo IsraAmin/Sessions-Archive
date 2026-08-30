@@ -29,9 +29,9 @@ export type Database = {
         Relationships: []
       }
       sessions: {
-        Row: { id: string; title: string; slug: string; description: string; category_id: string | null; speaker_id: string | null; series_id: string | null; series_position: number | null; starts_at: string; ends_at: string | null; location: string | null; capacity: number; cover_path: string | null; status: string; created_by: string | null; created_at: string; updated_at: string }
-        Insert: { id?: string; title: string; slug: string; description: string; category_id?: string | null; speaker_id?: string | null; series_id?: string | null; series_position?: number | null; starts_at: string; ends_at?: string | null; location?: string | null; capacity?: number; cover_path?: string | null; status?: string; created_by?: string | null; created_at?: string; updated_at?: string }
-        Update: { id?: string; title?: string; slug?: string; description?: string; category_id?: string | null; speaker_id?: string | null; series_id?: string | null; series_position?: number | null; starts_at?: string; ends_at?: string | null; location?: string | null; capacity?: number; cover_path?: string | null; status?: string; created_by?: string | null; created_at?: string; updated_at?: string }
+        Row: { id: string; title: string; slug: string; description: string; category_id: string | null; speaker_id: string | null; speaker_ids: string[]; series_id: string | null; series_position: number | null; starts_at: string; ends_at: string | null; location: string | null; capacity: number; cover_path: string | null; status: string; created_by: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; title: string; slug: string; description: string; category_id?: string | null; speaker_id?: string | null; speaker_ids?: string[]; series_id?: string | null; series_position?: number | null; starts_at: string; ends_at?: string | null; location?: string | null; capacity?: number; cover_path?: string | null; status?: string; created_by?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; title?: string; slug?: string; description?: string; category_id?: string | null; speaker_id?: string | null; speaker_ids?: string[]; series_id?: string | null; series_position?: number | null; starts_at?: string; ends_at?: string | null; location?: string | null; capacity?: number; cover_path?: string | null; status?: string; created_by?: string | null; created_at?: string; updated_at?: string }
         Relationships: [
           { foreignKeyName: 'sessions_category_id_fkey'; columns: ['category_id']; isOneToOne: false; referencedRelation: 'categories'; referencedColumns: ['id'] },
           { foreignKeyName: 'sessions_series_id_fkey'; columns: ['series_id']; isOneToOne: false; referencedRelation: 'session_series'; referencedColumns: ['id'] },
@@ -72,9 +72,9 @@ export type Database = {
         Relationships: [{ foreignKeyName: 'session_resources_session_id_fkey'; columns: ['session_id']; isOneToOne: false; referencedRelation: 'sessions'; referencedColumns: ['id'] }]
       }
       session_videos: {
-        Row: { id: string; session_id: string; title: string; youtube_video_id: string; part_number: number; position: number; created_at: string; updated_at: string }
-        Insert: { id?: string; session_id: string; title: string; youtube_video_id: string; part_number?: number; position?: number; created_at?: string; updated_at?: string }
-        Update: { id?: string; session_id?: string; title?: string; youtube_video_id?: string; part_number?: number; position?: number; created_at?: string; updated_at?: string }
+        Row: { id: string; session_id: string; title: string; youtube_video_id: string; video_provider: 'youtube' | 'google_drive'; part_number: number; position: number; created_at: string; updated_at: string }
+        Insert: { id?: string; session_id: string; title: string; youtube_video_id: string; video_provider?: 'youtube' | 'google_drive'; part_number?: number; position?: number; created_at?: string; updated_at?: string }
+        Update: { id?: string; session_id?: string; title?: string; youtube_video_id?: string; video_provider?: 'youtube' | 'google_drive'; part_number?: number; position?: number; created_at?: string; updated_at?: string }
         Relationships: [{ foreignKeyName: 'session_videos_session_id_fkey'; columns: ['session_id']; isOneToOne: false; referencedRelation: 'sessions'; referencedColumns: ['id'] }]
       }
       notifications: {
