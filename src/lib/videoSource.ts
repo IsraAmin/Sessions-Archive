@@ -5,8 +5,17 @@ export type ParsedVideoSource = { provider: VideoProvider; id: string }
 
 const DRIVE_ID = /^[A-Za-z0-9_-]{10,}$/
 
+function cleanDriveId(value: string) {
+  return value.startsWith('gdrive:') ? value.slice(7) : value
+}
+
 export function extractGoogleDriveFileId(value: string) {
   const input = value.trim()
+  if (input.startsWith('gdrive:')) {
+    const id = cleanDriveId(input)
+    return DRIVE_ID.test(id) ? id : null
+  }
+
   try {
     const url = new URL(input)
     const host = url.hostname.replace(/^www\./, '')
@@ -29,21 +38,21 @@ export function extractGoogleDriveFileId(value: string) {
 }
 
 export function parseVideoSource(value: string): ParsedVideoSource | null {
-  const youtubeId = extractYouTubeVideoId(value)
-  if (youtubeId) return { provider: 'youtube', id: youtubeId }
-
   const driveId = extractGoogleDriveFileId(value)
   if (driveId) return { provider: 'google_drive', id: driveId }
+
+  const youtubeId = extractYouTubeVideoId(value)
+  if (youtubeId && !youtubeId.startsWith('gdrive:')) return { provider: 'youtube', id: youtubeId }
 
   return null
 }
 
 export function googleDrivePreviewUrl(fileId: string) {
-  return `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview`
+  return `https://drive.google.com/file/d/${encodeURIComponent(cleanDriveId(fileId))}/preview`
 }
 
 export function videoSourceUrl(provider: VideoProvider | null | undefined, id: string) {
-  return provider === 'google_drive'
-    ? `https://drive.google.com/file/d/${id}/view`
+  return provider === 'google_drive' || id.startsWith('gdrive:')
+    ? `https://drive.google.com/file/d/${cleanDriveId(id)}/view`
     : `https://youtu.be/${id}`
 }
