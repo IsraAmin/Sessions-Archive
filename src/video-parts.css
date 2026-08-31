@@ -83,6 +83,7 @@
 }
 
 .google-drive-frame {
+  --drive-embed-scale: 1;
   position: relative;
   width: 100%;
   max-width: 100%;
@@ -90,19 +91,24 @@
   aspect-ratio: 16 / 9;
   overflow: hidden;
   background: #000;
+  contain: layout paint;
 }
 
 .google-drive-video-frame {
   position: absolute;
-  inset: 0;
+  inset: 0 auto auto 0;
   display: block;
-  width: 100% !important;
-  height: 100% !important;
+  width: calc(100% / var(--drive-embed-scale)) !important;
+  height: calc(100% / var(--drive-embed-scale)) !important;
+  min-width: 0 !important;
   min-height: 0 !important;
+  max-width: none !important;
   max-height: none !important;
   aspect-ratio: auto;
   border: 0;
   background: #000;
+  transform: scale(var(--drive-embed-scale));
+  transform-origin: top left;
 }
 
 /* Session details category: make the linked category unmistakable. */
@@ -133,6 +139,17 @@
   content: 'Category:';
   color: var(--v2-muted);
   font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  /* Google Drive's embedded player can render as if its internal viewport is
+     wider than the visible iframe on phones/tablets. Give the embedded page a
+     slightly larger layout viewport, then scale it back to the exact card size
+     so the whole recording stays visible instead of looking cropped/zoomed. */
+  .session-recordings .google-drive-frame,
+  .video-preview .google-drive-frame {
+    --drive-embed-scale: .88;
+  }
 }
 
 @media (max-width: 640px) {
@@ -168,7 +185,13 @@
     min-height: 0;
   }
 
+  .session-recordings .google-drive-frame,
+  .video-preview .google-drive-frame {
+    --drive-embed-scale: .80;
+  }
+
   .google-drive-video-frame {
+    min-width: 0 !important;
     min-height: 0 !important;
   }
 
