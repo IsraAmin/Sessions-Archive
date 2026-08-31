@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
 import { supabase } from '../lib/supabase'
+import { extractWhatsAppChannelUpdateUrl } from '../lib/youtube'
 import { GoogleDrivePlayer } from './GoogleDrivePlayer'
 
 interface YTPlayer {
@@ -57,17 +58,19 @@ type Props = {
 
 export function YouTubePlayer({ videoId, title, videoDbId, initialProgress }: Props) {
   const { user } = useAuth()
-  const { t } = useUi()
+  const { t, language } = useUi()
   const hostRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<YTPlayer | null>(null)
   const timerRef = useRef<number | null>(null)
   const [percent, setPercent] = useState(initialProgress?.percent ?? 0)
   const driveFileId = videoId.startsWith('gdrive:') ? videoId.slice(7) : null
+  const whatsappUrl = extractWhatsAppChannelUpdateUrl(videoId)
+  const ar = language === 'ar'
 
   useEffect(() => setPercent(initialProgress?.percent ?? 0), [initialProgress?.percent, videoDbId])
 
   useEffect(() => {
-    if (driveFileId) return
+    if (driveFileId || whatsappUrl) return
 
     let cancelled = false
     let player: YTPlayer | null = null
@@ -121,13 +124,26 @@ export function YouTubePlayer({ videoId, title, videoDbId, initialProgress }: Pr
       playerRef.current = null
       player?.destroy()
     }
-  }, [driveFileId, videoId, videoDbId, user?.id])
+  }, [driveFileId, whatsappUrl, videoId, videoDbId, user?.id])
 
   function continueWatching() {
     if (!playerRef.current || !initialProgress?.seconds) return
     playerRef.current.seekTo(initialProgress.seconds, true)
     playerRef.current.playVideo()
   }
+
+  if (whatsappUrl) return <div className="whatsapp-recording-card">
+    <div className="whatsapp-recording-mark" aria-hidden="true">WA</div>
+    <div className="whatsapp-recording-copy">
+      <span className="whatsapp-recording-kicker">{ar ? 'التسجيل موجود في قناة واتساب' : 'Recording shared on WhatsApp'}</span>
+      <strong>{title}</strong>
+      <p>{ar ? 'افتح الرسالة الأصلية في القناة، وستجد رابط التسجيل الموجود داخلها.' : 'Open the original channel update to access the recording link shared inside it.'}</p>
+    </div>
+    <a className="whatsapp-recording-link" href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+      <span>{ar ? 'فتح الرسالة في واتساب' : 'Open in WhatsApp'}</span>
+      <span aria-hidden="true">↗</span>
+    </a>
+  </div>
 
   if (driveFileId) return <GoogleDrivePlayer fileId={driveFileId} title={title} />
 
