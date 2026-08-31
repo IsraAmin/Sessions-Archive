@@ -111,6 +111,83 @@
   transform-origin: top left;
 }
 
+.whatsapp-recording-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, #25d366 28%, var(--v2-border));
+  border-radius: 18px;
+  background: linear-gradient(135deg, color-mix(in srgb, #25d366 8%, var(--v2-surface)), var(--v2-surface));
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .07);
+}
+
+.whatsapp-recording-mark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 15px;
+  background: #25d366;
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 900;
+  letter-spacing: .02em;
+  box-shadow: 0 8px 20px rgba(37, 211, 102, .24);
+}
+
+.whatsapp-recording-copy {
+  min-width: 0;
+  display: grid;
+  gap: .2rem;
+}
+
+.whatsapp-recording-kicker {
+  color: #168847;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.whatsapp-recording-copy strong {
+  color: var(--v2-text);
+  font-size: .96rem;
+  line-height: 1.4;
+}
+
+.whatsapp-recording-copy p {
+  margin: 0;
+  color: var(--v2-muted);
+  font-size: .8rem;
+  line-height: 1.6;
+}
+
+.whatsapp-recording-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  min-height: 42px;
+  padding: .68rem .9rem;
+  border: 1px solid color-mix(in srgb, #2563eb 28%, var(--v2-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, #2563eb 7%, var(--v2-surface));
+  color: #2563eb;
+  font-size: .78rem;
+  font-weight: 850;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.whatsapp-recording-link:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, #2563eb 12%, var(--v2-surface));
+  box-shadow: 0 8px 18px rgba(37, 99, 235, .14);
+}
+
 /* Session details category: make the linked category unmistakable. */
 .details-main > .eyebrow {
   width: fit-content;
@@ -149,6 +226,15 @@
   .session-recordings .google-drive-frame,
   .video-preview .google-drive-frame {
     --drive-embed-scale: .88;
+  }
+
+  .whatsapp-recording-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .whatsapp-recording-link {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 }
 
@@ -193,6 +279,17 @@
   .google-drive-video-frame {
     min-width: 0 !important;
     min-height: 0 !important;
+  }
+
+  .whatsapp-recording-card {
+    padding: .9rem;
+    border-radius: 16px;
+  }
+
+  .whatsapp-recording-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
   }
 
   .details-main > .eyebrow {
