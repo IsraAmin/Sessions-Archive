@@ -146,8 +146,8 @@ export function HomePage() {
     <section className="home-hero">
       <div className="home-hero-copy">
         <div className="home-hero-eyebrow">{ar ? 'كل السيشنات في مكان واحد' : 'Your sessions, in one place'}</div>
-        <h1>{ar ? 'ابدأ من هنا، ووصل للمهم بسرعة.' : 'Start here and get to what matters fast.'}</h1>
-        <p>{ar ? 'السيشن المثبتة، الأقرب، أحدث ما دخل الأرشيف، والأعلى تقييمًا — كلها قدامك من أول شاشة.' : 'Pinned sessions, what is coming next, the latest archive additions, and top-rated sessions — all from the first screen.'}</p>
+        <h1>{ar ? 'مرحبًا بك' : 'Welcome'}</h1>
+        <p>{ar ? 'ابحث عن السيشن التي تحتاجها، واستكشف الأرشيف بسهولة من مكان واحد.' : 'Search for the session you need and explore the archive easily from one place.'}</p>
         <form className="home-search" onSubmit={submitSearch}>
           <input aria-label={ar ? 'ابحث في السيشنات' : 'Search sessions'} placeholder={ar ? 'ابحث بعنوان السيشن، المتحدث أو التصنيف...' : 'Search by title, speaker, or category...'} value={query} onChange={(event) => setQuery(event.target.value)} />
           <button className="button button-primary" type="submit">{t('common.search')}</button>
