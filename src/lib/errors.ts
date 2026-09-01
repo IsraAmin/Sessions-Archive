@@ -21,6 +21,7 @@ export function errorMessage(error: unknown) {
     const details = text(value.details)
     const hint = text(value.hint)
 
+    if (message === 'PINNED_SESSION_LIMIT_REACHED') return 'يمكن تثبيت 3 سيشنات كحد أقصى. فك تثبيت واحدة أولًا ثم حاول مرة أخرى.'
     if (code === '23505') return 'هذه القيمة مستخدمة من قبل. غيّر الاسم أو البيانات المتكررة ثم حاول مرة أخرى.'
     if (code === '23514' && /Part/i.test(message) && /(المطلوب|next required|must start)/i.test(message)) return message
     if (code === '23514') return 'إحدى القيم لا تطابق شروط الحفظ. راجع التاريخ والسعة والحقول المطلوبة ثم حاول مرة أخرى.'
