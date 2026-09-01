@@ -24,6 +24,7 @@ export type SessionSeries = {
 }
 
 export type SessionStatus = 'draft' | 'published' | 'cancelled'
+export type RecordingProvider = 'youtube' | 'google_drive' | 'whatsapp' | 'telegram'
 
 export type Session = {
   id: string
@@ -42,6 +43,7 @@ export type Session = {
   cover_path: string | null
   cover_focus_x?: number
   cover_focus_y?: number
+  is_pinned?: boolean
   status: SessionStatus
   created_at: string
   category?: Category | null
@@ -97,4 +99,5 @@ export type SearchSession = Session & {
   speaker_name: string | null
   average_rating: number | string
   rating_count: number
+  recording_providers?: RecordingProvider[]
 }
