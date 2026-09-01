@@ -11,12 +11,12 @@ function authErrorMessage(error: unknown, language: 'ar' | 'en') {
   const rateLimited = code === 'over_email_send_rate_limit' || /email rate limit/i.test(base)
   if (rateLimited) {
     return language === 'ar'
-      ? 'خدمة إرسال رسائل التأكيد وصلت للحد المؤقت. الحساب لم يكتمل الآن. جرّبي بعد فترة قصيرة؛ وسيتم رفع هذا الحد عند تفعيل خدمة البريد المخصصة للمنصة.'
+      ? 'خدمة إرسال رسائل التأكيد وصلت للحد المؤقت. الحساب لم يكتمل الآن. جرّب بعد فترة قصيرة؛ وسيتم رفع هذا الحد عند تفعيل خدمة البريد المخصصة للمنصة.'
       : 'The confirmation email service has reached its temporary limit. The account was not completed. Try again shortly; this limit will be lifted once the platform uses custom email delivery.'
   }
   if (code === 'email_not_confirmed') {
     return language === 'ar'
-      ? 'البريد الإلكتروني لم يتم تأكيده بعد. افتحي رسالة التأكيد في بريدك ثم حاولي تسجيل الدخول مرة أخرى.'
+      ? 'البريد الإلكتروني لم يتم تأكيده بعد. افتح رسالة التأكيد في بريدك ثم حاول تسجيل الدخول مرة أخرى.'
       : 'Your email has not been confirmed yet. Open the confirmation email, then try signing in again.'
   }
   if (code === 'invalid_credentials') {
@@ -26,7 +26,7 @@ function authErrorMessage(error: unknown, language: 'ar' | 'en') {
   }
   if (code === 'auth_request_timeout') {
     return language === 'ar'
-      ? 'تسجيل الدخول استغرق وقتًا أطول من المتوقع. حدّثي الصفحة مرة واحدة ثم حاولي الدخول من جديد.'
+      ? 'تسجيل الدخول استغرق وقتًا أطول من المتوقع. حدّث الصفحة مرة واحدة ثم حاول الدخول من جديد.'
       : 'Sign-in took longer than expected. Refresh the page once, then try signing in again.'
   }
   return base
