@@ -55,7 +55,7 @@ export function DashboardPage() {
     <div className="dashboard-columns">
       <section className="panel"><div className="panel-heading"><h2>{ar ? 'آخر السيشنات التي فتحتها' : 'Recently viewed sessions'}</h2></div><div className="list">
         {views.map((row) => row.session && <Link key={row.id} className="list-row" to={`/sessions/${row.session.id}`}><strong>{row.session.title}</strong><span>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(row.session.starts_at))}</span></Link>)}
-        {!views.length && <div className="empty-state">{ar ? 'لم تفتحي أي سيشن بعد. اختاري سيشن من صفحة الاستكشاف وسيظهر هنا.' : 'You have not opened any sessions yet. Explore a session and it will appear here.'}</div>}
+        {!views.length && <div className="empty-state">{ar ? 'لم تفتح أي سيشن بعد. اختر سيشن من صفحة الاستكشاف وسيظهر هنا.' : 'You have not opened any sessions yet. Explore a session and it will appear here.'}</div>}
       </div></section>
 
       <section className="panel"><div className="panel-heading"><h2>{t('dashboard.continueWatching')}</h2></div><div className="continue-list">
