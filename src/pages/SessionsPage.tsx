@@ -1,9 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { publicSupabase } from '../lib/supabase'
 import { SessionCard } from '../components/SessionCard'
-import type { Category, SearchSession } from '../types/domain'
+import type { Category, RecordingProvider, SearchSession } from '../types/domain'
 import { errorMessage } from '../lib/errors'
 import { useUi } from '../hooks/useUi'
+
+function isRecordingProvider(value: string): value is RecordingProvider {
+  return ['youtube', 'google_drive', 'whatsapp', 'telegram'].includes(value)
+}
 
 export function SessionsPage() {
   const { language, t } = useUi()
@@ -23,7 +27,39 @@ export function SessionsPage() {
         category_filter: category || undefined,
       })
       if (rpcError) throw rpcError
-      setSessions((data ?? []) as SearchSession[])
+
+      const baseSessions = (data ?? []) as SearchSession[]
+      if (!baseSessions.length) {
+        setSessions([])
+        return
+      }
+
+      const ids = baseSessions.map((session) => session.id)
+      const [sessionMetaResult, videoResult] = await Promise.all([
+        (publicSupabase.from('sessions') as any).select('id,is_pinned').in('id', ids),
+        publicSupabase.from('session_videos').select('session_id,video_provider').in('session_id', ids),
+      ])
+      if (sessionMetaResult.error) throw sessionMetaResult.error
+      if (videoResult.error) throw videoResult.error
+
+      const pinBySession = new Map<string, boolean>((sessionMetaResult.data ?? []).map((row: { id: string; is_pinned: boolean }) => [row.id, Boolean(row.is_pinned)]))
+      const providersBySession = new Map<string, Set<RecordingProvider>>()
+      for (const row of videoResult.data ?? []) {
+        const provider = String(row.video_provider)
+        if (!isRecordingProvider(provider)) continue
+        const current = providersBySession.get(row.session_id) ?? new Set<RecordingProvider>()
+        current.add(provider)
+        providersBySession.set(row.session_id, current)
+      }
+
+      const originalOrder = new Map(baseSessions.map((session, index) => [session.id, index]))
+      const enriched = baseSessions.map((session) => ({
+        ...session,
+        is_pinned: pinBySession.get(session.id) ?? false,
+        recording_providers: [...(providersBySession.get(session.id) ?? new Set<RecordingProvider>())],
+      }))
+      enriched.sort((a, b) => Number(Boolean(b.is_pinned)) - Number(Boolean(a.is_pinned)) || (originalOrder.get(a.id) ?? 0) - (originalOrder.get(b.id) ?? 0))
+      setSessions(enriched)
     } catch (err) {
       console.error('Could not load public sessions', err)
       setError(language === 'ar' ? 'تعذر تحميل السيشنات الآن. حاولي التحديث مرة أخرى.' : 'Could not load sessions right now. Please refresh and try again.')
