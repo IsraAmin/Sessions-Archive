@@ -245,7 +245,7 @@ export function AdminPage() {
     const description = String(values.get('description') || '').trim()
     const startValue = String(values.get('starts_at') || '')
     const endValue = String(values.get('ends_at') || '')
-    if (title.length < 3 || !description || !startValue) { fail(new Error(ar ? 'أكملي عنوان السيشن والوصف ووقت البداية.' : 'Complete the session title, description, and start time.')); return }
+    if (title.length < 3 || !description || !startValue) { fail(new Error(ar ? 'أكمل عنوان السيشن والوصف ووقت البداية.' : 'Complete the session title, description, and start time.')); return }
 
     const startsAt = new Date(startValue)
     const endsAt = endValue ? new Date(endValue) : null
@@ -273,6 +273,7 @@ export function AdminPage() {
       series_id: seriesId,
       series_position: seriesId ? Math.max(1, Number(values.get('series_position') || 1)) : null,
       status,
+      is_pinned: values.get('is_pinned') === 'on',
     }
     const created = await createAndReset(
       form,
@@ -301,7 +302,7 @@ export function AdminPage() {
       const { error: uploadError } = await supabase.storage.from('session-covers').upload(path, file, { upsert: true })
       if (uploadError) throw uploadError
       await performMutation(() => supabase.from('sessions').update({ cover_path: path }).eq('id', session.id))
-      success(ar ? 'تم تحديث غلاف السيشن. اختاري الآن الجزء الذي يظهر في الكارد.' : 'Session cover updated. Now choose the area shown on the card.')
+      success(ar ? 'تم تحديث غلاف السيشن. اختر الآن الجزء الذي يظهر في الكارد.' : 'Session cover updated. Now choose the area shown on the card.')
       await load()
       setEditing({ type: 'session', item: { ...session, cover_path: path } })
     } catch (error) { fail(error) }
@@ -323,7 +324,7 @@ export function AdminPage() {
     event.preventDefault()
     const videoId = extractYouTubeVideoId(videoUrl)
     const partNumber = Math.max(1, Math.floor(Number(videoPartNumber || 1)))
-    if (!videoSessionId || !videoTitle.trim() || !videoId) { fail(new Error(ar ? 'اختاري السيشن واكتبي عنوانًا والصقي رابط فيديو صالحًا من YouTube أو Google Drive.' : 'Choose a session, add a title, and paste a valid YouTube or Google Drive URL.')); return }
+    if (!videoSessionId || !videoTitle.trim() || !videoId) { fail(new Error(ar ? 'اختر السيشن واكتب عنوانًا والصق رابط فيديو صالحًا من YouTube أو Google Drive.' : 'Choose a session, add a title, and paste a valid YouTube or Google Drive URL.')); return }
     const videosInPart = videos.filter(video => video.session_id === videoSessionId && Math.max(1, Number(video.part_number || 1)) === partNumber)
     const nextPosition = videosInPart.length ? Math.max(...videosInPart.map(video => video.position)) + 1 : 0
     setSavingContent(true)
@@ -404,7 +405,7 @@ export function AdminPage() {
       ? role === 'admin' ? (ar ? 'ترقية إلى Admin؟' : 'Promote to Admin?') : (ar ? 'سحب صلاحية Admin؟' : 'Remove Admin access?')
       : action === 'ban' ? (ar ? 'تعطيل الحساب؟' : 'Disable account?') : (ar ? 'إعادة تفعيل الحساب؟' : 'Enable account?')
     const description = action === 'set_role'
-      ? role === 'admin' ? (ar ? `سيحصل ${label} على صلاحيات الإدارة. تأكدي من هويته قبل المتابعة.` : `${label} will receive admin permissions. Verify their identity before continuing.`) : (ar ? `سيعود ${label} إلى صلاحيات الطالب العادية.` : `${label} will return to standard student access.`)
+      ? role === 'admin' ? (ar ? `سيحصل ${label} على صلاحيات الإدارة. تأكد من هويته قبل المتابعة.` : `${label} will receive admin permissions. Verify their identity before continuing.`) : (ar ? `سيعود ${label} إلى صلاحيات الطالب العادية.` : `${label} will return to standard student access.`)
       : action === 'ban' ? (ar ? `لن يتمكن ${label} من تسجيل الدخول حتى إعادة تفعيل الحساب.` : `${label} will not be able to sign in until the account is enabled again.`) : (ar ? `سيتمكن ${label} من تسجيل الدخول مرة أخرى.` : `${label} will be able to sign in again.`)
 
     ask({
@@ -513,7 +514,7 @@ export function AdminPage() {
 
     {isSuperAdmin && <section className="panel section-gap admin-section">
       <div className="admin-v3-section-head"><div><span className="eyebrow">{t('admin.superAdmin')}</span><h2>{t('admin.userManagement')}</h2><p>{t('admin.superOnly')}</p></div><Icon name="users" /></div>
-      <div className="user-directory-toolbar"><FormField label={ar ? 'ابحثي في المستخدمين' : 'Search users'}><input value={userSearch} onChange={event => setUserSearch(event.target.value)} placeholder={ar ? 'الاسم، البريد، الجامعة أو القسم' : 'Name, email, university or department'} /></FormField><span className="user-result-count">{filteredUsers.length} {ar ? 'حساب' : 'accounts'}</span></div>
+      <div className="user-directory-toolbar"><FormField label={ar ? 'ابحث في المستخدمين' : 'Search users'}><input value={userSearch} onChange={event => setUserSearch(event.target.value)} placeholder={ar ? 'الاسم، البريد، الجامعة أو القسم' : 'Name, email, university or department'} /></FormField><span className="user-result-count">{filteredUsers.length} {ar ? 'حساب' : 'accounts'}</span></div>
       <div className="user-management-list">
         {filteredUsers.map(account => {
           const banned = Boolean(account.banned_until && new Date(account.banned_until).getTime() > Date.now())
@@ -530,13 +531,13 @@ export function AdminPage() {
     </section>}
 
     <section className="panel section-gap admin-section">
-      <div className="admin-v3-section-head"><div><h2>{t('admin.series')}</h2><p>{ar ? 'أنشئي مسارات مترابطة ورتبي السيشنات داخلها.' : 'Create structured learning series.'}</p></div><Icon name="layers" /></div>
+      <div className="admin-v3-section-head"><div><h2>{t('admin.series')}</h2><p>{ar ? 'أنشئ مسارات مترابطة ورتب السيشنات داخلها.' : 'Create structured learning series.'}</p></div><Icon name="layers" /></div>
       <form className="admin-form-grid" onSubmit={event => void addSeries(event)} aria-busy={savingContent}><FormField label={t('admin.seriesTitle')}><input name="title" maxLength={160} required /></FormField><FormField label={t('admin.seriesDescription')}><input name="description" /></FormField><button className="button button-primary" disabled={savingContent}>{t('admin.createSeries')}</button></form>
       <div className="admin-v3-list">{series.map(item => <div className="admin-v3-item" key={item.id}><span className="admin-v3-item-copy"><strong>{item.title}</strong><small>{item.description || '—'}</small></span><div className="admin-v3-actions"><button className="button button-ghost" onClick={() => setEditing({ type: 'series', item })}>{t('common.edit')}</button><button className="button danger" onClick={() => confirmDelete(ar ? 'السلسلة' : 'series', item.title, async () => { await run(() => supabase.from('session_series').delete().eq('id', item.id), ar ? 'تم حذف السلسلة.' : 'Series deleted.') })}>{t('common.delete')}</button></div></div>)}</div>
     </section>
 
     <div className="admin-grid section-gap">
-      <section className="panel"><h2>{t('admin.category')}</h2><form className="admin-form-grid" onSubmit={event => void addCategory(event)} aria-busy={savingContent}><FormField label={t('admin.name')}><input name="name" required /></FormField><FormField label={ar ? 'Slug (اختياري)' : 'Slug (optional)'} hint={ar ? 'إذا تركتيه فارغًا سيتم توليده تلقائيًا.' : 'Leave blank to generate it automatically.'}><input name="slug" inputMode="url" /></FormField><FormField label={t('admin.description')} wide><textarea name="description" rows={3} /></FormField><button className="button button-primary" disabled={savingContent}>{t('common.add')}</button></form><div className="admin-v3-list">{categories.map(item => <div className="admin-v3-item" key={item.id}><span className="admin-v3-item-copy"><strong>{item.name}</strong><small>{item.slug}</small></span><div className="admin-v3-actions"><button className="button button-ghost" onClick={() => setEditing({ type: 'category', item })}>{t('common.edit')}</button><button className="button danger" onClick={() => confirmDelete(ar ? 'التصنيف' : 'category', item.name, async () => { await run(() => supabase.from('categories').delete().eq('id', item.id), ar ? 'تم حذف التصنيف.' : 'Category deleted.') })}>{t('common.delete')}</button></div></div>)}</div></section>
+      <section className="panel"><h2>{t('admin.category')}</h2><form className="admin-form-grid" onSubmit={event => void addCategory(event)} aria-busy={savingContent}><FormField label={t('admin.name')}><input name="name" required /></FormField><FormField label={ar ? 'Slug (اختياري)' : 'Slug (optional)'} hint={ar ? 'إذا تركته فارغًا سيتم توليده تلقائيًا.' : 'Leave blank to generate it automatically.'}><input name="slug" inputMode="url" /></FormField><FormField label={t('admin.description')} wide><textarea name="description" rows={3} /></FormField><button className="button button-primary" disabled={savingContent}>{t('common.add')}</button></form><div className="admin-v3-list">{categories.map(item => <div className="admin-v3-item" key={item.id}><span className="admin-v3-item-copy"><strong>{item.name}</strong><small>{item.slug}</small></span><div className="admin-v3-actions"><button className="button button-ghost" onClick={() => setEditing({ type: 'category', item })}>{t('common.edit')}</button><button className="button danger" onClick={() => confirmDelete(ar ? 'التصنيف' : 'category', item.name, async () => { await run(() => supabase.from('categories').delete().eq('id', item.id), ar ? 'تم حذف التصنيف.' : 'Category deleted.') })}>{t('common.delete')}</button></div></div>)}</div></section>
       <section className="panel"><h2>{t('admin.speakers')}</h2><form className="admin-form-grid" onSubmit={event => void addSpeaker(event)} aria-busy={savingContent}><FormField label={t('admin.name')}><input name="name" required /></FormField><FormField label={ar ? 'الجامعة / الشركة / المؤسسة' : t('admin.organization')}><input name="organization" /></FormField><FormField label={ar ? 'النبذة' : 'Bio'} wide><textarea name="bio" rows={3} /></FormField><button className="button button-primary" disabled={savingContent}>{t('common.add')}</button></form><div className="admin-v3-list">{speakers.map(item => <div className="admin-v3-item" key={item.id}><span className="admin-v3-item-copy"><strong>{item.name}</strong><small>{item.organization || '—'}</small></span><div className="admin-v3-actions"><label className="file-action">{ar ? 'صورة' : 'Photo'}<input type="file" accept="image/*" onChange={event => event.target.files?.[0] && void uploadSpeakerImage(item, event.target.files[0])} /></label><button className="button button-ghost" onClick={() => setEditing({ type: 'speaker', item })}>{t('common.edit')}</button><button className="button danger" onClick={() => confirmDelete(ar ? 'المتحدث' : 'speaker', item.name, async () => { await run(() => supabase.from('speakers').delete().eq('id', item.id), ar ? 'تم حذف المتحدث.' : 'Speaker deleted.') })}>{t('common.delete')}</button></div></div>)}</div></section>
     </div>
 
@@ -544,7 +545,7 @@ export function AdminPage() {
       <div className="admin-v3-section-head"><div><h2>{t('admin.sessions')}</h2><p>{ar ? 'كل بيانات السيشن قابلة للتعديل، والـSlug يتم ضبطه تلقائيًا.' : 'Every session field is editable and slugs are normalized automatically.'}</p></div></div>
       <form className="admin-form-grid" onSubmit={event => void addSession(event)} aria-busy={savingContent}>
         <FormField label={t('admin.titleField')}><input name="title" minLength={3} maxLength={180} required /></FormField>
-        <FormField label={ar ? 'Slug (اختياري)' : 'Slug (optional)'} hint={ar ? 'اتركيه فارغًا لتوليده تلقائيًا.' : 'Leave blank to generate automatically.'}><input name="slug" inputMode="url" /></FormField>
+        <FormField label={ar ? 'Slug (اختياري)' : 'Slug (optional)'} hint={ar ? 'اتركه فارغًا لتوليده تلقائيًا.' : 'Leave blank to generate automatically.'}><input name="slug" inputMode="url" /></FormField>
         <FormField label={t('admin.description')} wide><textarea name="description" rows={4} required /></FormField>
         <FormField label={ar ? 'وقت البداية' : 'Start time'}><input name="starts_at" type="datetime-local" required /></FormField>
         <FormField label={ar ? 'وقت النهاية' : 'End time'}><input name="ends_at" type="datetime-local" /></FormField>
@@ -556,7 +557,7 @@ export function AdminPage() {
           <div style={{ display: 'grid', gap: '.65rem' }}>
             {sessionSpeakerSlots.map((slot, index) => <div key={slot} style={{ display: 'grid', gridTemplateColumns: index === 0 ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) auto', gap: '.55rem', alignItems: 'center' }}>
               <select name="speaker_ids" aria-label={ar ? `المتحدث ${index + 1}` : `Speaker ${index + 1}`}>
-                <option value="">{index === 0 ? t('admin.noSpeaker') : (ar ? 'اختاري متحدثًا إضافيًا' : 'Choose another speaker')}</option>
+                <option value="">{index === 0 ? t('admin.noSpeaker') : (ar ? 'اختر متحدثًا إضافيًا' : 'Choose another speaker')}</option>
                 {speakers.map(item => <option key={item.id} value={item.id}>{item.name}{item.organization ? ` — ${item.organization}` : ''}</option>)}
               </select>
               {index > 0 && <button type="button" className="button button-ghost" onClick={() => setSessionSpeakerSlots(current => current.filter(item => item !== slot))}>{ar ? 'إزالة' : 'Remove'}</button>}
@@ -571,19 +572,20 @@ export function AdminPage() {
               <span aria-hidden="true">＋</span>{ar ? 'إضافة متحدث آخر' : 'Add another speaker'}
             </button>
           </div>
-          <span className="field-hint">{ar ? 'اختاري المتحدث الأول، واضغطي + فقط إذا كان للسيشن متحدث إضافي.' : 'Choose the first speaker, then use + only when the session has another speaker.'}</span>
+          <span className="field-hint">{ar ? 'اختر المتحدث الأول، واضغط + فقط إذا كان للسيشن متحدث إضافي.' : 'Choose the first speaker, then use + only when the session has another speaker.'}</span>
         </div>
         <FormField label={t('admin.series')}><select name="series_id"><option value="">{t('admin.noSeries')}</option>{series.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></FormField>
         <FormField label={t('admin.seriesPosition')}><input name="series_position" type="number" min="1" defaultValue="1" /></FormField>
         <FormField label={ar ? 'الحالة' : 'Status'}><select name="status" defaultValue="published"><option value="draft">{ar ? 'مسودة' : 'Draft'}</option><option value="published">{ar ? 'منشور' : 'Published'}</option><option value="cancelled">{ar ? 'ملغي' : 'Cancelled'}</option></select></FormField>
+        <label className="pin-session-control wide"><input type="checkbox" name="is_pinned" /><span><strong>{ar ? 'تثبيت السيشن في أول الصفحة' : 'Pin session to the top'}</strong><small>{ar ? 'إذا فعّلت التثبيت سيتم فك تثبيت أي سيشن أخرى تلقائيًا.' : 'Pinning this session automatically unpins the previously pinned session.'}</small></span></label>
         <button className="button button-primary" disabled={savingContent}>{savingContent ? (ar ? 'جارٍ الحفظ…' : 'Saving…') : t('admin.createSession')}</button>
       </form>
       <div className="admin-v3-list">{sessions.map(item => <div className="admin-v3-item" key={item.id}><span className="admin-v3-item-copy"><strong>{item.title}</strong><small>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.starts_at))} · {item.status}</small></span><div className="admin-v3-actions"><label className="file-action">{ar ? 'رفع الغلاف' : 'Upload cover'}<input type="file" accept="image/*" onChange={event => event.target.files?.[0] && void uploadSessionCover(item, event.target.files[0])} /></label><label className="file-action">{t('admin.resource')}<input type="file" onChange={event => event.target.files?.[0] && void uploadSessionResource(item, event.target.files[0])} /></label><button className="button button-ghost" onClick={() => setEditing({ type: 'session', item })}>{t('common.edit')}</button><button className="button danger" onClick={() => confirmDelete(ar ? 'السيشن' : 'session', item.title, async () => { await run(() => supabase.from('sessions').delete().eq('id', item.id), ar ? 'تم حذف السيشن.' : 'Session deleted.') })}>{t('common.delete')}</button></div></div>)}</div>
     </section>
 
     <section className="panel section-gap video-admin-panel">
-      <div className="video-admin-heading"><div><div className="eyebrow">{ar ? 'مصدر الفيديو' : 'Video source'}</div><h2>{ar ? 'تسجيلات الفيديو' : 'Video recordings'}</h2><p>{ar ? 'أضيفي رابط YouTube أو Google Drive لنفس السيشن وحددي لكل فيديو الـPart الخاص به. يمكن أن يحتوي الـPart الواحد على أكثر من فيديو.' : 'Add a YouTube or Google Drive link to a session and assign each video to its part. A part can contain multiple videos.'}</p></div></div>
-      <div className="video-admin-layout"><form className="video-admin-form" onSubmit={event => void addSessionVideo(event)}><FormField label={t('admin.videoSession')}><select value={videoSessionId} onChange={event => setVideoSessionId(event.target.value)} required><option value="">{t('admin.videoSession')}</option>{sessions.map(session => <option key={session.id} value={session.id}>{session.title}</option>)}</select></FormField><FormField label={t('admin.videoTitle')}><input value={videoTitle} onChange={event => setVideoTitle(event.target.value)} required /></FormField><FormField label="Part" hint={ar ? 'مثلاً 1 أو 2 أو 3. كل الفيديوهات بنفس الرقم ستظهر داخل نفس الجزء.' : 'For example 1, 2, or 3. Videos with the same number appear in the same part.'}><input type="number" min="1" step="1" value={videoPartNumber} onChange={event => setVideoPartNumber(Math.max(1, Math.floor(Number(event.target.value) || 1)))} required /></FormField><FormField label={ar ? 'رابط الفيديو' : 'Video URL'} hint={ar ? 'يقبل رابط YouTube أو Google Drive.' : 'Accepts a YouTube or Google Drive link.'}><input value={videoUrl} onChange={event => setVideoUrl(event.target.value)} inputMode="url" placeholder={ar ? 'الصقي رابط YouTube أو Google Drive' : 'Paste a YouTube or Google Drive link'} required /></FormField><button className="button button-primary wide" disabled={savingContent}>{savingContent ? (ar ? 'جارٍ إضافة الفيديو…' : 'Adding video…') : t('admin.addRecording')}</button></form><div className="video-preview">{extractYouTubeVideoId(videoUrl) ? <><span className="video-part-preview-badge">Part {videoPartNumber}</span><YouTubePlayer videoId={extractYouTubeVideoId(videoUrl)!} title={videoTitle || t('admin.preview')} /></> : <div className="video-preview-empty"><strong>{t('admin.preview')}</strong><span>{ar ? 'الصقي رابط فيديو صالحًا من YouTube أو Google Drive لرؤية المعاينة.' : 'Paste a valid YouTube or Google Drive URL to preview it.'}</span></div>}</div></div>
+      <div className="video-admin-heading"><div><div className="eyebrow">{ar ? 'مصدر الفيديو' : 'Video source'}</div><h2>{ar ? 'تسجيلات الفيديو' : 'Video recordings'}</h2><p>{ar ? 'أضف رابط YouTube أو Google Drive لنفس السيشن وحدد لكل فيديو الـPart الخاص به. يمكن أن يحتوي الـPart الواحد على أكثر من فيديو.' : 'Add a YouTube or Google Drive link to a session and assign each video to its part. A part can contain multiple videos.'}</p></div></div>
+      <div className="video-admin-layout"><form className="video-admin-form" onSubmit={event => void addSessionVideo(event)}><FormField label={t('admin.videoSession')}><select value={videoSessionId} onChange={event => setVideoSessionId(event.target.value)} required><option value="">{t('admin.videoSession')}</option>{sessions.map(session => <option key={session.id} value={session.id}>{session.title}</option>)}</select></FormField><FormField label={t('admin.videoTitle')}><input value={videoTitle} onChange={event => setVideoTitle(event.target.value)} required /></FormField><FormField label="Part" hint={ar ? 'مثلاً 1 أو 2 أو 3. كل الفيديوهات بنفس الرقم ستظهر داخل نفس الجزء.' : 'For example 1, 2, or 3. Videos with the same number appear in the same part.'}><input type="number" min="1" step="1" value={videoPartNumber} onChange={event => setVideoPartNumber(Math.max(1, Math.floor(Number(event.target.value) || 1)))} required /></FormField><FormField label={ar ? 'رابط الفيديو' : 'Video URL'} hint={ar ? 'يقبل رابط YouTube أو Google Drive.' : 'Accepts a YouTube or Google Drive link.'}><input value={videoUrl} onChange={event => setVideoUrl(event.target.value)} inputMode="url" placeholder={ar ? 'الصق رابط YouTube أو Google Drive' : 'Paste a YouTube or Google Drive link'} required /></FormField><button className="button button-primary wide" disabled={savingContent}>{savingContent ? (ar ? 'جارٍ إضافة الفيديو…' : 'Adding video…') : t('admin.addRecording')}</button></form><div className="video-preview">{extractYouTubeVideoId(videoUrl) ? <><span className="video-part-preview-badge">Part {videoPartNumber}</span><YouTubePlayer videoId={extractYouTubeVideoId(videoUrl)!} title={videoTitle || t('admin.preview')} /></> : <div className="video-preview-empty"><strong>{t('admin.preview')}</strong><span>{ar ? 'الصق رابط فيديو صالحًا من YouTube أو Google Drive لرؤية المعاينة.' : 'Paste a valid YouTube or Google Drive URL to preview it.'}</span></div>}</div></div>
       <div className="admin-v3-list">{videos.map(item => <div className="admin-v3-item" key={item.id}><span className="admin-v3-item-copy"><strong>{item.title}</strong><small>Part {item.part_number ?? 1} · {sessions.find(session => session.id === item.session_id)?.title || '—'}</small></span><div className="admin-v3-actions"><button className="button button-ghost" onClick={() => setEditing({ type: 'video', item })}>{t('common.edit')}</button><button className="button danger" onClick={() => confirmDelete(ar ? 'التسجيل' : 'recording', item.title, async () => { await run(() => supabase.from('session_videos').delete().eq('id', item.id), ar ? 'تم حذف التسجيل.' : 'Recording deleted.') })}>{t('common.delete')}</button></div></div>)}</div>
     </section>
 
