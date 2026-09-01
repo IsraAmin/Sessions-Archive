@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from 'react'
 
-type IconName = 'home' | 'dashboard' | 'user' | 'shield' | 'bell' | 'sun' | 'moon' | 'language' | 'menu' | 'close' | 'calendar' | 'play' | 'bookmark' | 'logout' | 'chart' | 'users' | 'layers' | 'check' | 'error'
+type IconName = 'home' | 'dashboard' | 'user' | 'shield' | 'bell' | 'sun' | 'moon' | 'language' | 'menu' | 'close' | 'calendar' | 'play' | 'bookmark' | 'logout' | 'chart' | 'users' | 'layers' | 'check' | 'error' | 'share'
 
 const paths: Record<IconName, ReactNode> = {
   home: <><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/></>,
@@ -16,6 +16,7 @@ const paths: Record<IconName, ReactNode> = {
   play: <path d="m8 5 11 7-11 7V5Z"/>, bookmark: <path d="M6 3h12v18l-6-4-6 4V3Z"/>, logout: <path d="M10 17l5-5-5-5M15 12H3M13 3h8v18h-8"/>,
   chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></>, users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,
   layers: <><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></>, check: <path d="m5 12 4 4L19 6"/>, error: <><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 17h.01"/></>,
+  share: <><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></>,
 }
 
 export function Icon({ name, ...props }: SVGProps<SVGSVGElement> & { name: IconName }) {
