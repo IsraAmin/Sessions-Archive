@@ -213,16 +213,16 @@ export function ProfilePage() {
       <label>{t('profile.department')}<input value={profile.department ?? ''} onChange={(e) => setProfile({ ...profile, department: e.target.value || null })} /></label>
       <label>{t('profile.level')}<input value={profile.level ?? ''} onChange={(e) => setProfile({ ...profile, level: e.target.value || null })} /></label>
       <label className="wide">{t('profile.bio')}<textarea rows={4} value={profile.bio ?? ''} onChange={(e) => setProfile({ ...profile, bio: e.target.value || null })} /></label>
-      <div className="wide profile-upload-card"><div><strong>{t('profile.photo')}</strong><p>{ar ? 'اختاري صورة شخصية واضحة وسيتم تجهيزها تلقائيًا قبل الحفظ.' : 'Choose a clear profile photo. It will be prepared automatically before saving.'}</p></div><label className="button button-secondary profile-upload-button">{busy ? t('profile.preparing') : t('profile.choosePhoto')}<input type="file" accept="image/*" disabled={busy} onChange={(event) => void uploadAvatar(event)} /></label></div>
+      <div className="wide profile-upload-card"><div><strong>{t('profile.photo')}</strong><p>{ar ? 'اختر صورة شخصية واضحة وسيتم تجهيزها تلقائيًا قبل الحفظ.' : 'Choose a clear profile photo. It will be prepared automatically before saving.'}</p></div><label className="button button-secondary profile-upload-button">{busy ? t('profile.preparing') : t('profile.choosePhoto')}<input type="file" accept="image/*" disabled={busy} onChange={(event) => void uploadAvatar(event)} /></label></div>
       <button className="button button-primary" disabled={busy}>{t('common.save')}</button>
     </form>
 
     <section className="notification-settings" aria-labelledby="notification-settings-title">
       <div className="notification-card">
         <div>
-          <div className="eyebrow">{ar ? 'Push Notifications' : 'Push Notifications'}</div>
+          <div className="eyebrow">Push Notifications</div>
           <h2 id="notification-settings-title">{ar ? 'إشعارات الجهاز' : 'Device notifications'}</h2>
-          <p>{ar ? 'استلمي التذكيرات والتحديثات حتى عندما تكون المنصة مغلقة.' : 'Receive reminders and updates even when the app is closed.'}</p>
+          <p>{ar ? 'استلم التذكيرات والتحديثات حتى عندما تكون المنصة مغلقة.' : 'Receive reminders and updates even when the app is closed.'}</p>
           <span className={`push-status-pill ${pushEnabled ? 'is-enabled' : ''}`}>{pushStatusLabel}</span>
         </div>
         <button
@@ -243,12 +243,12 @@ export function ProfilePage() {
 
       {preferences && <div className="notification-settings-list" aria-busy={preferencesBusy}>
         <label className="notification-setting-row">
-          <span className="notification-setting-copy"><strong>{ar ? 'تذكيرات السيشنات' : 'Session reminders'}</strong><small>{ar ? 'تنبيه قبل موعد السيشن المسجّلة فيها.' : 'Get alerted before a session you are registered for.'}</small></span>
+          <span className="notification-setting-copy"><strong>{ar ? 'تذكيرات السيشنات' : 'Session reminders'}</strong><small>{ar ? 'تنبيه قبل موعد السيشن المسجل فيها.' : 'Get alerted before a session you are registered for.'}</small></span>
           <input type="checkbox" checked={preferences.session_reminders} disabled={preferencesBusy} onChange={(event) => void savePreferences({ session_reminders: event.target.checked })} />
         </label>
 
         {preferences.session_reminders && <label className="notification-setting-row notification-reminder-row">
-          <span className="notification-setting-copy"><strong>{ar ? 'وقت التذكير' : 'Reminder time'}</strong><small>{ar ? 'اختاري المدة قبل بداية السيشن.' : 'Choose how early the reminder should arrive.'}</small></span>
+          <span className="notification-setting-copy"><strong>{ar ? 'وقت التذكير' : 'Reminder time'}</strong><small>{ar ? 'اختر المدة قبل بداية السيشن.' : 'Choose how early the reminder should arrive.'}</small></span>
           <select className="notification-reminder-select" value={preferences.reminder_minutes} disabled={preferencesBusy} onChange={(event) => void savePreferences({ reminder_minutes: Number(event.target.value) })}>
             {REMINDER_OPTIONS.map((minutes) => <option key={minutes} value={minutes}>{minutes === 1440 ? (ar ? 'قبل يوم' : '1 day before') : minutes >= 60 ? (ar ? `قبل ${minutes / 60} ساعة` : `${minutes / 60}h before`) : (ar ? `قبل ${minutes} دقيقة` : `${minutes}m before`)}</option>)}
           </select>
