@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { supabase, publicStorageUrl } from '../lib/supabase'
+import { supabase, publicStorageUrl, sessionShareUrl } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
 import type { RecordingProvider, Session, SessionResource, SessionSeries, SessionVideo, Speaker, VideoProgress } from '../types/domain'
@@ -107,7 +107,7 @@ export function SessionDetailsPage() {
   async function shareSession() {
     if (!session) return
     const ar = language === 'ar'
-    const url = window.location.href
+    const url = sessionShareUrl(session.id)
     const shareData = {
       title: session.title.replace(/\s+/g, ' ').trim(),
       text: ar ? `شوف السيشن دي في Sessions Archive: ${session.title.replace(/\s+/g, ' ').trim()}` : `Check out this session on Sessions Archive: ${session.title.replace(/\s+/g, ' ').trim()}`,
