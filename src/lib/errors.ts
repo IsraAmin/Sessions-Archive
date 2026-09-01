@@ -21,16 +21,16 @@ export function errorMessage(error: unknown) {
     const details = text(value.details)
     const hint = text(value.hint)
 
-    if (code === '23505') return 'هذه القيمة مستخدمة من قبل. غيّري الاسم أو البيانات المتكررة ثم حاولي مرة أخرى.'
+    if (code === '23505') return 'هذه القيمة مستخدمة من قبل. غيّر الاسم أو البيانات المتكررة ثم حاول مرة أخرى.'
     if (code === '23514' && /Part/i.test(message) && /(المطلوب|next required|must start)/i.test(message)) return message
-    if (code === '23514') return 'إحدى القيم لا تطابق شروط الحفظ. راجعي التاريخ والسعة والحقول المطلوبة ثم حاولي مرة أخرى.'
+    if (code === '23514') return 'إحدى القيم لا تطابق شروط الحفظ. راجع التاريخ والسعة والحقول المطلوبة ثم حاول مرة أخرى.'
     if (code === '42501' || /row-level security|permission denied/i.test(message)) {
-      return 'انتهت أو تغيّرت صلاحية الإدارة في الجلسة الحالية. حدّثي الصفحة أو سجّلي الدخول مرة أخرى ثم أعيدي المحاولة.'
+      return 'انتهت أو تغيّرت صلاحية الإدارة في الجلسة الحالية. حدّث الصفحة أو سجّل الدخول مرة أخرى ثم أعد المحاولة.'
     }
 
     const parts = [message, details, hint].filter(Boolean)
     if (parts.length) return parts.join(' — ')
   }
 
-  return 'تعذر تنفيذ الإجراء. حدّثي الصفحة وحاولي مرة أخرى، وإذا استمر الخطأ تحققي من الحقول المطلوبة.'
+  return 'تعذر تنفيذ الإجراء. حدّث الصفحة وحاول مرة أخرى، وإذا استمر الخطأ تحقق من الحقول المطلوبة.'
 }
