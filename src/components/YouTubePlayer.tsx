@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
 import { supabase } from '../lib/supabase'
-import { extractWhatsAppChannelUpdateUrl } from '../lib/youtube'
+import { extractTelegramMessageUrl, extractWhatsAppChannelUpdateUrl } from '../lib/youtube'
 import { GoogleDrivePlayer } from './GoogleDrivePlayer'
 
 interface YTPlayer {
@@ -65,12 +65,15 @@ export function YouTubePlayer({ videoId, title, videoDbId, initialProgress }: Pr
   const [percent, setPercent] = useState(initialProgress?.percent ?? 0)
   const driveFileId = videoId.startsWith('gdrive:') ? videoId.slice(7) : null
   const whatsappUrl = extractWhatsAppChannelUpdateUrl(videoId)
+  const telegramUrl = extractTelegramMessageUrl(videoId)
+  const externalUrl = whatsappUrl ?? telegramUrl
+  const externalProvider = whatsappUrl ? 'whatsapp' : telegramUrl ? 'telegram' : null
   const ar = language === 'ar'
 
   useEffect(() => setPercent(initialProgress?.percent ?? 0), [initialProgress?.percent, videoDbId])
 
   useEffect(() => {
-    if (driveFileId || whatsappUrl) return
+    if (driveFileId || externalUrl) return
 
     let cancelled = false
     let player: YTPlayer | null = null
@@ -124,7 +127,7 @@ export function YouTubePlayer({ videoId, title, videoDbId, initialProgress }: Pr
       playerRef.current = null
       player?.destroy()
     }
-  }, [driveFileId, whatsappUrl, videoId, videoDbId, user?.id])
+  }, [driveFileId, externalUrl, videoId, videoDbId, user?.id])
 
   function continueWatching() {
     if (!playerRef.current || !initialProgress?.seconds) return
@@ -132,18 +135,22 @@ export function YouTubePlayer({ videoId, title, videoDbId, initialProgress }: Pr
     playerRef.current.playVideo()
   }
 
-  if (whatsappUrl) return <div className="whatsapp-recording-card">
-    <div className="whatsapp-recording-mark" aria-hidden="true">WA</div>
-    <div className="whatsapp-recording-copy">
-      <span className="whatsapp-recording-kicker">{ar ? 'التسجيل موجود في قناة واتساب' : 'Recording shared on WhatsApp'}</span>
-      <strong>{title}</strong>
-      <p>{ar ? 'افتح الرسالة الأصلية في القناة، وستجد رابط التسجيل الموجود داخلها.' : 'Open the original channel update to access the recording link shared inside it.'}</p>
+  if (externalUrl && externalProvider) {
+    const isWhatsApp = externalProvider === 'whatsapp'
+    const providerName = isWhatsApp ? 'WhatsApp' : 'Telegram'
+    return <div className={`external-recording-card ${externalProvider}-recording-card`}>
+      <div className="external-recording-mark" aria-hidden="true">{isWhatsApp ? 'WA' : 'TG'}</div>
+      <div className="external-recording-copy" dir="auto">
+        <span className="external-recording-kicker">{ar ? `التسجيل موجود عبر ${providerName}` : `Recording shared on ${providerName}`}</span>
+        <strong>{title}</strong>
+        <p>{ar ? `افتح الرسالة الأصلية في ${providerName} للوصول إلى رابط التسجيل الموجود داخلها.` : `Open the original ${providerName} message to access the recording link shared inside it.`}</p>
+      </div>
+      <a className="external-recording-link" href={externalUrl} target="_blank" rel="noopener noreferrer">
+        <span>{ar ? `فتح الرسالة في ${providerName}` : `Open in ${providerName}`}</span>
+        <span aria-hidden="true">↗</span>
+      </a>
     </div>
-    <a className="whatsapp-recording-link" href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-      <span>{ar ? 'فتح الرسالة في واتساب' : 'Open in WhatsApp'}</span>
-      <span aria-hidden="true">↗</span>
-    </a>
-  </div>
+  }
 
   if (driveFileId) return <GoogleDrivePlayer fileId={driveFileId} title={title} />
 
