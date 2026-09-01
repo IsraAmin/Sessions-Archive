@@ -83,7 +83,7 @@ export function SavedSessionsPage() {
       <div>
         <div className="eyebrow">{ar ? 'مكتبتك' : 'Your library'}</div>
         <h1>{ar ? 'السيشنات المحفوظة' : 'Saved sessions'}</h1>
-        <p>{ar ? 'كل السيشنات التي حفظتيها موجودة هنا للرجوع إليها بسرعة.' : 'Everything you saved is kept here for quick access.'}</p>
+        <p>{ar ? 'كل السيشنات التي حفظتها موجودة هنا للرجوع إليها بسرعة.' : 'Everything you saved is kept here for quick access.'}</p>
       </div>
       <Link className="button button-secondary" to="/">{ar ? 'استكشف السيشنات' : 'Explore sessions'}</Link>
     </div>
@@ -91,7 +91,7 @@ export function SavedSessionsPage() {
     {error && <p className="notice error" role="alert">{error}</p>}
     {loading ? <div className="page-state">{ar ? 'جاري تحميل المحفوظات…' : 'Loading saved sessions…'}</div> : <section className="card-grid">
       {sessions.map((session) => <SessionCard key={session.id} session={session} />)}
-      {!sessions.length && !error && <div className="empty-state">{ar ? 'ما حفظتي أي سيشن لسه. افتحي أي سيشن واضغطي حفظ، وحتظهر هنا.' : 'You have not saved a session yet. Save one from its details page and it will appear here.'}</div>}
+      {!sessions.length && !error && <div className="empty-state">{ar ? 'ما حفظت أي سيشن لسه. افتح أي سيشن واضغط حفظ، وستظهر هنا.' : 'You have not saved a session yet. Save one from its details page and it will appear here.'}</div>}
     </section>}
   </section>
 }
