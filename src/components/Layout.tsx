@@ -38,7 +38,7 @@ export function Layout() {
       showToast({
         kind: 'error',
         title: t('common.error'),
-        message: ar ? 'تعذر تسجيل الخروج. حاولي مرة أخرى.' : 'Could not sign out. Please try again.',
+        message: ar ? 'تعذر تسجيل الخروج. حاول مرة أخرى.' : 'Could not sign out. Please try again.',
       })
     } finally {
       setLogoutBusy(false)
@@ -87,6 +87,6 @@ export function Layout() {
       {user ? <NavLink to="/profile" className={mobileNavClass}><Icon name="user" /><span>{t('nav.profile')}</span></NavLink> : <NavLink to="/auth" className={mobileNavClass}><Icon name="user" /><span>{t('common.signIn')}</span></NavLink>}
     </nav>
 
-    <ConfirmDialog open={logoutConfirm} title={ar ? 'تسجيل الخروج؟' : 'Sign out?'} description={ar ? 'هل أنتِ متأكدة من تسجيل الخروج من حسابك؟ يمكنك تسجيل الدخول مرة أخرى في أي وقت.' : 'Are you sure you want to sign out? You can sign in again at any time.'} confirmLabel={ar ? 'نعم، تسجيل الخروج' : 'Yes, sign out'} cancelLabel={ar ? 'البقاء في الحساب' : 'Stay signed in'} tone="danger" busy={logoutBusy} onCancel={() => !logoutBusy && setLogoutConfirm(false)} onConfirm={() => void confirmLogout()} />
+    <ConfirmDialog open={logoutConfirm} title={ar ? 'تسجيل الخروج؟' : 'Sign out?'} description={ar ? 'هل أنت متأكد من تسجيل الخروج من حسابك؟ يمكنك تسجيل الدخول مرة أخرى في أي وقت.' : 'Are you sure you want to sign out? You can sign in again at any time.'} confirmLabel={ar ? 'نعم، تسجيل الخروج' : 'Yes, sign out'} cancelLabel={ar ? 'البقاء في الحساب' : 'Stay signed in'} tone="danger" busy={logoutBusy} onCancel={() => !logoutBusy && setLogoutConfirm(false)} onConfirm={() => void confirmLogout()} />
   </div>
 }
