@@ -1,6 +1,6 @@
-import { extractWhatsAppChannelUpdateUrl, extractYouTubeVideoId } from './youtube'
+import { extractTelegramMessageUrl, extractWhatsAppChannelUpdateUrl, extractYouTubeVideoId } from './youtube'
 
-export type VideoProvider = 'youtube' | 'google_drive' | 'whatsapp'
+export type VideoProvider = 'youtube' | 'google_drive' | 'whatsapp' | 'telegram'
 export type ParsedVideoSource = { provider: VideoProvider; id: string }
 
 const DRIVE_ID = /^[A-Za-z0-9_-]{10,}$/
@@ -41,6 +41,9 @@ export function parseVideoSource(value: string): ParsedVideoSource | null {
   const whatsappUrl = extractWhatsAppChannelUpdateUrl(value)
   if (whatsappUrl) return { provider: 'whatsapp', id: whatsappUrl }
 
+  const telegramUrl = extractTelegramMessageUrl(value)
+  if (telegramUrl) return { provider: 'telegram', id: telegramUrl }
+
   const driveId = extractGoogleDriveFileId(value)
   if (driveId) return { provider: 'google_drive', id: driveId }
 
@@ -56,6 +59,7 @@ export function googleDrivePreviewUrl(fileId: string) {
 
 export function videoSourceUrl(provider: VideoProvider | null | undefined, id: string) {
   if (provider === 'whatsapp' || extractWhatsAppChannelUpdateUrl(id)) return extractWhatsAppChannelUpdateUrl(id) ?? id
+  if (provider === 'telegram' || extractTelegramMessageUrl(id)) return extractTelegramMessageUrl(id) ?? id
   return provider === 'google_drive' || id.startsWith('gdrive:')
     ? `https://drive.google.com/file/d/${cleanDriveId(id)}/view`
     : `https://youtu.be/${id}`
