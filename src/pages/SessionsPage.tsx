@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { publicSupabase } from '../lib/supabase'
 import { SessionCard } from '../components/SessionCard'
@@ -8,6 +8,25 @@ import { useUi } from '../hooks/useUi'
 
 function isRecordingProvider(value: string): value is RecordingProvider {
   return ['youtube', 'google_drive', 'whatsapp', 'telegram'].includes(value)
+}
+
+type HomeView = 'pinned' | 'upcoming' | 'recent' | 'top-rated'
+
+function isHomeView(value: string | null): value is HomeView {
+  return value === 'pinned' || value === 'upcoming' || value === 'recent' || value === 'top-rated'
+}
+
+function applyHomeView(sessions: SearchSession[], view: HomeView | null) {
+  const next = [...sessions]
+  if (view === 'pinned') return next.filter((session) => Boolean(session.is_pinned))
+  if (view === 'upcoming') return next
+    .filter((session) => new Date(session.starts_at).getTime() >= Date.now())
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+  if (view === 'recent') return next.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  if (view === 'top-rated') return next
+    .filter((session) => Number(session.rating_count || 0) > 0)
+    .sort((a, b) => Number(b.average_rating || 0) - Number(a.average_rating || 0) || Number(b.rating_count || 0) - Number(a.rating_count || 0))
+  return next
 }
 
 export function SessionsPage() {
@@ -20,6 +39,8 @@ export function SessionsPage() {
   const [categoryId, setCategoryId] = useState(searchParams.get('category') ?? '')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const activeView = isHomeView(searchParams.get('view')) ? searchParams.get('view') as HomeView : null
+  const ar = language === 'ar'
 
   async function load(searchText = query, category = categoryId) {
     setLoading(true)
@@ -65,7 +86,7 @@ export function SessionsPage() {
       setSessions(enriched)
     } catch (err) {
       console.error('Could not load public sessions', err)
-      setError(language === 'ar' ? 'تعذر تحميل السيشنات الآن. حاولي التحديث مرة أخرى.' : 'Could not load sessions right now. Please refresh and try again.')
+      setError(ar ? 'تعذر تحميل السيشنات الآن. حاول التحديث مرة أخرى.' : 'Could not load sessions right now. Please refresh and try again.')
     } finally {
       setLoading(false)
     }
@@ -86,25 +107,37 @@ export function SessionsPage() {
     void load(nextQuery, nextCategory)
   }, [searchKey])
 
+  const visibleSessions = useMemo(() => applyHomeView(sessions, activeView), [sessions, activeView])
+  const viewTitle = activeView === 'pinned'
+    ? (ar ? 'السيشنات المثبتة' : 'Pinned sessions')
+    : activeView === 'upcoming'
+      ? (ar ? 'السيشنات القريبة' : 'Upcoming sessions')
+      : activeView === 'recent'
+        ? (ar ? 'المضافة حديثًا للأرشيف' : 'Recently added')
+        : activeView === 'top-rated'
+          ? (ar ? 'أعلى السيشنات تقييمًا' : 'Top-rated sessions')
+          : t('sessions.title')
+
   function submit(event: FormEvent) {
     event.preventDefault()
     const next = new URLSearchParams()
     const cleanQuery = query.trim()
     if (cleanQuery) next.set('search', cleanQuery)
     if (categoryId) next.set('category', categoryId)
+    if (activeView) next.set('view', activeView)
     if (next.toString() === searchKey) void load(cleanQuery, categoryId)
     else setSearchParams(next)
   }
 
   return <>
-    <section className="hero hero-v2"><div><div className="eyebrow">{t('sessions.eyebrow')}</div><h1>{t('sessions.title')}</h1><p>{t('sessions.subtitle')}</p></div></section>
+    <section className="hero hero-v2"><div><div className="eyebrow">{t('sessions.eyebrow')}</div><h1>{viewTitle}</h1><p>{t('sessions.subtitle')}</p></div></section>
     <form className="search-panel panel search-panel-v2" onSubmit={submit}>
       <label className="form-field">
-        <span className="field-label">{language === 'ar' ? 'البحث عن سيشن' : 'Search sessions'}</span>
+        <span className="field-label">{ar ? 'البحث عن سيشن' : 'Search sessions'}</span>
         <input placeholder={t('sessions.placeholder')} value={query} onChange={(e) => setQuery(e.target.value)} />
       </label>
       <label className="form-field">
-        <span className="field-label">{language === 'ar' ? 'التصنيف' : 'Category'}</span>
+        <span className="field-label">{ar ? 'التصنيف' : 'Category'}</span>
         <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
           <option value="">{t('sessions.allCategories')}</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
         </select>
@@ -113,8 +146,8 @@ export function SessionsPage() {
     </form>
     {error && <p className="notice error">{error}</p>}
     {loading ? <div className="page-state">{t('sessions.loading')}</div> : <section className="card-grid">
-      {sessions.map((session) => <SessionCard key={session.id} session={session} />)}
-      {!sessions.length && !error && <div className="empty-state">{t('sessions.noResults')}</div>}
+      {visibleSessions.map((session) => <SessionCard key={session.id} session={session} />)}
+      {!visibleSessions.length && !error && <div className="empty-state">{activeView ? (ar ? 'لا توجد سيشنات في هذا القسم حاليًا.' : 'There are no sessions in this section right now.') : t('sessions.noResults')}</div>}
     </section>}
   </>
 }
