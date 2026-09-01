@@ -78,7 +78,7 @@ export function PushResubscribeAction({ fullWidth = false }: { fullWidth?: boole
       showToast({
         kind: 'error',
         title: ar ? 'الإذن ما زال محظورًا' : 'Permission is still blocked',
-        message: ar ? 'اسمحي بالإشعارات من إعدادات الجهاز أو المتصفح أولًا، ثم ارجعي واضغطي الزر مرة أخرى.' : 'Allow notifications in your device or browser settings first, then return and try again.',
+        message: ar ? 'اسمح بالإشعارات من إعدادات الجهاز أو المتصفح أولًا، ثم ارجع واضغط الزر مرة أخرى.' : 'Allow notifications in your device or browser settings first, then return and try again.',
       })
       return
     }
@@ -94,7 +94,7 @@ export function PushResubscribeAction({ fullWidth = false }: { fullWidth?: boole
       : (ar ? 'إعادة الاشتراك في الإشعارات' : 'Re-subscribe to notifications')
 
   const permissionHelp = ar
-    ? 'المتصفح أو الجهاز حظر الإشعارات، والمنصة لا تستطيع تغيير هذا الإذن بنفسها. إذا كنتِ تفتحين التطبيق من الأيقونة: اضغطي مطولًا على أيقونة Sessions Archive ثم «معلومات التطبيق» ← «الإشعارات» ← «سماح». وإذا كنتِ داخل Chrome: افتحي ⋮ ← الإعدادات ← إعدادات المواقع ← الإشعارات ← Sessions Archive ← سماح. بعد السماح ارجعي للمنصة واضغطي «تحقق وفعّل الآن».'
+    ? 'المتصفح أو الجهاز حظر الإشعارات، والمنصة لا تستطيع تغيير هذا الإذن بنفسها. إذا كنت تفتح التطبيق من الأيقونة: اضغط مطولًا على أيقونة Sessions Archive ثم «معلومات التطبيق» ← «الإشعارات» ← «سماح». وإذا كنت داخل Chrome: افتح ⋮ ← الإعدادات ← إعدادات المواقع ← الإشعارات ← Sessions Archive ← سماح. بعد السماح ارجع للمنصة واضغط «تحقق وفعّل الآن».'
     : 'Notifications are blocked by the browser or device, and the app cannot change that permission itself. If you opened the installed app, long-press the Sessions Archive icon, open App info → Notifications → Allow. In Chrome, open ⋮ → Settings → Site settings → Notifications → Sessions Archive → Allow. Then return here and tap “Check and enable now”.'
 
   if (!user) return null
