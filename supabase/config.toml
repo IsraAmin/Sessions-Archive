@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.dispatch-push-notifications]
 verify_jwt = false
+
+[functions.session-share]
+verify_jwt = false
