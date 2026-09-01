@@ -133,7 +133,6 @@ export function HomePage() {
     .filter((session) => Number(session.rating_count || 0) > 0)
     .sort((a, b) => Number(b.average_rating || 0) - Number(a.average_rating || 0) || Number(b.rating_count || 0) - Number(a.rating_count || 0))
     .slice(0, 6), [sessions])
-  const sessionsWithRecording = useMemo(() => sessions.filter((session) => (session.recording_providers?.length ?? 0) > 0).length, [sessions])
 
   function submitSearch(event: FormEvent) {
     event.preventDefault()
@@ -156,11 +155,6 @@ export function HomePage() {
         <div className="home-hero-actions">
           <Link className="button home-secondary-button" to="/sessions">{ar ? 'استعراض كل السيشنات' : 'Browse all sessions'}</Link>
         </div>
-      </div>
-      <div className="home-hero-stats" aria-label={ar ? 'ملخص الأرشيف' : 'Archive summary'}>
-        <div className="home-stat"><strong>{sessions.length}</strong><span>{ar ? 'Session في الأرشيف' : 'Archived sessions'}</span></div>
-        <div className="home-stat"><strong>{categories.length}</strong><span>{ar ? 'تصنيفات' : 'Categories'}</span></div>
-        <div className="home-stat"><strong>{sessionsWithRecording}</strong><span>{ar ? 'تسجيلات متاحة' : 'Recordings available'}</span></div>
       </div>
     </section>
 
