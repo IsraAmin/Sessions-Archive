@@ -17,6 +17,27 @@ type SessionMetaRow = {
   cover_focus_y: number | null
 }
 
+type HomeSectionProps = {
+  icon: 'bookmark' | 'calendar' | 'layers' | 'chart'
+  kicker: string
+  title: string
+  view: 'pinned' | 'upcoming' | 'recent' | 'top-rated'
+  sessions: SearchSession[]
+  emptyTitle: string
+  emptyText: string
+  ar: boolean
+}
+
+function HomeSessionSection({ icon, kicker, title, view, sessions, emptyTitle, emptyText, ar }: HomeSectionProps) {
+  return <section className="home-section">
+    <div className="home-section-head">
+      <div><span className="home-section-kicker"><Icon name={icon} />{kicker}</span><h2>{title}</h2></div>
+      <Link to={`/sessions?view=${view}`} className="home-section-link">{ar ? 'عرض الكل' : 'View all'} <span aria-hidden="true">←</span></Link>
+    </div>
+    {sessions.length ? <div className="home-session-rail">{sessions.map((session) => <div className="home-session-rail-item" key={session.id}><SessionCard session={session} /></div>)}</div> : <div className="home-empty"><Icon name={icon} /><div><strong>{emptyTitle}</strong><span>{emptyText}</span></div></div>}
+  </section>
+}
+
 export function HomePage() {
   const { language, t } = useUi()
   const navigate = useNavigate()
@@ -89,7 +110,7 @@ export function HomePage() {
         }
       } catch (loadError) {
         console.error('Could not load home page', loadError)
-        if (active) setError(ar ? 'تعذر تحميل الصفحة الرئيسية الآن. حاولي التحديث مرة أخرى.' : 'Could not load the home page right now. Please refresh and try again.')
+        if (active) setError(ar ? 'تعذر تحميل الصفحة الرئيسية الآن. حاول التحديث مرة أخرى.' : 'Could not load the home page right now. Please refresh and try again.')
       } finally {
         if (active) setLoading(false)
       }
@@ -100,18 +121,18 @@ export function HomePage() {
   }, [ar])
 
   const now = Date.now()
-  const pinnedSession = useMemo(() => sessions.find((session) => Boolean(session.is_pinned)) ?? null, [sessions])
+  const pinnedSessions = useMemo(() => sessions.filter((session) => Boolean(session.is_pinned)).slice(0, 6), [sessions])
   const upcomingSessions = useMemo(() => [...sessions]
     .filter((session) => new Date(session.starts_at).getTime() >= now)
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
-    .slice(0, 3), [sessions, now])
+    .slice(0, 6), [sessions, now])
   const recentSessions = useMemo(() => [...sessions]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 4), [sessions])
+    .slice(0, 6), [sessions])
   const topRatedSessions = useMemo(() => [...sessions]
     .filter((session) => Number(session.rating_count || 0) > 0)
     .sort((a, b) => Number(b.average_rating || 0) - Number(a.average_rating || 0) || Number(b.rating_count || 0) - Number(a.rating_count || 0))
-    .slice(0, 4), [sessions])
+    .slice(0, 6), [sessions])
   const sessionsWithRecording = useMemo(() => sessions.filter((session) => (session.recording_providers?.length ?? 0) > 0).length, [sessions])
 
   function submitSearch(event: FormEvent) {
@@ -126,10 +147,10 @@ export function HomePage() {
     <section className="home-hero">
       <div className="home-hero-copy">
         <div className="home-hero-eyebrow">{ar ? 'كل السيشنات في مكان واحد' : 'Your sessions, in one place'}</div>
-        <h1>{ar ? 'ابدئي من هنا، ووصلي للمهم بسرعة.' : 'Start here and get to what matters fast.'}</h1>
-        <p>{ar ? 'السيشنات المثبتة، الأقرب، أحدث ما دخل الأرشيف، والأعلى تقييمًا — كلها قدامك من أول شاشة.' : 'Pinned sessions, what is coming next, the latest archive additions, and top-rated sessions — all from the first screen.'}</p>
+        <h1>{ar ? 'ابدأ من هنا، ووصل للمهم بسرعة.' : 'Start here and get to what matters fast.'}</h1>
+        <p>{ar ? 'السيشن المثبتة، الأقرب، أحدث ما دخل الأرشيف، والأعلى تقييمًا — كلها قدامك من أول شاشة.' : 'Pinned sessions, what is coming next, the latest archive additions, and top-rated sessions — all from the first screen.'}</p>
         <form className="home-search" onSubmit={submitSearch}>
-          <input aria-label={ar ? 'ابحثي في السيشنات' : 'Search sessions'} placeholder={ar ? 'ابحثي بعنوان السيشن، المتحدث أو التصنيف...' : 'Search by title, speaker, or category...'} value={query} onChange={(event) => setQuery(event.target.value)} />
+          <input aria-label={ar ? 'ابحث في السيشنات' : 'Search sessions'} placeholder={ar ? 'ابحث بعنوان السيشن، المتحدث أو التصنيف...' : 'Search by title, speaker, or category...'} value={query} onChange={(event) => setQuery(event.target.value)} />
           <button className="button button-primary" type="submit">{t('common.search')}</button>
         </form>
         <div className="home-hero-actions">
@@ -145,31 +166,52 @@ export function HomePage() {
 
     {error && <p className="notice error">{error}</p>}
 
-    <section className="home-section">
-      <div className="home-section-head">
-        <div><span className="home-section-kicker"><Icon name="bookmark" />{ar ? 'مهم الآن' : 'Featured'}</span><h2>{ar ? 'Session مثبتة' : 'Pinned session'}</h2></div>
-        <Link to="/sessions" className="home-section-link">{ar ? 'كل السيشنات' : 'All sessions'} <span aria-hidden="true">←</span></Link>
-      </div>
-      {pinnedSession ? <div className="home-featured"><SessionCard session={pinnedSession} /></div> : <div className="home-empty home-empty-featured"><Icon name="bookmark" /><div><strong>{ar ? 'ما في Session مثبتة حاليًا' : 'No pinned session right now'}</strong><span>{ar ? 'أول ما يتم تثبيت Session من الإدارة حتظهر هنا تلقائيًا.' : 'As soon as a session is pinned by an admin, it will appear here automatically.'}</span></div></div>}
-    </section>
+    <HomeSessionSection
+      icon="bookmark"
+      kicker={ar ? 'مهم الآن' : 'Featured'}
+      title={ar ? 'السيشن المثبتة' : 'Pinned session'}
+      view="pinned"
+      sessions={pinnedSessions}
+      emptyTitle={ar ? 'ما في Session مثبتة حاليًا' : 'No pinned session right now'}
+      emptyText={ar ? 'أول ما يتم تثبيت Session من الإدارة ستظهر هنا تلقائيًا.' : 'As soon as a session is pinned by an admin, it will appear here automatically.'}
+      ar={ar}
+    />
 
-    <section className="home-section">
-      <div className="home-section-head"><div><span className="home-section-kicker"><Icon name="calendar" />{ar ? 'على الطريق' : 'Coming up'}</span><h2>{ar ? 'Sessions قريبة' : 'Upcoming sessions'}</h2></div></div>
-      {upcomingSessions.length ? <div className="home-card-grid home-card-grid-three">{upcomingSessions.map((session) => <SessionCard key={session.id} session={session} />)}</div> : <div className="home-empty"><Icon name="calendar" /><div><strong>{ar ? 'ما في Sessions قادمة مضافة الآن' : 'No upcoming sessions yet'}</strong><span>{ar ? 'لما تتم إضافة موعد جديد حيظهر هنا مباشرة.' : 'New scheduled sessions will show up here automatically.'}</span></div></div>}
-    </section>
+    <HomeSessionSection
+      icon="calendar"
+      kicker={ar ? 'على الطريق' : 'Coming up'}
+      title={ar ? 'Sessions قريبة' : 'Upcoming sessions'}
+      view="upcoming"
+      sessions={upcomingSessions}
+      emptyTitle={ar ? 'ما في Sessions قادمة مضافة الآن' : 'No upcoming sessions yet'}
+      emptyText={ar ? 'لما تتم إضافة موعد جديد سيظهر هنا مباشرة.' : 'New scheduled sessions will show up here automatically.'}
+      ar={ar}
+    />
 
-    <section className="home-section">
-      <div className="home-section-head"><div><span className="home-section-kicker"><Icon name="layers" />{ar ? 'وصلت للأرشيف' : 'Fresh in the archive'}</span><h2>{ar ? 'أضيف حديثًا للأرشيف' : 'Recently added'}</h2></div><Link to="/sessions" className="home-section-link">{ar ? 'عرض الكل' : 'View all'} <span aria-hidden="true">←</span></Link></div>
-      {recentSessions.length ? <div className="home-card-grid">{recentSessions.map((session) => <SessionCard key={session.id} session={session} />)}</div> : <div className="home-empty"><Icon name="layers" /><div><strong>{ar ? 'الأرشيف فاضي حاليًا' : 'The archive is empty'}</strong><span>{ar ? 'أول Session منشورة حتظهر هنا.' : 'The first published session will appear here.'}</span></div></div>}
-    </section>
+    <HomeSessionSection
+      icon="layers"
+      kicker={ar ? 'وصلت للأرشيف' : 'Fresh in the archive'}
+      title={ar ? 'أضيف حديثًا للأرشيف' : 'Recently added'}
+      view="recent"
+      sessions={recentSessions}
+      emptyTitle={ar ? 'الأرشيف فاضي حاليًا' : 'The archive is empty'}
+      emptyText={ar ? 'أول Session منشورة ستظهر هنا.' : 'The first published session will appear here.'}
+      ar={ar}
+    />
 
-    <section className="home-section">
-      <div className="home-section-head"><div><span className="home-section-kicker"><Icon name="chart" />{ar ? 'اختيارات الجمهور' : 'Community favorites'}</span><h2>{ar ? 'أعلى Sessions تقييمًا' : 'Top-rated sessions'}</h2></div></div>
-      {topRatedSessions.length ? <div className="home-card-grid">{topRatedSessions.map((session) => <SessionCard key={session.id} session={session} />)}</div> : <div className="home-empty"><Icon name="chart" /><div><strong>{ar ? 'لسه ما في تقييمات كفاية' : 'No ratings yet'}</strong><span>{ar ? 'بعد أول تقييم، أعلى السيشنات حتظهر هنا.' : 'Once ratings arrive, the highest-rated sessions will appear here.'}</span></div></div>}
-    </section>
+    <HomeSessionSection
+      icon="chart"
+      kicker={ar ? 'اختيارات الجمهور' : 'Community favorites'}
+      title={ar ? 'أعلى Sessions تقييمًا' : 'Top-rated sessions'}
+      view="top-rated"
+      sessions={topRatedSessions}
+      emptyTitle={ar ? 'لسه ما في تقييمات كفاية' : 'No ratings yet'}
+      emptyText={ar ? 'بعد أول تقييم، أعلى السيشنات ستظهر هنا.' : 'Once ratings arrive, the highest-rated sessions will appear here.'}
+      ar={ar}
+    />
 
     <section className="home-section home-categories-section">
-      <div className="home-section-head"><div><span className="home-section-kicker"><Icon name="layers" />{ar ? 'وصول أسرع' : 'Quick access'}</span><h2>{ar ? 'تصنيفات سريعة' : 'Quick categories'}</h2></div></div>
+      <div className="home-section-head"><div><span className="home-section-kicker"><Icon name="layers" />{ar ? 'وصول أسرع' : 'Quick access'}</span><h2>{ar ? 'تصنيفات سريعة' : 'Quick categories'}</h2></div><Link to="/sessions" className="home-section-link">{ar ? 'عرض الكل' : 'View all'} <span aria-hidden="true">←</span></Link></div>
       <div className="home-category-grid">
         {categories.map((category) => {
           const count = sessions.filter((session) => session.category_id === category.id).length
