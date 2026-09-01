@@ -4,6 +4,7 @@ import { UiProvider } from './hooks/useUi'
 import { ToastProvider } from './components/ToastProvider'
 import { Layout } from './components/Layout'
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute'
+import { HomePage } from './pages/HomePage'
 import { SessionsPage } from './pages/SessionsPage'
 import { SessionDetailsPage } from './pages/SessionDetailsPage'
 import { SavedSessionsPage } from './pages/SavedSessionsPage'
@@ -23,7 +24,8 @@ export default function App() {
         <AuthProvider>
           <Routes>
             <Route element={<Layout />}>
-              <Route index element={<SessionsPage />} />
+              <Route index element={<HomePage />} />
+              <Route path="sessions" element={<SessionsPage />} />
               <Route path="sessions/:id" element={<SessionDetailsPage />} />
               <Route path="auth" element={<AuthPage />} />
               <Route path="saved" element={<ProtectedRoute><SavedSessionsPage /></ProtectedRoute>} />

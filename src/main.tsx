@@ -16,6 +16,7 @@ import './mobile-notifications.css'
 import './admin-scroll-lists.css'
 import './video-parts.css'
 import './cover-focus.css'
+import './home.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

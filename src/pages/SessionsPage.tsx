@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { publicSupabase } from '../lib/supabase'
 import { SessionCard } from '../components/SessionCard'
 import type { Category, RecordingProvider, SearchSession } from '../types/domain'
@@ -11,10 +12,12 @@ function isRecordingProvider(value: string): value is RecordingProvider {
 
 export function SessionsPage() {
   const { language, t } = useUi()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const searchKey = searchParams.toString()
   const [sessions, setSessions] = useState<SearchSession[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [query, setQuery] = useState('')
-  const [categoryId, setCategoryId] = useState('')
+  const [query, setQuery] = useState(searchParams.get('search') ?? '')
+  const [categoryId, setCategoryId] = useState(searchParams.get('category') ?? '')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -73,12 +76,24 @@ export function SessionsPage() {
       if (categoryError) console.error('Could not load categories', errorMessage(categoryError))
       setCategories((data ?? []) as Category[])
     })
-    void load('', '')
   }, [])
+
+  useEffect(() => {
+    const nextQuery = searchParams.get('search') ?? ''
+    const nextCategory = searchParams.get('category') ?? ''
+    setQuery(nextQuery)
+    setCategoryId(nextCategory)
+    void load(nextQuery, nextCategory)
+  }, [searchKey])
 
   function submit(event: FormEvent) {
     event.preventDefault()
-    void load()
+    const next = new URLSearchParams()
+    const cleanQuery = query.trim()
+    if (cleanQuery) next.set('search', cleanQuery)
+    if (categoryId) next.set('category', categoryId)
+    if (next.toString() === searchKey) void load(cleanQuery, categoryId)
+    else setSearchParams(next)
   }
 
   return <>
