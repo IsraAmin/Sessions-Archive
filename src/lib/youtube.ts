@@ -34,6 +34,20 @@ export function extractWhatsAppChannelUpdateUrl(value: string) {
   }
 }
 
+export function extractTelegramMessageUrl(value: string) {
+  const input = value.trim()
+  try {
+    const url = new URL(input)
+    const host = url.hostname.replace(/^www\./, '').replace(/^m\./, '').toLowerCase()
+    if (host !== 't.me' && host !== 'telegram.me') return null
+    if (!url.pathname || url.pathname === '/' || /\s/.test(url.pathname)) return null
+
+    return `https://t.me${url.pathname}${url.search}`
+  } catch {
+    return null
+  }
+}
+
 export function extractYouTubeVideoId(value: string) {
   const input = value.trim()
   if (YOUTUBE_VIDEO_ID.test(input)) return input
@@ -41,6 +55,9 @@ export function extractYouTubeVideoId(value: string) {
 
   const whatsappUrl = extractWhatsAppChannelUpdateUrl(input)
   if (whatsappUrl) return whatsappUrl
+
+  const telegramUrl = extractTelegramMessageUrl(input)
+  if (telegramUrl) return telegramUrl
 
   try {
     const url = new URL(input)
