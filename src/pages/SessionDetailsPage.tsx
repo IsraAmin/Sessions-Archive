@@ -218,7 +218,7 @@ export function SessionDetailsPage() {
             <small>{activeVideoPart.videos.length} {ar ? (activeVideoPart.videos.length === 1 ? 'تسجيل' : 'تسجيلات') : (activeVideoPart.videos.length === 1 ? 'recording' : 'recordings')}</small>
           </div>
           {videoParts.length > 1 ? <label className="recording-part-select">
-            <span>{ar ? 'اختاري الجزء' : 'Choose part'}</span>
+            <span>{ar ? 'اختر الجزء' : 'Choose part'}</span>
             <select value={activeVideoPart.part} onChange={(event) => setSelectedVideoPart(Number(event.target.value))}>
               {videoParts.map((entry) => <option key={entry.part} value={entry.part}>Part {entry.part} — {entry.videos.length} {ar ? (entry.videos.length === 1 ? 'تسجيل' : 'تسجيلات') : entry.videos.length === 1 ? 'recording' : 'recordings'}</option>)}
             </select>
@@ -239,7 +239,7 @@ export function SessionDetailsPage() {
     </div>
 
     <aside className="panel action-panel action-panel-v2">
-      {!user ? <><p>{ar ? 'سجّلي الدخول لحفظ السيشن وإضافة تقييم أو تعليق.' : 'Sign in to save this session and leave a rating or comment.'}</p><Link className="button button-primary full" to="/auth">{t('common.signIn')}</Link></> : <>
+      {!user ? <><p>{ar ? 'سجّل الدخول لحفظ السيشن وإضافة تقييم أو تعليق.' : 'Sign in to save this session and leave a rating or comment.'}</p><Link className="button button-primary full" to="/auth">{t('common.signIn')}</Link></> : <>
         <button className="button button-secondary full" disabled={busy} onClick={() => void action(async () => {
           if (bookmarked) { const { error } = await supabase.from('bookmarks').delete().eq('session_id', session.id).eq('user_id', user.id); if (error) throw error }
           else { const { error } = await supabase.from('bookmarks').insert({ session_id: session.id, user_id: user.id, note: null }); if (error) throw error }
