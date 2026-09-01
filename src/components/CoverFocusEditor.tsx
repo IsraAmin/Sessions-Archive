@@ -13,7 +13,7 @@ export function CoverFocusEditor({ session, language }: { session: Session; lang
   const [y, setY] = useState(() => clampFocus(session.cover_focus_y))
 
   if (!image) {
-    return <div className="cover-focus-empty">{ar ? 'ارفعي غلاف السيشن أولاً، وبعدها سيظهر هنا التحكم في الجزء الظاهر داخل الكارد.' : 'Upload a session cover first, then the card crop controls will appear here.'}</div>
+    return <div className="cover-focus-empty">{ar ? 'ارفع غلاف السيشن أولاً، وبعدها سيظهر هنا التحكم في الجزء الظاهر داخل الكارد.' : 'Upload a session cover first, then the card crop controls will appear here.'}</div>
   }
 
   return <div className="cover-focus-editor">
@@ -30,12 +30,12 @@ export function CoverFocusEditor({ session, language }: { session: Session; lang
       <label>
         <span><strong>{ar ? 'الموضع الأفقي' : 'Horizontal position'}</strong><b>{Math.round(x)}%</b></span>
         <input dir="ltr" name="cover_focus_x" type="range" min="0" max="100" step="1" value={x} onChange={(event) => setX(Number(event.target.value))} />
-        <small>{ar ? 'حرّكيه لاختيار الجزء من اليسار إلى اليمين.' : 'Move it to choose the visible area from left to right.'}</small>
+        <small>{ar ? 'حرّكه لاختيار الجزء من اليسار إلى اليمين.' : 'Move it to choose the visible area from left to right.'}</small>
       </label>
       <label>
         <span><strong>{ar ? 'الموضع الرأسي' : 'Vertical position'}</strong><b>{Math.round(y)}%</b></span>
         <input dir="ltr" name="cover_focus_y" type="range" min="0" max="100" step="1" value={y} onChange={(event) => setY(Number(event.target.value))} />
-        <small>{ar ? 'حرّكيه لاختيار الجزء من أعلى إلى أسفل.' : 'Move it to choose the visible area from top to bottom.'}</small>
+        <small>{ar ? 'حرّكه لاختيار الجزء من أعلى إلى أسفل.' : 'Move it to choose the visible area from top to bottom.'}</small>
       </label>
     </div>
 
