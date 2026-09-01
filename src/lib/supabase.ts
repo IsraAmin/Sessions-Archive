@@ -37,3 +37,7 @@ export function publicStorageUrl(bucket: string, path: string | null) {
   if (!path) return null
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
 }
+
+export function sessionShareUrl(sessionId: string) {
+  return `${supabaseUrl}/functions/v1/session-share?id=${encodeURIComponent(sessionId)}`
+}
