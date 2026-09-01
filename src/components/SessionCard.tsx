@@ -1,15 +1,8 @@
 import { Link } from 'react-router-dom'
-import type { RecordingProvider, SearchSession, Session } from '../types/domain'
+import type { SearchSession, Session } from '../types/domain'
 import { publicStorageUrl } from '../lib/supabase'
 import { useUi } from '../hooks/useUi'
 import { StarRating } from './StarRating'
-
-function providerLabel(provider: RecordingProvider) {
-  if (provider === 'google_drive') return 'Google Drive'
-  if (provider === 'whatsapp') return 'WhatsApp'
-  if (provider === 'telegram') return 'Telegram'
-  return 'YouTube'
-}
 
 export function SessionCard({ session }: { session: Session | SearchSession }) {
   const { locale, t, language } = useUi()
@@ -36,10 +29,7 @@ export function SessionCard({ session }: { session: Session | SearchSession }) {
 
       <div className={`session-recording-status ${hasRecording ? 'available' : 'pending'}`}>
         <span className="session-recording-status-dot" aria-hidden="true" />
-        <div>
-          <strong>{hasRecording ? (ar ? 'التسجيل متاح' : 'Recording available') : (ar ? 'التسجيل غير مضاف بعد' : 'Recording not added yet')}</strong>
-          {hasRecording && <span className="session-recording-providers">{recordingProviders.map((provider) => <small key={provider}>{providerLabel(provider)}</small>)}</span>}
-        </div>
+        <strong>{hasRecording ? (ar ? 'التسجيل متاح' : 'Recording available') : (ar ? 'التسجيل غير مضاف بعد' : 'Recording not added yet')}</strong>
       </div>
 
       <div className="session-meta"><span className="session-bidi-text" dir="auto">{speaker || t('sessions.speakerLater')}</span><span>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(session.starts_at))}</span></div>
