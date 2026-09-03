@@ -105,11 +105,23 @@ select option {
   }
 }
 
+/* Dark mode deliberately uses the stable native select shell instead of
+   Chromium base-select. Some Chromium versions render their internal picker
+   adornments on top of our custom chevron in dark color-scheme, producing
+   multiple arrows. Forcing appearance:none here guarantees exactly one arrow. */
 :root[data-theme='dark'] select:not([multiple]) {
+  -webkit-appearance: none !important;
+  appearance: none !important;
   background-color: #101a28;
   color: var(--v2-heading, #f6f8fc);
   border-color: #2a3a50;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2391a2b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat !important;
+  background-size: 18px 18px !important;
+}
+
+:root[data-theme='dark'] select:not([multiple])::-ms-expand {
+  display: none;
 }
 
 :root[data-theme='dark'] select:not([multiple]):hover {
@@ -117,13 +129,16 @@ select option {
 }
 
 :root[data-theme='dark'] select option,
-:root[data-theme='dark'] select optgroup,
-:root[data-theme='dark'] ::picker(select) {
+:root[data-theme='dark'] select optgroup {
   background: var(--v2-surface-2, #131e2d);
   color: var(--v2-text, #d6deea);
 }
 
 @supports (appearance: base-select) {
+  :root[data-theme='dark'] select:not([multiple])::picker-icon {
+    display: none !important;
+  }
+
   :root[data-theme='dark'] select option:hover,
   :root[data-theme='dark'] select option:focus {
     background: var(--v2-surface-3, #192638);
@@ -132,11 +147,6 @@ select option {
   :root[data-theme='dark'] select option:checked {
     background: color-mix(in srgb, var(--v2-brand, #6ea0ff) 17%, var(--v2-surface-2, #131e2d));
     color: #b8ceff;
-  }
-
-  :root[data-theme='dark'] ::picker(select) {
-    border-color: var(--v2-border, #25354a);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, .4);
   }
 }
 
