@@ -18,6 +18,7 @@ import './admin-backup.css'
 import './video-parts.css'
 import './cover-focus.css'
 import './home.css'
+import './select-system.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
