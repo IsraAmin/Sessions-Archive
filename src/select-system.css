@@ -1,0 +1,158 @@
+/* Unified select/dropdown system for every single-choice select in the platform. */
+select:not([multiple]) {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 48px;
+  cursor: pointer;
+  border-radius: 14px;
+  border: 1px solid var(--v2-border, #cbd5e1);
+  background-color: var(--v2-surface, #fff);
+  color: var(--v2-text, #122033);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .02);
+  transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+
+/* In RTL the arrow sits on the left, but intentionally inset from the edge
+   so it visually belongs to the selected value instead of floating at the border. */
+select:not([multiple]):dir(rtl) {
+  background-position: left clamp(1.15rem, 7%, 3.6rem) center;
+  padding-inline-start: clamp(3rem, 12%, 5.25rem);
+  padding-inline-end: .95rem;
+}
+
+select:not([multiple]):dir(ltr) {
+  background-position: right clamp(1.15rem, 7%, 3.6rem) center;
+  padding-inline-end: clamp(3rem, 12%, 5.25rem);
+  padding-inline-start: .95rem;
+}
+
+select:not([multiple]):hover {
+  border-color: color-mix(in srgb, var(--v2-brand, #3157d5) 30%, var(--v2-border, #cbd5e1));
+}
+
+select:not([multiple]):focus,
+select:not([multiple]):focus-visible {
+  border-color: color-mix(in srgb, var(--v2-brand, #3157d5) 68%, var(--v2-border, #cbd5e1));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--v2-brand, #3157d5) 12%, transparent);
+}
+
+select:not([multiple]):disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+select option,
+select optgroup {
+  background: var(--v2-surface, #fff);
+  color: var(--v2-text, #122033);
+  font: inherit;
+}
+
+select option {
+  padding: .7rem .85rem;
+}
+
+/* Chromium's customizable select gets a fully designed dropdown panel.
+   Browsers that do not support it keep the polished native fallback above. */
+@supports (appearance: base-select) {
+  select:not([multiple]),
+  ::picker(select) {
+    appearance: base-select;
+  }
+
+  select:not([multiple])::picker-icon {
+    display: none;
+  }
+
+  ::picker(select) {
+    margin-block-start: 7px;
+    padding: 6px;
+    max-height: min(340px, 48vh);
+    overflow: auto;
+    border: 1px solid color-mix(in srgb, var(--v2-border, #cbd5e1) 92%, transparent);
+    border-radius: 16px;
+    background: var(--v2-surface, #fff);
+    color: var(--v2-text, #122033);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, .14);
+  }
+
+  select option {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    padding: .65rem .8rem;
+    margin: 2px 0;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  select option:hover,
+  select option:focus {
+    background: var(--v2-surface-2, #f8fafc);
+  }
+
+  select option:checked {
+    background: color-mix(in srgb, var(--v2-brand, #3157d5) 11%, var(--v2-surface, #fff));
+    color: var(--v2-brand, #3157d5);
+    font-weight: 800;
+  }
+
+  select option::checkmark {
+    display: none;
+  }
+}
+
+:root[data-theme='dark'] select:not([multiple]) {
+  background-color: #101a28;
+  color: var(--v2-heading, #f6f8fc);
+  border-color: #2a3a50;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2391a2b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+}
+
+:root[data-theme='dark'] select:not([multiple]):hover {
+  border-color: #3a4e69;
+}
+
+:root[data-theme='dark'] select option,
+:root[data-theme='dark'] select optgroup,
+:root[data-theme='dark'] ::picker(select) {
+  background: var(--v2-surface-2, #131e2d);
+  color: var(--v2-text, #d6deea);
+}
+
+@supports (appearance: base-select) {
+  :root[data-theme='dark'] select option:hover,
+  :root[data-theme='dark'] select option:focus {
+    background: var(--v2-surface-3, #192638);
+  }
+
+  :root[data-theme='dark'] select option:checked {
+    background: color-mix(in srgb, var(--v2-brand, #6ea0ff) 17%, var(--v2-surface-2, #131e2d));
+    color: #b8ceff;
+  }
+
+  :root[data-theme='dark'] ::picker(select) {
+    border-color: var(--v2-border, #25354a);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .4);
+  }
+}
+
+@media (max-width: 640px) {
+  select:not([multiple]) {
+    min-height: 46px;
+    border-radius: 13px;
+  }
+
+  select:not([multiple]):dir(rtl) {
+    background-position: left clamp(1rem, 6%, 2rem) center;
+    padding-inline-start: clamp(2.8rem, 11%, 4rem);
+  }
+
+  select:not([multiple]):dir(ltr) {
+    background-position: right clamp(1rem, 6%, 2rem) center;
+    padding-inline-end: clamp(2.8rem, 11%, 4rem);
+  }
+}
