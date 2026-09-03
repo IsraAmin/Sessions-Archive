@@ -85,8 +85,10 @@ select option {
     align-items: center;
     padding: .65rem .8rem;
     margin: 2px 0;
+    border: 1px solid transparent;
     border-radius: 10px;
     cursor: pointer;
+    transition: background-color .14s ease, border-color .14s ease, color .14s ease, transform .14s ease;
   }
 
   select option:hover,
@@ -105,27 +107,56 @@ select option {
   }
 }
 
-/* Dark mode deliberately uses the stable native select shell instead of
-   Chromium base-select. Some Chromium versions render their internal picker
-   adornments on top of our custom chevron in dark color-scheme, producing
-   multiple arrows. Forcing appearance:none here guarantees exactly one arrow. */
+/* Dark fallback: one custom chevron sitting inside a soft blue halo.
+   This remains stable on browsers without customizable select support. */
 :root[data-theme='dark'] select:not([multiple]) {
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  background-color: #101a28;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #0f1927;
   color: var(--v2-heading, #f6f8fc);
-  border-color: #2a3a50;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2391a2b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat !important;
-  background-size: 18px 18px !important;
+  border-color: #2b3b52;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23b6ccff' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E"),
+    radial-gradient(circle, rgba(110,160,255,.18) 0 54%, rgba(110,160,255,.07) 55% 70%, transparent 71%);
+  background-repeat: no-repeat, no-repeat;
+  background-size: 18px 18px, 36px 36px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.025),
+    0 8px 22px rgba(0,0,0,.12);
+}
+
+:root[data-theme='dark'] select:not([multiple]):dir(rtl) {
+  background-position:
+    left clamp(1.15rem, 7%, 3.6rem) center,
+    left calc(clamp(1.15rem, 7%, 3.6rem) - 9px) center;
+}
+
+:root[data-theme='dark'] select:not([multiple]):dir(ltr) {
+  background-position:
+    right clamp(1.15rem, 7%, 3.6rem) center,
+    right calc(clamp(1.15rem, 7%, 3.6rem) - 9px) center;
+}
+
+:root[data-theme='dark'] select:not([multiple]):hover {
+  border-color: #45638c;
+  background-color: #111e2e;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.035),
+    0 10px 26px rgba(0,0,0,.16),
+    0 0 0 1px rgba(110,160,255,.05);
+}
+
+:root[data-theme='dark'] select:not([multiple]):focus,
+:root[data-theme='dark'] select:not([multiple]):focus-visible {
+  border-color: color-mix(in srgb, var(--v2-brand, #6ea0ff) 72%, #2b3b52);
+  background-color: #111f30;
+  box-shadow:
+    0 0 0 4px rgba(110,160,255,.11),
+    0 12px 30px rgba(0,0,0,.18);
 }
 
 :root[data-theme='dark'] select:not([multiple])::-ms-expand {
   display: none;
-}
-
-:root[data-theme='dark'] select:not([multiple]):hover {
-  border-color: #3a4e69;
 }
 
 :root[data-theme='dark'] select option,
@@ -134,19 +165,110 @@ select option {
   color: var(--v2-text, #d6deea);
 }
 
+/* Dark creative mode: supported Chromium gets a true custom picker.
+   The select uses the browser's single picker icon as our only arrow, so no duplicates. */
 @supports (appearance: base-select) {
+  :root[data-theme='dark'] select:not([multiple]),
+  :root[data-theme='dark'] ::picker(select) {
+    appearance: base-select !important;
+  }
+
+  :root[data-theme='dark'] select:not([multiple]) {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding-inline: .95rem !important;
+    background-image: none !important;
+    background: linear-gradient(135deg, #0f1927 0%, #111f31 58%, #102139 100%);
+    border-color: #2f425c;
+  }
+
   :root[data-theme='dark'] select:not([multiple])::picker-icon {
-    display: none !important;
+    display: inline-grid !important;
+    place-items: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    margin-inline-start: .35rem;
+    margin-inline-end: 0;
+    padding: 6px;
+    border: 1px solid rgba(126,166,255,.27);
+    border-radius: 10px;
+    color: #b7ccff;
+    background: linear-gradient(145deg, rgba(110,160,255,.16), rgba(64,106,199,.07));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.07),
+      0 5px 14px rgba(0,0,0,.18),
+      0 0 18px rgba(88,137,255,.07);
+    transition: rotate .18s ease, transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+  }
+
+  :root[data-theme='dark'] select:not([multiple]):hover::picker-icon {
+    border-color: rgba(140,180,255,.42);
+    background: linear-gradient(145deg, rgba(110,160,255,.23), rgba(64,106,199,.11));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.09),
+      0 6px 16px rgba(0,0,0,.2),
+      0 0 22px rgba(88,137,255,.11);
+  }
+
+  :root[data-theme='dark'] select:not([multiple]):open::picker-icon {
+    rotate: 180deg;
+    transform: scale(.94);
+    border-color: rgba(146,184,255,.55);
+    background: linear-gradient(145deg, rgba(110,160,255,.3), rgba(64,106,199,.15));
+  }
+
+  :root[data-theme='dark'] ::picker(select) {
+    margin-block-start: 9px;
+    padding: 8px;
+    max-height: min(360px, 50vh);
+    overflow: auto;
+    border: 1px solid #314864;
+    border-radius: 18px;
+    background:
+      linear-gradient(145deg, rgba(19,30,45,.99), rgba(12,23,37,.99)),
+      radial-gradient(circle at 15% 0%, rgba(110,160,255,.12), transparent 38%);
+    color: var(--v2-text, #d6deea);
+    box-shadow:
+      0 26px 70px rgba(0,0,0,.52),
+      0 0 0 1px rgba(110,160,255,.035),
+      inset 0 1px 0 rgba(255,255,255,.035);
+  }
+
+  :root[data-theme='dark'] select option {
+    min-height: 44px;
+    margin: 3px 0;
+    padding: .68rem .82rem;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    color: #cbd6e7;
+    background: transparent;
   }
 
   :root[data-theme='dark'] select option:hover,
   :root[data-theme='dark'] select option:focus {
-    background: var(--v2-surface-3, #192638);
+    color: #f2f6ff;
+    background: linear-gradient(90deg, rgba(110,160,255,.11), rgba(110,160,255,.035));
+    border-color: rgba(110,160,255,.12);
+    transform: translateX(2px);
+  }
+
+  :root[dir='rtl'][data-theme='dark'] select option:hover,
+  :root[dir='rtl'][data-theme='dark'] select option:focus {
+    transform: translateX(-2px);
   }
 
   :root[data-theme='dark'] select option:checked {
-    background: color-mix(in srgb, var(--v2-brand, #6ea0ff) 17%, var(--v2-surface-2, #131e2d));
-    color: #b8ceff;
+    color: #c8d8ff;
+    background: linear-gradient(90deg, rgba(110,160,255,.19), rgba(70,111,212,.08));
+    border-color: rgba(126,166,255,.22);
+    box-shadow: inset 0 0 0 1px rgba(126,166,255,.035);
+    font-weight: 800;
+  }
+
+  :root[data-theme='dark'] select option::checkmark {
+    display: none;
   }
 }
 
@@ -164,5 +286,29 @@ select option {
   select:not([multiple]):dir(ltr) {
     background-position: right clamp(1rem, 6%, 2rem) center;
     padding-inline-end: clamp(2.8rem, 11%, 4rem);
+  }
+
+  :root[data-theme='dark'] select:not([multiple]):dir(rtl) {
+    background-position:
+      left clamp(1rem, 6%, 2rem) center,
+      left calc(clamp(1rem, 6%, 2rem) - 9px) center;
+  }
+
+  :root[data-theme='dark'] select:not([multiple]):dir(ltr) {
+    background-position:
+      right clamp(1rem, 6%, 2rem) center,
+      right calc(clamp(1rem, 6%, 2rem) - 9px) center;
+  }
+
+  @supports (appearance: base-select) {
+    :root[data-theme='dark'] select:not([multiple]) {
+      padding-inline: .85rem !important;
+    }
+
+    :root[data-theme='dark'] select:not([multiple])::picker-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+    }
   }
 }
