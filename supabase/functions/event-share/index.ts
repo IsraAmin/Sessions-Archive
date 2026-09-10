@@ -148,7 +148,7 @@ Deno.serve(async (req: Request) => {
   const shareUrl = `${requestUrl.origin}${requestUrl.pathname}?id=${encodeURIComponent(event.id)}`
   const title = compactText(event.title, 120)
   const metaLine = [typeLabel(event.event_type), formatDate(event.event_date), event.location?.trim()].filter(Boolean).join(' • ')
-  const description = compactText([event.description?.trim(), metaLine].filter(Boolean).join(' — ') || 'فعالية في Sessions Repeat', 200)
+  const description = compactText([event.description?.trim(), metaLine].filter(Boolean).join(' — ') || 'فعالية في Archive Repeat', 200)
   imageUrl = imageUrl ?? `${appBase}/icon-192.png?v=6`
 
   const userAgent = req.headers.get('user-agent') ?? ''
@@ -177,10 +177,10 @@ Deno.serve(async (req: Request) => {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${safeTitle} | Sessions Repeat</title>
+  <title>${safeTitle} | Archive Repeat</title>
   <meta name="description" content="${safeDescription}" />
   <meta property="og:type" content="article" />
-  <meta property="og:site_name" content="Sessions Repeat" />
+  <meta property="og:site_name" content="Archive Repeat" />
   <meta property="og:title" content="${safeTitle}" />
   <meta property="og:description" content="${safeDescription}" />
   <meta property="og:image" content="${safeImage}" />
@@ -196,7 +196,7 @@ Deno.serve(async (req: Request) => {
   <main>
     <h1>${safeTitle}</h1>
     <p>${safeDescription}</p>
-    <p><a href="${safeDestination}">فتح في Sessions Repeat</a></p>
+    <p><a href="${safeDestination}">فتح في Archive Repeat</a></p>
   </main>
 </body>
 </html>`

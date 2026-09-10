@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Sessions Repeat",
-  "short_name": "Sessions Repeat",
-  "description": "Sessions Repeat للسيشنات والفعاليات والصور والفيديوهات الطلابية.",
+  "name": "Archive Repeat",
+  "short_name": "Archive Repeat",
+  "description": "Archive Repeat للسيشنات والفعاليات والصور والفيديوهات الطلابية.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

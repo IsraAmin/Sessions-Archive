@@ -99,7 +99,7 @@ export function EventDetailsPage() {
     const caption = (event.description ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)
     const shareData = {
       title,
-      text: `Sessions Repeat:\n${title}${caption ? `\n${caption}` : ''}`,
+      text: `Archive Repeat:\n${title}${caption ? `\n${caption}` : ''}`,
       url,
     }
 

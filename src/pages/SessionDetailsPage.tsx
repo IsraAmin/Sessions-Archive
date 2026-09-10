@@ -110,7 +110,7 @@ export function SessionDetailsPage() {
     const url = sessionShareUrl(session.id)
     const shareData = {
       title: session.title.replace(/\s+/g, ' ').trim(),
-      text: `Sessions Repeat:\n${session.title.replace(/\s+/g, ' ').trim()}`,
+      text: `Archive Repeat:\n${session.title.replace(/\s+/g, ' ').trim()}`,
       url,
     }
 
