@@ -22,22 +22,16 @@ jobs:
 
           event_path = Path('src/pages/EventDetailsPage.tsx')
           event_text = event_path.read_text()
-          old_event = """      text: ar
-        ? `شوف الفعالية دي في أرشيف ريبيت: ${title}${caption ? ` — ${caption}` : ''}`
-        : `Check out this event on أرشيف ريبيت: ${title}${caption ? ` — ${caption}` : ''}`,
-"""
-          new_event = """      text: `أرشيف ريبيت:\n${title}${caption ? `\n${caption}` : ''}`,
-"""
+          old_event = "      text: ar\n        ? `شوف الفعالية دي في أرشيف ريبيت: ${title}${caption ? ` — ${caption}` : ''}`\n        : `Check out this event on أرشيف ريبيت: ${title}${caption ? ` — ${caption}` : ''}`,\n"
+          new_event = "      text: `أرشيف ريبيت:\\n${title}${caption ? `\\n${caption}` : ''}`,\n"
           if old_event not in event_text:
               raise SystemExit('Event share copy pattern not found')
           event_path.write_text(event_text.replace(old_event, new_event))
 
           session_path = Path('src/pages/SessionDetailsPage.tsx')
           session_text = session_path.read_text()
-          old_session = """      text: ar ? `شوف السيشن دي في أرشيف ريبيت: ${session.title.replace(/\\s+/g, ' ').trim()}` : `Check out this session on أرشيف ريبيت: ${session.title.replace(/\\s+/g, ' ').trim()}`,
-"""
-          new_session = """      text: `أرشيف ريبيت:\n${session.title.replace(/\\s+/g, ' ').trim()}`,
-"""
+          old_session = "      text: ar ? `شوف السيشن دي في أرشيف ريبيت: ${session.title.replace(/\\s+/g, ' ').trim()}` : `Check out this session on أرشيف ريبيت: ${session.title.replace(/\\s+/g, ' ').trim()}`,\n"
+          new_session = "      text: `أرشيف ريبيت:\\n${session.title.replace(/\\s+/g, ' ').trim()}`,\n"
           if old_session not in session_text:
               raise SystemExit('Session share copy pattern not found')
           session_path.write_text(session_text.replace(old_session, new_session))
