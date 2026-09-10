@@ -8,23 +8,6 @@ import { eventCoverDisplayUrl, eventImageDisplayUrl, eventVideoPlayerId, googleD
 import { publicSupabase } from '../lib/supabase'
 import type { CollegeEvent, EventMedia } from '../types/domain'
 
-function GalleryImage({ media, alt, onOpen }: { media: EventMedia; alt: string; onOpen: () => void }) {
-  const [failed, setFailed] = useState(false)
-
-  if (failed) {
-    return <a className="event-image-fallback" href={media.source_url} target="_blank" rel="noopener noreferrer">
-      <Icon name="layers" />
-      <span>{alt}</span>
-      <small>↗</small>
-    </a>
-  }
-
-  return <button type="button" className="event-gallery-image" onClick={onOpen} aria-label={alt}>
-    <img src={eventImageDisplayUrl(media)} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
-    {media.is_cover && <span className="event-cover-label">Cover</span>}
-  </button>
-}
-
 export function EventDetailsPage() {
   const { id } = useParams()
   const { language } = useUi()
@@ -33,7 +16,10 @@ export function EventDetailsPage() {
   const [media, setMedia] = useState<EventMedia[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [galleryIndex, setGalleryIndex] = useState(0)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [driveExpanded, setDriveExpanded] = useState(false)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
 
   useEffect(() => {
     let active = true
@@ -51,6 +37,8 @@ export function EventDetailsPage() {
         if (active) {
           setEvent(eventResult.data as CollegeEvent)
           setMedia((mediaResult.data ?? []) as EventMedia[])
+          setGalleryIndex(0)
+          setDriveExpanded(false)
         }
       } catch (loadError) {
         console.error('Could not load event', loadError)
@@ -67,11 +55,19 @@ export function EventDetailsPage() {
   const videos = useMemo(() => media.filter((item) => item.media_type === 'video'), [media])
 
   useEffect(() => {
-    if (lightboxIndex === null) return
+    if (!images.length) {
+      setGalleryIndex(0)
+      return
+    }
+    setGalleryIndex((current) => Math.min(current, images.length - 1))
+  }, [images.length])
+
+  useEffect(() => {
+    if (lightboxIndex === null || !images.length) return
     function onKey(keyEvent: KeyboardEvent) {
       if (keyEvent.key === 'Escape') setLightboxIndex(null)
-      if (keyEvent.key === 'ArrowLeft') setLightboxIndex((current) => current === null ? null : (current + 1) % images.length)
-      if (keyEvent.key === 'ArrowRight') setLightboxIndex((current) => current === null ? null : (current - 1 + images.length) % images.length)
+      if (keyEvent.key === 'ArrowLeft') setLightboxIndex((current) => current === null ? null : (current - 1 + images.length) % images.length)
+      if (keyEvent.key === 'ArrowRight') setLightboxIndex((current) => current === null ? null : (current + 1) % images.length)
     }
     document.body.classList.add('event-lightbox-open')
     window.addEventListener('keydown', onKey)
@@ -80,6 +76,19 @@ export function EventDetailsPage() {
       window.removeEventListener('keydown', onKey)
     }
   }, [lightboxIndex, images.length])
+
+  function moveGallery(delta: number) {
+    if (images.length < 2) return
+    setGalleryIndex((current) => (current + delta + images.length) % images.length)
+  }
+
+  function finishSwipe(endX: number) {
+    if (touchStartX === null) return
+    const distance = endX - touchStartX
+    setTouchStartX(null)
+    if (Math.abs(distance) < 45) return
+    moveGallery(distance > 0 ? -1 : 1)
+  }
 
   if (loading) return <div className="page-state">{ar ? 'جارٍ فتح الفعالية…' : 'Loading event…'}</div>
   if (error || !event) return <div className="events-empty"><Icon name="error" /><strong>{ar ? 'الفعالية غير متاحة' : 'Event unavailable'}</strong><span>{error}</span><Link className="button button-primary" to="/events">{ar ? 'العودة للفعاليات' : 'Back to events'}</Link></div>
@@ -91,6 +100,8 @@ export function EventDetailsPage() {
   const coverX = event.cover_focus_x ?? 50
   const coverY = event.cover_focus_y ?? 50
   const folderEmbed = event.drive_folder_url ? googleDriveFolderEmbedUrl(event.drive_folder_url) : null
+  const galleryImage = images[galleryIndex] ?? null
+  const galleryAlt = galleryImage ? (galleryImage.caption || galleryImage.title || `${event.title} — ${galleryIndex + 1}`) : ''
 
   return <article className="event-details-page event-story-page">
     <div className="event-details-back"><Link to="/events">← {ar ? 'كل الفعاليات' : 'All events'}</Link></div>
@@ -118,19 +129,37 @@ export function EventDetailsPage() {
       </div>
     </section>
 
-    {images.length > 0 && <section className="event-detail-section">
-      <div className="event-detail-section-head"><div><span>{ar ? 'مختارات من الألبوم' : 'Album highlights'}</span><h2>{ar ? 'الصور المختارة' : 'Selected photos'}</h2></div><small>{ar ? `${images.length} صورة` : `${images.length} photos`}</small></div>
-      <div className={`event-gallery ${images.length === 1 ? 'event-gallery-single' : ''}`}>
-        {images.map((item, index) => <GalleryImage key={item.id} media={item} alt={item.caption || item.title || `${event.title} — ${index + 1}`} onOpen={() => setLightboxIndex(index)} />)}
+    {galleryImage && <section className="event-detail-section event-carousel-section">
+      <div className="event-detail-section-head"><div><span>{ar ? 'مختارات من الألبوم' : 'Album highlights'}</span><h2>{ar ? 'الصور' : 'Photos'}</h2></div><small>{galleryIndex + 1} / {images.length}</small></div>
+      <div className="event-photo-carousel" onTouchStart={(touchEvent) => setTouchStartX(touchEvent.changedTouches[0]?.clientX ?? null)} onTouchEnd={(touchEvent) => finishSwipe(touchEvent.changedTouches[0]?.clientX ?? 0)}>
+        <button type="button" className="event-carousel-stage" onClick={() => setLightboxIndex(galleryIndex)} aria-label={ar ? 'فتح الصورة بالحجم الكامل' : 'Open full-size image'}>
+          <img src={eventImageDisplayUrl(galleryImage)} alt={galleryAlt} referrerPolicy="no-referrer" />
+          <span className="event-carousel-counter">{galleryIndex + 1} / {images.length}</span>
+          {(galleryImage.caption || galleryImage.title) && <span className="event-carousel-caption" dir="auto">{galleryImage.caption || galleryImage.title}</span>}
+        </button>
+        {images.length > 1 && <>
+          <button type="button" className="event-carousel-nav event-carousel-prev" onClick={() => moveGallery(-1)} aria-label={ar ? 'الصورة السابقة' : 'Previous photo'}>‹</button>
+          <button type="button" className="event-carousel-nav event-carousel-next" onClick={() => moveGallery(1)} aria-label={ar ? 'الصورة التالية' : 'Next photo'}>›</button>
+        </>}
       </div>
+      {images.length > 1 && <div className="event-carousel-thumbs" role="tablist" aria-label={ar ? 'اختيار صورة' : 'Choose photo'}>
+        {images.map((item, index) => <button key={item.id} type="button" className={index === galleryIndex ? 'active' : ''} onClick={() => setGalleryIndex(index)} aria-label={ar ? `الصورة ${index + 1}` : `Photo ${index + 1}`} aria-selected={index === galleryIndex} role="tab"><img src={eventImageDisplayUrl(item)} alt="" loading="lazy" referrerPolicy="no-referrer" /></button>)}
+      </div>}
+      {images.length > 1 && <div className="event-carousel-dots" aria-hidden="true">{images.slice(0, 10).map((item, index) => <span key={item.id} className={index === galleryIndex ? 'active' : ''} />)}</div>}
     </section>}
 
-    {folderEmbed && <section className="event-detail-section event-drive-live-section">
-      <div className="event-detail-section-head"><div><span>{ar ? 'يتحدث مباشرة مع Google Drive' : 'Live from Google Drive'}</span><h2>{ar ? 'الألبوم الكامل' : 'Full album'}</h2></div><small>{ar ? 'يتحدث تلقائيًا' : 'Updates automatically'}</small></div>
-      <div className="event-drive-live-frame">
-        <iframe src={folderEmbed} title={ar ? `ألبوم ${event.title} على Google Drive` : `${event.title} Google Drive album`} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
-      </div>
-      <p className="event-drive-live-note">{ar ? 'الصور هنا تُعرض من مجلد Drive نفسه؛ لو أضفت صورًا جديدة للمجلد ستظهر من نفس الرابط بدون رفعها إلى قاعدة بيانات المنصة.' : 'These photos are shown directly from the Drive folder; new files added to the folder remain available from the same link without uploading them to the platform database.'}</p>
+    {folderEmbed && <section className="event-detail-section event-drive-live-section event-drive-collapsible">
+      <div className="event-detail-section-head"><div><span>{ar ? 'الألبوم الأصلي' : 'Original album'}</span><h2>{ar ? 'كل الصور على Drive' : 'All photos on Drive'}</h2></div><small>{ar ? 'ألبوم كامل' : 'Full album'}</small></div>
+      {!driveExpanded ? <button type="button" className="event-drive-preview" onClick={() => setDriveExpanded(true)}>
+        {cover && <img src={cover} alt="" referrerPolicy="no-referrer" style={{ objectPosition: `${coverX}% ${coverY}%` }} />}
+        <span className="event-drive-preview-shade" aria-hidden="true" />
+        <span className="event-drive-preview-content"><Icon name="layers" /><strong>{ar ? 'استعراض الألبوم الكامل' : 'Browse the full album'}</strong><small>{ar ? 'اضغطي هنا لعرض محتويات مجلد Drive' : 'Open the Drive folder contents here'}</small></span>
+      </button> : <>
+        <div className="event-drive-live-frame">
+          <iframe src={folderEmbed} title={ar ? `ألبوم ${event.title} على Google Drive` : `${event.title} Google Drive album`} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
+        </div>
+        <button type="button" className="event-drive-collapse-button" onClick={() => setDriveExpanded(false)}>{ar ? 'إخفاء الألبوم الكامل' : 'Hide full album'}</button>
+      </>}
     </section>}
 
     {videos.length > 0 && <section className="event-detail-section">
