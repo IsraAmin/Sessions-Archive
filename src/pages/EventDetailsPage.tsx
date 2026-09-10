@@ -4,7 +4,7 @@ import { eventTypeLabel } from '../components/EventCard'
 import { Icon } from '../components/Icon'
 import { YouTubePlayer } from '../components/YouTubePlayer'
 import { useUi } from '../hooks/useUi'
-import { eventImageDisplayUrl, eventVideoPlayerId } from '../lib/eventMedia'
+import { eventCoverDisplayUrl, eventImageDisplayUrl, eventVideoPlayerId, googleDriveFolderEmbedUrl } from '../lib/eventMedia'
 import { publicSupabase } from '../lib/supabase'
 import type { CollegeEvent, EventMedia } from '../types/domain'
 
@@ -68,10 +68,10 @@ export function EventDetailsPage() {
 
   useEffect(() => {
     if (lightboxIndex === null) return
-    function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') setLightboxIndex(null)
-      if (event.key === 'ArrowLeft') setLightboxIndex((current) => current === null ? null : (current + 1) % images.length)
-      if (event.key === 'ArrowRight') setLightboxIndex((current) => current === null ? null : (current - 1 + images.length) % images.length)
+    function onKey(keyEvent: KeyboardEvent) {
+      if (keyEvent.key === 'Escape') setLightboxIndex(null)
+      if (keyEvent.key === 'ArrowLeft') setLightboxIndex((current) => current === null ? null : (current + 1) % images.length)
+      if (keyEvent.key === 'ArrowRight') setLightboxIndex((current) => current === null ? null : (current - 1 + images.length) % images.length)
     }
     document.body.classList.add('event-lightbox-open')
     window.addEventListener('keydown', onKey)
@@ -86,28 +86,51 @@ export function EventDetailsPage() {
 
   const date = new Intl.DateTimeFormat(ar ? 'ar-SA' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${event.event_date}T12:00:00`))
   const activeImage = lightboxIndex === null ? null : images[lightboxIndex]
+  const selectedCover = images.find((item) => item.is_cover) ?? images[0] ?? null
+  const cover = eventCoverDisplayUrl(event.cover_url) ?? (selectedCover ? eventImageDisplayUrl(selectedCover) : null)
+  const coverX = event.cover_focus_x ?? 50
+  const coverY = event.cover_focus_y ?? 50
+  const folderEmbed = event.drive_folder_url ? googleDriveFolderEmbedUrl(event.drive_folder_url) : null
 
-  return <article className="event-details-page">
+  return <article className="event-details-page event-story-page">
     <div className="event-details-back"><Link to="/events">← {ar ? 'كل الفعاليات' : 'All events'}</Link></div>
 
-    <header className="event-details-hero">
-      <div className="event-details-heading">
+    <header className={`event-story-cover ${cover ? 'has-cover' : 'no-cover'}`}>
+      {cover ? <img src={cover} alt="" referrerPolicy="no-referrer" style={{ objectPosition: `${coverX}% ${coverY}%` }} /> : <div className="event-story-cover-placeholder"><Icon name="calendar" /></div>}
+      <div className="event-story-cover-shade" aria-hidden="true" />
+      <div className="event-story-cover-copy">
         <div className="event-details-badges"><span>{eventTypeLabel(event.event_type, ar)}</span>{event.featured && <span>{ar ? 'فعالية مميزة' : 'Featured event'}</span>}</div>
         <h1 dir="auto">{event.title}</h1>
-        <div className="event-details-meta">
-          <span><Icon name="calendar" /><time dateTime={event.event_date}>{date}</time></span>
-          {event.location && <span><Icon name="layers" /><bdi>{event.location}</bdi></span>}
-        </div>
-        {event.description && <p dir="auto">{event.description}</p>}
+        <div className="event-story-cover-meta"><span><Icon name="calendar" /><time dateTime={event.event_date}>{date}</time></span>{event.location && <span><Icon name="layers" /><bdi>{event.location}</bdi></span>}</div>
       </div>
-      {event.drive_folder_url && <a className="button event-drive-album-button" href={event.drive_folder_url} target="_blank" rel="noopener noreferrer"><Icon name="layers" />{ar ? 'فتح الألبوم الأصلي على Drive' : 'Open original Drive album'} ↗</a>}
     </header>
 
+    <section className="event-story-intro">
+      <div>
+        <span className="events-eyebrow">{ar ? 'عن الفعالية' : 'About the event'}</span>
+        <h2>{ar ? 'الحكاية وراء الصور' : 'The story behind the photos'}</h2>
+        <p dir="auto">{event.description || (ar ? 'لم تتم إضافة وصف للفعالية بعد.' : 'No event description has been added yet.')}</p>
+      </div>
+      <div className="event-story-actions">
+        {event.drive_folder_url && <a className="button event-drive-album-button" href={event.drive_folder_url} target="_blank" rel="noopener noreferrer"><Icon name="layers" />{ar ? 'فتح الأصل على Drive' : 'Open original on Drive'} ↗</a>}
+        <span>{images.length ? (ar ? `${images.length} صورة مختارة` : `${images.length} selected photos`) : (ar ? 'بدون صور مختارة' : 'No selected photos')}</span>
+        <span>{videos.length ? (ar ? `${videos.length} فيديو` : `${videos.length} videos`) : (ar ? 'بدون فيديو' : 'No videos')}</span>
+      </div>
+    </section>
+
     {images.length > 0 && <section className="event-detail-section">
-      <div className="event-detail-section-head"><div><span>{ar ? 'لحظات من الفعالية' : 'Event moments'}</span><h2>{ar ? 'الصور' : 'Photos'}</h2></div><small>{ar ? `${images.length} صورة` : `${images.length} photos`}</small></div>
+      <div className="event-detail-section-head"><div><span>{ar ? 'مختارات من الألبوم' : 'Album highlights'}</span><h2>{ar ? 'الصور المختارة' : 'Selected photos'}</h2></div><small>{ar ? `${images.length} صورة` : `${images.length} photos`}</small></div>
       <div className={`event-gallery ${images.length === 1 ? 'event-gallery-single' : ''}`}>
         {images.map((item, index) => <GalleryImage key={item.id} media={item} alt={item.caption || item.title || `${event.title} — ${index + 1}`} onOpen={() => setLightboxIndex(index)} />)}
       </div>
+    </section>}
+
+    {folderEmbed && <section className="event-detail-section event-drive-live-section">
+      <div className="event-detail-section-head"><div><span>{ar ? 'يتحدث مباشرة مع Google Drive' : 'Live from Google Drive'}</span><h2>{ar ? 'الألبوم الكامل' : 'Full album'}</h2></div><small>{ar ? 'يتحدث تلقائيًا' : 'Updates automatically'}</small></div>
+      <div className="event-drive-live-frame">
+        <iframe src={folderEmbed} title={ar ? `ألبوم ${event.title} على Google Drive` : `${event.title} Google Drive album`} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
+      </div>
+      <p className="event-drive-live-note">{ar ? 'الصور هنا تُعرض من مجلد Drive نفسه؛ لو أضفت صورًا جديدة للمجلد ستظهر من نفس الرابط بدون رفعها إلى قاعدة بيانات المنصة.' : 'These photos are shown directly from the Drive folder; new files added to the folder remain available from the same link without uploading them to the platform database.'}</p>
     </section>}
 
     {videos.length > 0 && <section className="event-detail-section">
@@ -126,7 +149,7 @@ export function EventDetailsPage() {
       </div>
     </section>}
 
-    {!images.length && !videos.length && <div className="events-empty event-details-empty"><Icon name="layers" /><strong>{ar ? 'الألبوم لسه فاضي' : 'The album is empty'}</strong><span>{ar ? 'سيظهر هنا أي صور أو فيديوهات تُضاف لهذه الفعالية.' : 'Photos and videos added to this event will appear here.'}</span></div>}
+    {!images.length && !videos.length && !folderEmbed && <div className="events-empty event-details-empty"><Icon name="layers" /><strong>{ar ? 'الألبوم لسه فاضي' : 'The album is empty'}</strong><span>{ar ? 'سيظهر هنا أي مجلد Drive أو صور أو فيديوهات تُضاف لهذه الفعالية.' : 'A Drive folder, photos, or videos added to this event will appear here.'}</span></div>}
 
     {activeImage && lightboxIndex !== null && <div className="event-lightbox" role="dialog" aria-modal="true" aria-label={ar ? 'عارض الصور' : 'Photo viewer'}>
       <button type="button" className="event-lightbox-scrim" onClick={() => setLightboxIndex(null)} aria-label={ar ? 'إغلاق' : 'Close'} />
