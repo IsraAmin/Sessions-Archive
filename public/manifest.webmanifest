@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "أرشيف ريبيت",
-  "short_name": "أرشيف ريبيت",
-  "description": "أرشيف ريبيت للسيشنات والفعاليات والصور والفيديوهات الطلابية.",
+  "name": "Sessions Repeat",
+  "short_name": "Sessions Repeat",
+  "description": "Sessions Repeat للسيشنات والفعاليات والصور والفيديوهات الطلابية.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

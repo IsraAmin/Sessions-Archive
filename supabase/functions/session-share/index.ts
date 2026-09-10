@@ -71,7 +71,7 @@ Deno.serve(async (req: Request) => {
   const destinationUrl = `${appBase}/sessions/${encodeURIComponent(session.id)}`
   const shareUrl = `${requestUrl.origin}${requestUrl.pathname}?id=${encodeURIComponent(session.id)}`
   const title = compactText(session.title, 120)
-  const description = compactText(session.description || 'أرشيف ريبيت', 180)
+  const description = compactText(session.description || 'Sessions Repeat', 180)
   const imageUrl = session.cover_path
     ? `${supabaseUrl}/storage/v1/object/public/session-covers/${encodeStoragePath(session.cover_path)}`
     : `${appBase}/icon-192.png?v=6`
@@ -102,10 +102,10 @@ Deno.serve(async (req: Request) => {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${safeTitle} | أرشيف ريبيت</title>
+  <title>${safeTitle} | Sessions Repeat</title>
   <meta name="description" content="${safeDescription}" />
   <meta property="og:type" content="article" />
-  <meta property="og:site_name" content="أرشيف ريبيت" />
+  <meta property="og:site_name" content="Sessions Repeat" />
   <meta property="og:title" content="${safeTitle}" />
   <meta property="og:description" content="${safeDescription}" />
   <meta property="og:image" content="${safeImage}" />
@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
   <main>
     <h1>${safeTitle}</h1>
     <p>${safeDescription}</p>
-    <p><a href="${safeDestination}">فتح في أرشيف ريبيت</a></p>
+    <p><a href="${safeDestination}">فتح في Sessions Repeat</a></p>
   </main>
 </body>
 </html>`
