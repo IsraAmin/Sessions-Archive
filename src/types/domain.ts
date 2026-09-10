@@ -101,3 +101,41 @@ export type SearchSession = Session & {
   rating_count: number
   recording_providers?: RecordingProvider[]
 }
+
+export type EventType = 'cultural' | 'sports' | 'initiative' | 'social' | 'academic' | 'other'
+export type EventStatus = 'draft' | 'published'
+export type EventMediaProvider = 'google_drive' | 'youtube' | 'external' | 'whatsapp' | 'telegram'
+
+export type CollegeEvent = {
+  id: string
+  title: string
+  slug: string
+  description: string
+  event_type: EventType
+  event_date: string
+  location: string | null
+  drive_folder_url: string | null
+  featured: boolean
+  status: EventStatus
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type EventMedia = {
+  id: string
+  event_id: string
+  media_type: 'image' | 'video'
+  provider: EventMediaProvider
+  source_url: string
+  source_id: string | null
+  title: string | null
+  caption: string | null
+  position: number
+  is_cover: boolean
+  created_at: string
+}
+
+export type CollegeEventWithMedia = CollegeEvent & {
+  media: EventMedia[]
+}
