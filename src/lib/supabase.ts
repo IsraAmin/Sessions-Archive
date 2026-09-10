@@ -41,3 +41,7 @@ export function publicStorageUrl(bucket: string, path: string | null) {
 export function sessionShareUrl(sessionId: string) {
   return `${supabaseUrl}/functions/v1/session-share?id=${encodeURIComponent(sessionId)}`
 }
+
+export function eventShareUrl(eventId: string) {
+  return `${supabaseUrl}/functions/v1/event-share?id=${encodeURIComponent(eventId)}`
+}

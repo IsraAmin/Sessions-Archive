@@ -110,7 +110,7 @@ export function SessionDetailsPage() {
     const url = sessionShareUrl(session.id)
     const shareData = {
       title: session.title.replace(/\s+/g, ' ').trim(),
-      text: ar ? `شوف السيشن دي في Sessions Archive: ${session.title.replace(/\s+/g, ' ').trim()}` : `Check out this session on Sessions Archive: ${session.title.replace(/\s+/g, ' ').trim()}`,
+      text: ar ? `شوف السيشن دي في أرشيف ريبيت: ${session.title.replace(/\s+/g, ' ').trim()}` : `Check out this session on أرشيف ريبيت: ${session.title.replace(/\s+/g, ' ').trim()}`,
       url,
     }
 

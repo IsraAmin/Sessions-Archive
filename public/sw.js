@@ -1,10 +1,10 @@
-const APP_CACHE = 'archive-repeat-app-v23'
-const RUNTIME_CACHE = 'archive-repeat-runtime-v23'
+const APP_CACHE = 'archive-repeat-app-v24'
+const RUNTIME_CACHE = 'archive-repeat-runtime-v24'
 const BASE_URL = new URL(self.registration.scope)
 const BASE_PATH = BASE_URL.pathname.endsWith('/') ? BASE_URL.pathname : `${BASE_URL.pathname}/`
 const APP_SHELL = [
   BASE_PATH,
-  `${BASE_PATH}manifest.webmanifest?v=6`,
+  `${BASE_PATH}manifest.webmanifest?v=7`,
   `${BASE_PATH}icon-192.png?v=6`,
   `${BASE_PATH}icon-512.svg?v=6`,
   `${BASE_PATH}favicon-32x32.png?v=6`,
@@ -57,7 +57,7 @@ function appTarget(path) {
 }
 
 self.addEventListener('push', (event) => {
-  let payload = { title: 'Archive Repeat', body: 'لديك تحديث جديد', url: '/' }
+  let payload = { title: 'أرشيف ريبيت', body: 'لديك تحديث جديد', url: '/' }
   try { if (event.data) payload = { ...payload, ...event.data.json() } }
   catch { if (event.data) payload.body = event.data.text() }
   const target = appTarget(payload.url)

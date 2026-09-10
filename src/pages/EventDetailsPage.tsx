@@ -2,15 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { eventTypeLabel } from '../components/EventCard'
 import { Icon } from '../components/Icon'
+import { useToast } from '../components/ToastProvider'
 import { YouTubePlayer } from '../components/YouTubePlayer'
 import { useUi } from '../hooks/useUi'
 import { eventCoverDisplayUrl, eventImageDisplayUrl, eventVideoPlayerId, googleDriveFolderEmbedUrl } from '../lib/eventMedia'
-import { publicSupabase } from '../lib/supabase'
+import { eventShareUrl, publicSupabase } from '../lib/supabase'
 import type { CollegeEvent, EventMedia } from '../types/domain'
 
 export function EventDetailsPage() {
   const { id } = useParams()
   const { language } = useUi()
+  const { showToast } = useToast()
   const ar = language === 'ar'
   const [event, setEvent] = useState<CollegeEvent | null>(null)
   const [media, setMedia] = useState<EventMedia[]>([])
@@ -90,6 +92,32 @@ export function EventDetailsPage() {
     moveGallery(distance > 0 ? -1 : 1)
   }
 
+  async function shareEvent() {
+    if (!event) return
+    const url = eventShareUrl(event.id)
+    const title = event.title.replace(/\s+/g, ' ').trim()
+    const caption = (event.description ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)
+    const shareData = {
+      title,
+      text: ar
+        ? `شوف الفعالية دي في أرشيف ريبيت: ${title}${caption ? ` — ${caption}` : ''}`
+        : `Check out this event on أرشيف ريبيت: ${title}${caption ? ` — ${caption}` : ''}`,
+      url,
+    }
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+        return
+      }
+      await navigator.clipboard.writeText(url)
+      showToast({ kind: 'success', title: ar ? 'تم بنجاح' : 'Success', message: ar ? 'تم نسخ رابط الفعالية، جاهز للمشاركة.' : 'Event link copied and ready to share.' })
+    } catch (shareError) {
+      if (shareError instanceof DOMException && shareError.name === 'AbortError') return
+      showToast({ kind: 'error', title: ar ? 'تعذر التنفيذ' : 'Could not complete action', message: ar ? 'تعذر مشاركة الفعالية الآن.' : 'Could not share the event right now.' })
+    }
+  }
+
   if (loading) return <div className="page-state">{ar ? 'جارٍ فتح الفعالية…' : 'Loading event…'}</div>
   if (error || !event) return <div className="events-empty"><Icon name="error" /><strong>{ar ? 'الفعالية غير متاحة' : 'Event unavailable'}</strong><span>{error}</span><Link className="button button-primary" to="/events">{ar ? 'العودة للفعاليات' : 'Back to events'}</Link></div>
 
@@ -123,6 +151,7 @@ export function EventDetailsPage() {
         <p dir="auto">{event.description || (ar ? 'لم تتم إضافة وصف للفعالية بعد.' : 'No event description has been added yet.')}</p>
       </div>
       <div className="event-story-actions">
+        <button type="button" className="button button-secondary event-share-button" onClick={() => void shareEvent()}><Icon name="share" />{ar ? 'مشاركة الفعالية' : 'Share event'}</button>
         {event.drive_folder_url && <a className="button event-drive-album-button" href={event.drive_folder_url} target="_blank" rel="noopener noreferrer"><Icon name="layers" />{ar ? 'فتح الأصل على Drive' : 'Open original on Drive'} ↗</a>}
         <span>{images.length ? (ar ? `${images.length} صورة مختارة` : `${images.length} selected photos`) : (ar ? 'بدون صور مختارة' : 'No selected photos')}</span>
         <span>{videos.length ? (ar ? `${videos.length} فيديو` : `${videos.length} videos`) : (ar ? 'بدون فيديو' : 'No videos')}</span>

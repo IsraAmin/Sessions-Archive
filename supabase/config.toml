@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.session-share]
 verify_jwt = false
+
+[functions.event-share]
+verify_jwt = false

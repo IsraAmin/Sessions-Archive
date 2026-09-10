@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Sessions Archive",
-  "short_name": "Sessions Archive",
-  "description": "منصة طلابية لاكتشاف السيشنات وحفظها ومتابعة تسجيلاتها وتحديثاتها.",
+  "name": "أرشيف ريبيت",
+  "short_name": "أرشيف ريبيت",
+  "description": "أرشيف ريبيت للسيشنات والفعاليات والصور والفيديوهات الطلابية.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
