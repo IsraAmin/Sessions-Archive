@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { EventCard } from '../components/EventCard'
+import { eventTypeLabel } from '../components/EventCard'
 import { Icon } from '../components/Icon'
 import { useUi } from '../hooks/useUi'
+import { eventCoverDisplayUrl, eventImageDisplayUrl } from '../lib/eventMedia'
 import { publicSupabase } from '../lib/supabase'
 import type { CollegeEvent, CollegeEventWithMedia, EventMedia, EventType } from '../types/domain'
 
@@ -15,6 +16,74 @@ const eventTypes: Array<{ value: 'all' | EventType; ar: string; en: string }> = 
   { value: 'academic', ar: 'أكاديمية', en: 'Academic' },
   { value: 'other', ar: 'أخرى', en: 'Other' },
 ]
+
+function fallbackCover(event: CollegeEventWithMedia) {
+  const images = event.media.filter((item) => item.media_type === 'image')
+  return images.find((item) => item.is_cover) ?? images[0] ?? null
+}
+
+function coverUrl(event: CollegeEventWithMedia) {
+  return eventCoverDisplayUrl(event.cover_url) ?? (fallbackCover(event) ? eventImageDisplayUrl(fallbackCover(event) as EventMedia) : null)
+}
+
+function eventCounts(event: CollegeEventWithMedia, ar: boolean) {
+  const photos = event.media.filter((item) => item.media_type === 'image').length
+  const videos = event.media.filter((item) => item.media_type === 'video').length
+  const parts: string[] = []
+  if (photos) parts.push(ar ? `${photos} صورة` : `${photos} photos`)
+  if (videos) parts.push(ar ? `${videos} فيديو` : `${videos} videos`)
+  if (event.drive_folder_url) parts.push(ar ? 'ألبوم Drive مباشر' : 'Live Drive album')
+  return parts
+}
+
+function EventLead({ event, ar }: { event: CollegeEventWithMedia; ar: boolean }) {
+  const image = coverUrl(event)
+  const date = new Date(`${event.event_date}T12:00:00`)
+  const month = new Intl.DateTimeFormat(ar ? 'ar-SA' : 'en-US', { month: 'short' }).format(date)
+  const counts = eventCounts(event, ar)
+  const x = event.cover_focus_x ?? 50
+  const y = event.cover_focus_y ?? 50
+
+  return <Link to={`/events/${event.id}`} className={`event-editorial-lead ${image ? 'has-image' : 'no-image'}`}>
+    <div className="event-editorial-lead-visual">
+      {image ? <img src={image} alt="" loading="eager" referrerPolicy="no-referrer" style={{ objectPosition: `${x}% ${y}%` }} /> : <div className="event-editorial-placeholder"><Icon name="calendar" /></div>}
+      <div className="event-editorial-date" aria-hidden="true"><strong>{String(date.getDate()).padStart(2, '0')}</strong><span>{month}</span></div>
+    </div>
+    <div className="event-editorial-lead-copy">
+      <div className="event-editorial-kickers"><span>{eventTypeLabel(event.event_type, ar)}</span>{event.featured && <em>{ar ? 'مميزة' : 'Featured'}</em>}</div>
+      <h2 dir="auto">{event.title}</h2>
+      {event.description && <p dir="auto">{event.description.slice(0, 230)}{event.description.length > 230 ? '…' : ''}</p>}
+      <div className="event-editorial-meta">
+        {event.location && <span dir="auto">{event.location}</span>}
+        {counts.map((item) => <span key={item}>{item}</span>)}
+      </div>
+      <span className="event-editorial-open">{ar ? 'افتح الذكرى' : 'Open the memory'} <b aria-hidden="true">←</b></span>
+    </div>
+  </Link>
+}
+
+function EventChapter({ event, ar, index }: { event: CollegeEventWithMedia; ar: boolean; index: number }) {
+  const image = coverUrl(event)
+  const date = new Date(`${event.event_date}T12:00:00`)
+  const dateLabel = new Intl.DateTimeFormat(ar ? 'ar-SA' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
+  const counts = eventCounts(event, ar)
+  const x = event.cover_focus_x ?? 50
+  const y = event.cover_focus_y ?? 50
+
+  return <Link to={`/events/${event.id}`} className="event-memory-chapter">
+    <div className="event-memory-index" aria-hidden="true">{String(index).padStart(2, '0')}</div>
+    <div className="event-memory-thumb">
+      {image ? <img src={image} alt="" loading="lazy" referrerPolicy="no-referrer" style={{ objectPosition: `${x}% ${y}%` }} /> : <span><Icon name="calendar" /></span>}
+    </div>
+    <div className="event-memory-copy">
+      <div className="event-memory-topline"><time dateTime={event.event_date}>{dateLabel}</time><span>{eventTypeLabel(event.event_type, ar)}</span></div>
+      <h3 dir="auto">{event.title}</h3>
+      {event.description && <p dir="auto">{event.description.slice(0, 150)}{event.description.length > 150 ? '…' : ''}</p>}
+      <div className="event-memory-meta">{event.location && <span dir="auto">{event.location}</span>}{counts.map((item) => <span key={item}>{item}</span>)}</div>
+    </div>
+    <span className="event-memory-arrow" aria-hidden="true">←</span>
+  </Link>
+}
 
 export function EventsPage() {
   const { language } = useUi()
@@ -87,17 +156,20 @@ export function EventsPage() {
 
   if (loading) return <div className="page-state">{ar ? 'جارٍ تحميل الفعاليات…' : 'Loading events…'}</div>
 
-  return <div className="events-page">
-    <section className="events-hero">
+  const lead = filtered[0] ?? null
+  const chapters = filtered.slice(1)
+
+  return <div className="events-page events-editorial-page">
+    <header className="events-editorial-header">
       <div>
         <span className="events-eyebrow"><Icon name="calendar" />{ar ? 'ذاكرة الكلية' : 'College memories'}</span>
-        <h1>{ar ? 'الفعاليات' : 'Events'}</h1>
-        <p>{ar ? 'صور وفيديوهات الأيام الثقافية والرياضية والمبادرات واللحظات التي تستحق أن تظل محفوظة.' : 'Photos and videos from cultural days, sports, initiatives, and the moments worth keeping.'}</p>
+        <h1>{ar ? 'فعاليات عشناها، محفوظة هنا' : 'Moments we lived, kept here'}</h1>
+        <p>{ar ? 'أيام ثقافية، رياضة، مبادرات ولحظات من الكلية — مرتبة كحكايات، مش مجرد ملفات.' : 'Cultural days, sports, initiatives, and campus moments — arranged as stories, not just files.'}</p>
       </div>
-      <Link className="button events-hero-link" to="/explore?type=events">{ar ? 'البحث في الأرشيف' : 'Search the archive'}</Link>
-    </section>
+      <Link className="events-editorial-search-link" to="/explore?type=events">{ar ? 'بحث شامل' : 'Full search'} <span aria-hidden="true">↗</span></Link>
+    </header>
 
-    <section className="events-toolbar" aria-label={ar ? 'فلترة الفعاليات' : 'Filter events'}>
+    <section className="events-editorial-filter" aria-label={ar ? 'فلترة الفعاليات' : 'Filter events'}>
       <div className="events-search-box"><Icon name="layers" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ar ? 'ابحث باسم الفعالية أو المكان…' : 'Search by event or place…'} aria-label={ar ? 'البحث في الفعاليات' : 'Search events'} /></div>
       <div className="event-type-chips" role="group" aria-label={ar ? 'نوع الفعالية' : 'Event type'}>
         {eventTypes.map((item) => <button key={item.value} type="button" className={type === item.value ? 'active' : ''} onClick={() => setType(item.value)}>{ar ? item.ar : item.en}</button>)}
@@ -106,6 +178,12 @@ export function EventsPage() {
 
     {error && <p className="notice error">{error}</p>}
 
-    {filtered.length ? <div className="events-grid">{filtered.map((event) => <EventCard key={event.id} event={event} ar={ar} />)}</div> : <div className="events-empty"><Icon name="calendar" /><strong>{ar ? 'ما في فعاليات مطابقة' : 'No matching events'}</strong><span>{ar ? 'غيّر البحث أو نوع الفعالية، أو أضف أول فعالية من لوحة الإدارة.' : 'Change the search or event type, or add the first event from the admin panel.'}</span></div>}
+    {lead ? <>
+      <EventLead event={lead} ar={ar} />
+      {chapters.length > 0 && <section className="event-memory-index-list">
+        <div className="event-memory-list-heading"><span>{ar ? 'من الأحدث للأقدم' : 'Newest to oldest'}</span><strong>{ar ? `${filtered.length} فعالية` : `${filtered.length} events`}</strong></div>
+        <div className="event-memory-chapters">{chapters.map((event, index) => <EventChapter key={event.id} event={event} ar={ar} index={index + 2} />)}</div>
+      </section>}
+    </> : <div className="events-empty"><Icon name="calendar" /><strong>{ar ? 'ما في فعاليات مطابقة' : 'No matching events'}</strong><span>{ar ? 'غيّر البحث أو نوع الفعالية، أو أضف أول فعالية من لوحة الإدارة.' : 'Change the search or event type, or add the first event from the admin panel.'}</span></div>}
   </div>
 }
