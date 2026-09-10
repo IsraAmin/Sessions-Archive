@@ -55,6 +55,8 @@ export function Layout() {
       <nav className="sidebar-nav" aria-label={t('nav.explore')}>
         <span className="sidebar-label">{t('nav.explore')}</span>
         <NavLink end to="/" className={navClass}><Icon name="home" /><span>{homeLabel}</span></NavLink>
+        <NavLink to="/sessions" className={navClass}><Icon name="calendar" /><span>{ar ? 'السيشنات' : 'Sessions'}</span></NavLink>
+        <NavLink to="/events" className={navClass}><Icon name="layers" /><span>{ar ? 'الفعاليات' : 'Events'}</span></NavLink>
         {user && <NavLink to="/saved" className={navClass}><Icon name="bookmark" /><span>{savedLabel}</span></NavLink>}
         {user && <NavLink to="/dashboard" className={navClass}><Icon name="dashboard" /><span>{t('nav.dashboard')}</span></NavLink>}
         {isAdmin && <><span className="sidebar-label sidebar-label-spaced">{t('admin.content')}</span><NavLink end to="/admin" className={navClass}><Icon name="shield" /><span>{t('nav.admin')}</span>{isSuperAdmin && <em className="mini-badge">SUPER</em>}</NavLink><NavLink to="/admin/analytics" className={navClass}><Icon name="chart" /><span>{t('admin.analytics')}</span></NavLink></>}
