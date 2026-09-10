@@ -7,6 +7,9 @@ import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute'
 import { HomePage } from './pages/HomePage'
 import { SessionsPage } from './pages/SessionsPage'
 import { SessionDetailsPage } from './pages/SessionDetailsPage'
+import { EventsPage } from './pages/EventsPage'
+import { EventDetailsPage } from './pages/EventDetailsPage'
+import { ExplorePage } from './pages/ExplorePage'
 import { SavedSessionsPage } from './pages/SavedSessionsPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { AuthPage } from './pages/AuthPage'
@@ -25,8 +28,11 @@ export default function App() {
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<HomePage />} />
+              <Route path="explore" element={<ExplorePage />} />
               <Route path="sessions" element={<SessionsPage />} />
               <Route path="sessions/:id" element={<SessionDetailsPage />} />
+              <Route path="events" element={<EventsPage />} />
+              <Route path="events/:id" element={<EventDetailsPage />} />
               <Route path="auth" element={<AuthPage />} />
               <Route path="saved" element={<ProtectedRoute><SavedSessionsPage /></ProtectedRoute>} />
               <Route path="notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
