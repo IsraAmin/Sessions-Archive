@@ -77,6 +77,18 @@ export type Database = {
         Update: { id?: string; session_id?: string; title?: string; youtube_video_id?: string; video_provider?: 'youtube' | 'google_drive' | 'whatsapp'; part_number?: number; position?: number; created_at?: string; updated_at?: string }
         Relationships: [{ foreignKeyName: 'session_videos_session_id_fkey'; columns: ['session_id']; isOneToOne: false; referencedRelation: 'sessions'; referencedColumns: ['id'] }]
       }
+      events: {
+        Row: { id: string; title: string; slug: string; description: string; event_type: 'cultural' | 'sports' | 'initiative' | 'social' | 'academic' | 'other'; event_date: string; location: string | null; drive_folder_url: string | null; featured: boolean; status: 'draft' | 'published'; created_by: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; title: string; slug: string; description?: string; event_type?: 'cultural' | 'sports' | 'initiative' | 'social' | 'academic' | 'other'; event_date: string; location?: string | null; drive_folder_url?: string | null; featured?: boolean; status?: 'draft' | 'published'; created_by?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; title?: string; slug?: string; description?: string; event_type?: 'cultural' | 'sports' | 'initiative' | 'social' | 'academic' | 'other'; event_date?: string; location?: string | null; drive_folder_url?: string | null; featured?: boolean; status?: 'draft' | 'published'; created_by?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      event_media: {
+        Row: { id: string; event_id: string; media_type: 'image' | 'video'; provider: 'google_drive' | 'youtube' | 'external' | 'whatsapp' | 'telegram'; source_url: string; source_id: string | null; title: string | null; caption: string | null; position: number; is_cover: boolean; created_at: string }
+        Insert: { id?: string; event_id: string; media_type: 'image' | 'video'; provider: 'google_drive' | 'youtube' | 'external' | 'whatsapp' | 'telegram'; source_url: string; source_id?: string | null; title?: string | null; caption?: string | null; position?: number; is_cover?: boolean; created_at?: string }
+        Update: { id?: string; event_id?: string; media_type?: 'image' | 'video'; provider?: 'google_drive' | 'youtube' | 'external' | 'whatsapp' | 'telegram'; source_url?: string; source_id?: string | null; title?: string | null; caption?: string | null; position?: number; is_cover?: boolean; created_at?: string }
+        Relationships: [{ foreignKeyName: 'event_media_event_id_fkey'; columns: ['event_id']; isOneToOne: false; referencedRelation: 'events'; referencedColumns: ['id'] }]
+      }
       notifications: {
         Row: { id: string; user_id: string; type: string; title_ar: string; title_en: string; body_ar: string; body_en: string; href: string | null; dedupe_key: string | null; read_at: string | null; created_at: string }
         Insert: { id?: string; user_id: string; type: string; title_ar: string; title_en: string; body_ar: string; body_en: string; href?: string | null; dedupe_key?: string | null; read_at?: string | null; created_at?: string }
