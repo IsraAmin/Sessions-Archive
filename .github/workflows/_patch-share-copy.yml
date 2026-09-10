@@ -16,8 +16,8 @@ jobs:
         with:
           fetch-depth: 0
       - name: Update share wording
-        shell: python
         run: |
+          python - <<'PY'
           from pathlib import Path
 
           event_path = Path('src/pages/EventDetailsPage.tsx')
@@ -41,6 +41,7 @@ jobs:
           if old_session not in session_text:
               raise SystemExit('Session share copy pattern not found')
           session_path.write_text(session_text.replace(old_session, new_session))
+          PY
       - name: Commit share copy update
         run: |
           git config user.name "github-actions[bot]"
