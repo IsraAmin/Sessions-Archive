@@ -246,26 +246,42 @@ export function AdminEventsPanel() {
 
   async function addMedia() {
     if (!selected) return
-    const imageSources = lines(imageUrls).map(parseEventImageSource)
+    const rawImages = lines(imageUrls)
+    const folderLinks = rawImages.filter((value) => Boolean(googleDriveFolderEmbedUrl(value)))
+    if (folderLinks.length > 1) return fail(new Error(ar ? 'استخدمي رابط مجلد Drive واحد فقط.' : 'Use only one Drive folder link.'))
+
+    const individualImageLinks = rawImages.filter((value) => !googleDriveFolderEmbedUrl(value))
+    const imageSources = individualImageLinks.map(parseEventImageSource)
     const videoSources = lines(videoUrls).map(parseEventVideoSource)
     if (imageSources.some((item) => !item) || videoSources.some((item) => !item)) return fail(new Error(ar ? 'في رابط غير صالح. خلي كل رابط في سطر براهو.' : 'One or more links are invalid. Keep one link per line.'))
 
     const parsedImages = imageSources.filter((item): item is NonNullable<typeof item> => Boolean(item))
     const parsedVideos = videoSources.filter((item): item is NonNullable<typeof item> => Boolean(item))
-    if (!parsedImages.length && !parsedVideos.length) return
+    const detectedFolder = folderLinks[0] ?? ''
+    if (!parsedImages.length && !parsedVideos.length && !detectedFolder) return
 
     setBusy(true)
     try {
+      if (detectedFolder) {
+        const { error: folderError } = await supabase.from('events').update({ drive_folder_url: detectedFolder, updated_at: new Date().toISOString() }).eq('id', selected.id)
+        if (folderError) throw folderError
+        setFolderUrl(detectedFolder)
+      }
+
       const start = selectedMedia.reduce((max, item) => Math.max(max, item.position), 0) + 1
       const rows = [
         ...parsedImages.map((item, index) => ({ event_id: selected.id, media_type: 'image' as const, provider: item.provider, source_url: item.sourceUrl, source_id: item.sourceId, title: null, caption: null, position: start + index, is_cover: false })),
         ...parsedVideos.map((item, index) => ({ event_id: selected.id, media_type: 'video' as const, provider: item.provider, source_url: item.sourceUrl, source_id: item.sourceId, title: null, caption: null, position: start + parsedImages.length + index, is_cover: false })),
       ]
-      const { error } = await supabase.from('event_media').insert(rows)
-      if (error) throw error
+      if (rows.length) {
+        const { error } = await supabase.from('event_media').insert(rows)
+        if (error) throw error
+      }
       setImageUrls('')
       setVideoUrls('')
-      success(ar ? `تمت إضافة ${rows.length} عنصر للألبوم.` : `${rows.length} album items added.`)
+      success(ar
+        ? detectedFolder && !rows.length ? 'تم التعرف على رابط المجلد وربطه كألبوم كامل.' : `تمت إضافة ${rows.length} عنصر${detectedFolder ? ' وربط مجلد Drive' : ''}.`
+        : detectedFolder && !rows.length ? 'Drive folder detected and connected as the full album.' : `${rows.length} item${rows.length === 1 ? '' : 's'} added${detectedFolder ? ' and Drive folder connected' : ''}.`)
       await load(selected.id)
     } catch (error) { fail(error) }
     finally { setBusy(false) }
