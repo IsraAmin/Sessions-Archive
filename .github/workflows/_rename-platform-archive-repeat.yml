@@ -1,0 +1,56 @@
+name: Rename platform to Archive Repeat
+
+on:
+  push:
+    paths:
+      - '.github/workflows/_rename-platform-archive-repeat.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Rename visible brand
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          allowed = {'.ts', '.tsx', '.js', '.jsx', '.html', '.json', '.webmanifest', '.css', '.md'}
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts or path.suffix not in allowed:
+                  continue
+              try:
+                  text = path.read_text()
+              except UnicodeDecodeError:
+                  continue
+              updated = text.replace('Sessions Repeat', 'Archive Repeat')
+              if updated != text:
+                  path.write_text(updated)
+
+          layout = Path('src/components/Layout.tsx')
+          text = layout.read_text().replace('<strong>Sessions</strong><small>Repeat</small>', '<strong>Archive</strong><small>Repeat</small>')
+          layout.write_text(text)
+
+          index = Path('index.html')
+          text = index.read_text().replace('manifest.webmanifest?v=8', 'manifest.webmanifest?v=9')
+          index.write_text(text)
+
+          sw = Path('public/sw.js')
+          text = sw.read_text()
+          text = text.replace('archive-repeat-app-v25', 'archive-repeat-app-v26')
+          text = text.replace('archive-repeat-runtime-v25', 'archive-repeat-runtime-v26')
+          text = text.replace('manifest.webmanifest?v=8', 'manifest.webmanifest?v=9')
+          sw.write_text(text)
+          PY
+      - name: Commit rename
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Rename platform to Archive Repeat"
+          git push
