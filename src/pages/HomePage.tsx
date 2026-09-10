@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { EventCard } from '../components/EventCard'
 import { SessionCard } from '../components/SessionCard'
 import { Icon } from '../components/Icon'
 import { useUi } from '../hooks/useUi'
 import { publicSupabase } from '../lib/supabase'
-import type { Category, RecordingProvider, SearchSession } from '../types/domain'
+import type { Category, CollegeEvent, CollegeEventWithMedia, EventMedia, RecordingProvider, SearchSession } from '../types/domain'
 
 function isRecordingProvider(value: string): value is RecordingProvider {
   return ['youtube', 'google_drive', 'whatsapp', 'telegram'].includes(value)
@@ -44,6 +45,7 @@ export function HomePage() {
   const ar = language === 'ar'
   const [sessions, setSessions] = useState<SearchSession[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [events, setEvents] = useState<CollegeEventWithMedia[]>([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -55,58 +57,71 @@ export function HomePage() {
       setLoading(true)
       setError('')
       try {
-        const [sessionsResult, categoriesResult] = await Promise.all([
+        const [sessionsResult, categoriesResult, eventsResult] = await Promise.all([
           publicSupabase.rpc('search_sessions', { search_text: undefined, category_filter: undefined }),
           publicSupabase.from('categories').select('*').order('name'),
+          publicSupabase.from('events').select('*').eq('status', 'published').order('featured', { ascending: false }).order('event_date', { ascending: false }).limit(8),
         ])
         if (sessionsResult.error) throw sessionsResult.error
         if (categoriesResult.error) throw categoriesResult.error
+        if (eventsResult.error) throw eventsResult.error
 
         const baseSessions = (sessionsResult.data ?? []) as SearchSession[]
         const nextCategories = (categoriesResult.data ?? []) as Category[]
+        const baseEvents = (eventsResult.data ?? []) as CollegeEvent[]
 
-        if (!baseSessions.length) {
-          if (active) {
-            setSessions([])
-            setCategories(nextCategories)
+        let enrichedSessions = baseSessions
+        if (baseSessions.length) {
+          const ids = baseSessions.map((session) => session.id)
+          const [sessionMetaResult, videoResult] = await Promise.all([
+            (publicSupabase.from('sessions') as any).select('id,is_pinned,cover_focus_x,cover_focus_y').in('id', ids),
+            publicSupabase.from('session_videos').select('session_id,video_provider').in('session_id', ids),
+          ])
+          if (sessionMetaResult.error) throw sessionMetaResult.error
+          if (videoResult.error) throw videoResult.error
+
+          const metaBySession = new Map<string, SessionMetaRow>(
+            ((sessionMetaResult.data ?? []) as SessionMetaRow[]).map((row) => [row.id, row]),
+          )
+          const providersBySession = new Map<string, Set<RecordingProvider>>()
+          for (const row of videoResult.data ?? []) {
+            const provider = String(row.video_provider)
+            if (!isRecordingProvider(provider)) continue
+            const current = providersBySession.get(row.session_id) ?? new Set<RecordingProvider>()
+            current.add(provider)
+            providersBySession.set(row.session_id, current)
           }
-          return
+
+          enrichedSessions = baseSessions.map((session) => {
+            const meta = metaBySession.get(session.id)
+            return {
+              ...session,
+              is_pinned: Boolean(meta?.is_pinned),
+              cover_focus_x: meta?.cover_focus_x ?? session.cover_focus_x,
+              cover_focus_y: meta?.cover_focus_y ?? session.cover_focus_y,
+              recording_providers: [...(providersBySession.get(session.id) ?? new Set<RecordingProvider>())],
+            }
+          })
         }
 
-        const ids = baseSessions.map((session) => session.id)
-        const [sessionMetaResult, videoResult] = await Promise.all([
-          (publicSupabase.from('sessions') as any).select('id,is_pinned,cover_focus_x,cover_focus_y').in('id', ids),
-          publicSupabase.from('session_videos').select('session_id,video_provider').in('session_id', ids),
-        ])
-        if (sessionMetaResult.error) throw sessionMetaResult.error
-        if (videoResult.error) throw videoResult.error
-
-        const metaBySession = new Map<string, SessionMetaRow>(
-          ((sessionMetaResult.data ?? []) as SessionMetaRow[]).map((row) => [row.id, row]),
-        )
-        const providersBySession = new Map<string, Set<RecordingProvider>>()
-        for (const row of videoResult.data ?? []) {
-          const provider = String(row.video_provider)
-          if (!isRecordingProvider(provider)) continue
-          const current = providersBySession.get(row.session_id) ?? new Set<RecordingProvider>()
-          current.add(provider)
-          providersBySession.set(row.session_id, current)
+        let eventMedia: EventMedia[] = []
+        if (baseEvents.length) {
+          const mediaResult = await publicSupabase.from('event_media').select('*').in('event_id', baseEvents.map((event) => event.id)).order('position')
+          if (mediaResult.error) throw mediaResult.error
+          eventMedia = (mediaResult.data ?? []) as EventMedia[]
         }
-
-        const enriched = baseSessions.map((session) => {
-          const meta = metaBySession.get(session.id)
-          return {
-            ...session,
-            is_pinned: Boolean(meta?.is_pinned),
-            cover_focus_x: meta?.cover_focus_x ?? session.cover_focus_x,
-            cover_focus_y: meta?.cover_focus_y ?? session.cover_focus_y,
-            recording_providers: [...(providersBySession.get(session.id) ?? new Set<RecordingProvider>())],
-          }
-        })
+        const mediaByEvent = new Map<string, EventMedia[]>()
+        for (const item of eventMedia) {
+          const current = mediaByEvent.get(item.event_id) ?? []
+          current.push(item)
+          mediaByEvent.set(item.event_id, current)
+        }
+        const enrichedEvents = baseEvents.map((event) => ({ ...event, media: mediaByEvent.get(event.id) ?? [] }))
 
         if (active) {
-          setSessions(enriched)
+          setSessions(enrichedSessions)
           setCategories(nextCategories)
+          setEvents(enrichedEvents)
         }
       } catch (loadError) {
         console.error('Could not load home page', loadError)
@@ -133,11 +148,14 @@ export function HomePage() {
     .filter((session) => Number(session.rating_count || 0) > 0)
     .sort((a, b) => Number(b.average_rating || 0) - Number(a.average_rating || 0) || Number(b.rating_count || 0) - Number(a.rating_count || 0))
     .slice(0, 6), [sessions])
+  const homeEvents = useMemo(() => [...events]
+    .sort((a, b) => Number(b.featured) - Number(a.featured) || new Date(b.event_date).getTime() - new Date(a.event_date).getTime())
+    .slice(0, 6), [events])
 
   function submitSearch(event: FormEvent) {
     event.preventDefault()
     const value = query.trim()
-    navigate(value ? `/sessions?search=${encodeURIComponent(value)}` : '/sessions')
+    navigate(value ? `/explore?search=${encodeURIComponent(value)}` : '/explore')
   }
 
   if (loading) return <div className="page-state">{t('sessions.loading')}</div>
@@ -145,15 +163,16 @@ export function HomePage() {
   return <div className="home-page">
     <section className="home-hero">
       <div className="home-hero-copy">
-        <div className="home-hero-eyebrow">{ar ? 'كل السيشنات في مكان واحد' : 'Your sessions, in one place'}</div>
+        <div className="home-hero-eyebrow">{ar ? 'أرشيف الكلية في مكان واحد' : 'The college archive, in one place'}</div>
         <h1>{ar ? 'مرحبًا بك' : 'Welcome'}</h1>
-        <p>{ar ? 'ابحث عن السيشن التي تحتاجها، واستكشف الأرشيف بسهولة من مكان واحد.' : 'Search for the session you need and explore the archive easily from one place.'}</p>
+        <p>{ar ? 'ابحث في السيشنات والفعاليات، واستكشف الأرشيف بسهولة من مكان واحد.' : 'Search sessions and college events, and explore the archive from one place.'}</p>
         <form className="home-search" onSubmit={submitSearch}>
-          <input aria-label={ar ? 'ابحث في السيشنات' : 'Search sessions'} placeholder={ar ? 'ابحث بعنوان السيشن، المتحدث أو التصنيف...' : 'Search by title, speaker, or category...'} value={query} onChange={(event) => setQuery(event.target.value)} />
+          <input aria-label={ar ? 'ابحث في الأرشيف' : 'Search archive'} placeholder={ar ? 'ابحث عن سيشن، فعالية، متحدث أو تصنيف...' : 'Search for a session, event, speaker, or category...'} value={query} onChange={(event) => setQuery(event.target.value)} />
           <button className="button button-primary" type="submit">{t('common.search')}</button>
         </form>
         <div className="home-hero-actions">
-          <Link className="button home-secondary-button" to="/sessions">{ar ? 'استعراض كل السيشنات' : 'Browse all sessions'}</Link>
+          <Link className="button home-secondary-button" to="/sessions">{ar ? 'استعراض السيشنات' : 'Browse sessions'}</Link>
+          <Link className="button home-secondary-button" to="/events">{ar ? 'استعراض الفعاليات' : 'Browse events'}</Link>
         </div>
       </div>
     </section>
@@ -181,6 +200,14 @@ export function HomePage() {
       emptyText={ar ? 'لما تتم إضافة موعد جديد سيظهر هنا مباشرة.' : 'New scheduled sessions will show up here automatically.'}
       ar={ar}
     />
+
+    <section className="home-section home-events-section">
+      <div className="home-section-head">
+        <div><span className="home-section-kicker"><Icon name="layers" />{ar ? 'لحظات تستحق الحفظ' : 'Moments worth keeping'}</span><h2>{ar ? 'من فعاليات الكلية' : 'From college events'}</h2></div>
+        <Link to="/events" className="home-section-link">{ar ? 'عرض كل الفعاليات' : 'View all events'} <span aria-hidden="true">←</span></Link>
+      </div>
+      {homeEvents.length ? <div className="home-event-rail">{homeEvents.map((collegeEvent) => <div className="home-event-rail-item" key={collegeEvent.id}><EventCard event={collegeEvent} ar={ar} /></div>)}</div> : <div className="home-empty"><Icon name="layers" /><div><strong>{ar ? 'لسه ما في فعاليات مضافة' : 'No events added yet'}</strong><span>{ar ? 'أول فعالية منشورة وصورها ستظهر هنا.' : 'The first published event and its photos will appear here.'}</span></div></div>}
+    </section>
 
     <HomeSessionSection
       icon="layers"
