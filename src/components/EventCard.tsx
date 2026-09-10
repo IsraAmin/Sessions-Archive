@@ -21,7 +21,7 @@ function coverFor(event: CollegeEventWithMedia) {
   return images.find((item) => item.is_cover) ?? images[0] ?? null
 }
 
-function EventCover({ media, title }: { media: EventMedia | null; title: string }) {
+function EventCover({ media }: { media: EventMedia | null }) {
   if (!media) {
     return <div className="event-card-cover event-card-cover-empty" aria-hidden="true"><Icon name="calendar" /></div>
   }
@@ -38,7 +38,7 @@ export function EventCard({ event, ar }: { event: CollegeEventWithMedia; ar: boo
   const date = new Intl.DateTimeFormat(ar ? 'ar-SA' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${event.event_date}T12:00:00`))
 
   return <Link to={`/events/${event.id}`} className="event-card">
-    <EventCover media={cover} title={event.title} />
+    <EventCover media={cover} />
     <div className="event-card-overlay" aria-hidden="true" />
     <div className="event-card-topline">
       <span className="event-type-pill">{eventTypeLabel(event.event_type, ar)}</span>
