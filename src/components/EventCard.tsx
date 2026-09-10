@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Icon } from './Icon'
-import { eventImageDisplayUrl } from '../lib/eventMedia'
+import { eventCoverDisplayUrl, eventImageDisplayUrl } from '../lib/eventMedia'
 import type { CollegeEventWithMedia, EventMedia, EventType } from '../types/domain'
 
 const typeLabels: Record<EventType, { ar: string; en: string }> = {
@@ -21,13 +21,16 @@ function coverFor(event: CollegeEventWithMedia) {
   return images.find((item) => item.is_cover) ?? images[0] ?? null
 }
 
-function EventCover({ media }: { media: EventMedia | null }) {
-  if (!media) {
+function EventCover({ event, media }: { event: CollegeEventWithMedia; media: EventMedia | null }) {
+  const src = eventCoverDisplayUrl(event.cover_url) ?? (media ? eventImageDisplayUrl(media) : null)
+  if (!src) {
     return <div className="event-card-cover event-card-cover-empty" aria-hidden="true"><Icon name="calendar" /></div>
   }
 
+  const x = event.cover_focus_x ?? 50
+  const y = event.cover_focus_y ?? 50
   return <div className="event-card-cover">
-    <img src={eventImageDisplayUrl(media)} alt="" loading="lazy" referrerPolicy="no-referrer" />
+    <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" style={{ objectPosition: `${x}% ${y}%` }} />
   </div>
 }
 
@@ -38,7 +41,7 @@ export function EventCard({ event, ar }: { event: CollegeEventWithMedia; ar: boo
   const date = new Intl.DateTimeFormat(ar ? 'ar-SA' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${event.event_date}T12:00:00`))
 
   return <Link to={`/events/${event.id}`} className="event-card">
-    <EventCover media={cover} />
+    <EventCover event={event} media={cover} />
     <div className="event-card-overlay" aria-hidden="true" />
     <div className="event-card-topline">
       <span className="event-type-pill">{eventTypeLabel(event.event_type, ar)}</span>
@@ -51,6 +54,7 @@ export function EventCard({ event, ar }: { event: CollegeEventWithMedia; ar: boo
       <div className="event-card-counts">
         {imageCount > 0 && <span><Icon name="layers" />{ar ? `${imageCount} صورة` : `${imageCount} photos`}</span>}
         {videoCount > 0 && <span><Icon name="play" />{ar ? `${videoCount} فيديو` : `${videoCount} videos`}</span>}
+        {event.drive_folder_url && <span><Icon name="layers" />{ar ? 'ألبوم Drive' : 'Drive album'}</span>}
       </div>
     </div>
   </Link>
