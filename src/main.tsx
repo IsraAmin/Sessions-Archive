@@ -22,6 +22,7 @@ import './select-system.css'
 import './events.css'
 import './admin-content-launcher.css'
 import './events-v2.css'
+import './event-cover-upload.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
