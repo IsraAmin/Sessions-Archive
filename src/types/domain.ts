@@ -115,6 +115,9 @@ export type CollegeEvent = {
   event_date: string
   location: string | null
   drive_folder_url: string | null
+  cover_url: string | null
+  cover_focus_x: number | null
+  cover_focus_y: number | null
   featured: boolean
   status: EventStatus
   created_by: string | null
