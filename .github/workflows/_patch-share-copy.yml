@@ -1,0 +1,50 @@
+name: Refine share copy
+
+on:
+  push:
+    paths:
+      - '.github/workflows/_patch-share-copy.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update share wording
+        shell: python
+        run: |
+          from pathlib import Path
+
+          event_path = Path('src/pages/EventDetailsPage.tsx')
+          event_text = event_path.read_text()
+          old_event = """      text: ar
+        ? `شوف الفعالية دي في أرشيف ريبيت: ${title}${caption ? ` — ${caption}` : ''}`
+        : `Check out this event on أرشيف ريبيت: ${title}${caption ? ` — ${caption}` : ''}`,
+"""
+          new_event = """      text: `أرشيف ريبيت:\n${title}${caption ? `\n${caption}` : ''}`,
+"""
+          if old_event not in event_text:
+              raise SystemExit('Event share copy pattern not found')
+          event_path.write_text(event_text.replace(old_event, new_event))
+
+          session_path = Path('src/pages/SessionDetailsPage.tsx')
+          session_text = session_path.read_text()
+          old_session = """      text: ar ? `شوف السيشن دي في أرشيف ريبيت: ${session.title.replace(/\\s+/g, ' ').trim()}` : `Check out this session on أرشيف ريبيت: ${session.title.replace(/\\s+/g, ' ').trim()}`,
+"""
+          new_session = """      text: `أرشيف ريبيت:\n${session.title.replace(/\\s+/g, ' ').trim()}`,
+"""
+          if old_session not in session_text:
+              raise SystemExit('Session share copy pattern not found')
+          session_path.write_text(session_text.replace(old_session, new_session))
+      - name: Commit share copy update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/EventDetailsPage.tsx src/pages/SessionDetailsPage.tsx
+          git commit -m "Refine session and event share copy"
+          git push
