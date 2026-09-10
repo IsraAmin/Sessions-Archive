@@ -1,0 +1,62 @@
+name: Rename platform to Sessions Repeat
+
+on:
+  push:
+    paths:
+      - '.github/workflows/_rename-platform.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Rename visible brand
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          files = [
+              Path('index.html'),
+              Path('public/manifest.webmanifest'),
+              Path('public/sw.js'),
+              Path('src/components/Layout.tsx'),
+              Path('src/components/PwaInstallPrompt.tsx'),
+              Path('src/pages/EventDetailsPage.tsx'),
+              Path('src/pages/SessionDetailsPage.tsx'),
+              Path('supabase/functions/event-share/index.ts'),
+              Path('supabase/functions/session-share/index.ts'),
+          ]
+
+          for path in files:
+              text = path.read_text()
+              text = text.replace('أرشيف ريبيت', 'Sessions Repeat')
+              path.write_text(text)
+
+          layout = Path('src/components/Layout.tsx')
+          text = layout.read_text()
+          text = text.replace('<strong>أرشيف</strong><small>ريبيت</small>', '<strong>Sessions</strong><small>Repeat</small>')
+          layout.write_text(text)
+
+          index = Path('index.html')
+          text = index.read_text().replace('manifest.webmanifest?v=7', 'manifest.webmanifest?v=8')
+          index.write_text(text)
+
+          sw = Path('public/sw.js')
+          text = sw.read_text()
+          text = text.replace("archive-repeat-app-v24", "archive-repeat-app-v25")
+          text = text.replace("archive-repeat-runtime-v24", "archive-repeat-runtime-v25")
+          text = text.replace('manifest.webmanifest?v=7', 'manifest.webmanifest?v=8')
+          sw.write_text(text)
+          PY
+      - name: Commit rename
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html public/manifest.webmanifest public/sw.js src/components/Layout.tsx src/components/PwaInstallPrompt.tsx src/pages/EventDetailsPage.tsx src/pages/SessionDetailsPage.tsx supabase/functions/event-share/index.ts supabase/functions/session-share/index.ts
+          git commit -m "Rename platform to Sessions Repeat"
+          git push
