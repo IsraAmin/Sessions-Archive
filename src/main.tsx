@@ -21,6 +21,7 @@ import './home.css'
 import './select-system.css'
 import './events.css'
 import './admin-content-launcher.css'
+import './events-v2.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
