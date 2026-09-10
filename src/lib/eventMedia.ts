@@ -8,6 +8,12 @@ export type ParsedEventMediaSource = {
   sourceUrl: string
 }
 
+export type GoogleDriveFolderSource = {
+  folderId: string
+  resourceKey: string | null
+  sourceUrl: string
+}
+
 function publicHttpUrl(value: string) {
   try {
     const url = new URL(value.trim())
@@ -43,6 +49,35 @@ export function parseEventVideoSource(value: string): ParsedEventMediaSource | n
   return { provider: 'external', sourceId: null, sourceUrl }
 }
 
+export function extractGoogleDriveFolderSource(value: string): GoogleDriveFolderSource | null {
+  const sourceUrl = publicHttpUrl(value)
+  if (!sourceUrl) return null
+
+  try {
+    const url = new URL(sourceUrl)
+    if (url.hostname.replace(/^www\./, '') !== 'drive.google.com') return null
+    const parts = url.pathname.split('/').filter(Boolean)
+    const folderIndex = parts.indexOf('folders')
+    const folderId = folderIndex >= 0 ? (parts[folderIndex + 1] ?? '') : (url.searchParams.get('id') ?? '')
+    if (!/^[A-Za-z0-9_-]{10,}$/.test(folderId)) return null
+    return {
+      folderId,
+      resourceKey: url.searchParams.get('resourcekey'),
+      sourceUrl,
+    }
+  } catch {
+    return null
+  }
+}
+
+export function googleDriveFolderEmbedUrl(value: string) {
+  const folder = extractGoogleDriveFolderSource(value)
+  if (!folder) return null
+  const params = new URLSearchParams({ id: folder.folderId })
+  if (folder.resourceKey) params.set('resourcekey', folder.resourceKey)
+  return `https://drive.google.com/embeddedfolderview?${params.toString()}#grid`
+}
+
 export function googleDriveImageUrl(fileId: string) {
   return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(fileId)}`
 }
@@ -51,6 +86,15 @@ export function eventImageDisplayUrl(media: { provider: EventMediaProvider; sour
   return media.provider === 'google_drive' && media.source_id
     ? googleDriveImageUrl(media.source_id)
     : media.source_url
+}
+
+export function eventCoverDisplayUrl(coverUrl: string | null | undefined) {
+  if (!coverUrl) return null
+  const parsed = parseEventImageSource(coverUrl)
+  if (!parsed) return null
+  return parsed.provider === 'google_drive' && parsed.sourceId
+    ? googleDriveImageUrl(parsed.sourceId)
+    : parsed.sourceUrl
 }
 
 export function eventVideoPlayerId(media: { provider: EventMediaProvider; source_id: string | null; source_url: string }) {
