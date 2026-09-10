@@ -99,9 +99,7 @@ export function EventDetailsPage() {
     const caption = (event.description ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)
     const shareData = {
       title,
-      text: ar
-        ? `شوف الفعالية دي في أرشيف ريبيت: ${title}${caption ? ` — ${caption}` : ''}`
-        : `Check out this event on أرشيف ريبيت: ${title}${caption ? ` — ${caption}` : ''}`,
+      text: `أرشيف ريبيت:\n${title}${caption ? `\n${caption}` : ''}`,
       url,
     }
 
