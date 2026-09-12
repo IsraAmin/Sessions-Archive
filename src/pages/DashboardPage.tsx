@@ -44,7 +44,7 @@ export function DashboardPage() {
     <div className="section-heading"><div><div className="eyebrow">{t('dashboard.eyebrow')}</div><h1>{t('dashboard.title')}</h1></div><Link className="button button-secondary" to="/saved">{ar ? 'عرض المحفوظات' : 'View saved'}</Link></div>
     {loadError && <p className="notice error" role="alert">{loadError}</p>}
     <div className="stats-grid stats-grid-v2">
-      <StatCard label={ar ? 'السيشنات التي شاهدتها' : 'Sessions viewed'} value={views.length} />
+      <StatCard label={ar ? 'الجلسات التي شاهدتها' : 'Sessions viewed'} value={views.length} />
       <StatCard label={t('dashboard.bookmarks')} value={bookmarks} />
       <StatCard label={t('dashboard.feedback')} value={feedback} />
       <StatCard label={t('dashboard.progress')} value={progress.length} />
@@ -53,9 +53,9 @@ export function DashboardPage() {
     <SessionCalendar sessions={calendarSessions} />
 
     <div className="dashboard-columns">
-      <section className="panel"><div className="panel-heading"><h2>{ar ? 'آخر السيشنات التي فتحتها' : 'Recently viewed sessions'}</h2></div><div className="list">
+      <section className="panel"><div className="panel-heading"><h2>{ar ? 'آخر الجلسات التي فتحتها' : 'Recently viewed sessions'}</h2></div><div className="list">
         {views.map((row) => row.session && <Link key={row.id} className="list-row" to={`/sessions/${row.session.id}`}><strong>{row.session.title}</strong><span>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(row.session.starts_at))}</span></Link>)}
-        {!views.length && <div className="empty-state">{ar ? 'لم تفتح أي سيشن بعد. اختر سيشن من صفحة الاستكشاف وسيظهر هنا.' : 'You have not opened any sessions yet. Explore a session and it will appear here.'}</div>}
+        {!views.length && <div className="empty-state">{ar ? 'لم تفتح أي جلسة بعد. اختر جلسة من صفحة الاستكشاف وستظهر هنا.' : 'You have not opened any sessions yet. Explore a session and it will appear here.'}</div>}
       </div></section>
 
       <section className="panel"><div className="panel-heading"><h2>{t('dashboard.continueWatching')}</h2></div><div className="continue-list">
