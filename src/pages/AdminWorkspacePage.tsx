@@ -6,6 +6,7 @@ import { AdminActivityLog } from '../components/AdminActivityLog'
 import { AdminBackupRestorePanel } from '../components/AdminBackupRestorePanel'
 import { AdminEventsPanel } from '../components/AdminEventsPanel'
 import { AdminCompetitionsWorkspace } from '../components/AdminCompetitionsWorkspace'
+import { AdminEventCreateWizard } from '../components/AdminEventCreateWizard'
 import { Icon } from '../components/Icon'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
@@ -20,6 +21,7 @@ export function AdminWorkspacePage() {
   const ar = language === 'ar'
   const [tab, setTab] = useState<AdminWorkspaceTab>('sessions')
   const [eventsMode, setEventsMode] = useState<EventsWorkspaceMode>('events')
+  const [eventsVersion, setEventsVersion] = useState(0)
 
   useEffect(() => {
     const hash = location.hash.toLowerCase()
@@ -46,6 +48,15 @@ export function AdminWorkspacePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  function handleEventCreated(_eventId: string, isCompetition: boolean) {
+    const nextMode: EventsWorkspaceMode = isCompetition ? 'competitions' : 'events'
+    setEventsVersion((version) => version + 1)
+    setEventsMode(nextMode)
+    const hash = nextMode === 'competitions' ? '#competitions-admin' : '#events-admin'
+    window.history.replaceState(null, '', `${location.pathname}${location.search}${hash}`)
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)
+  }
+
   return <div className="admin-workspace-stack admin-workspace-v2">
     <section className="admin-workspace-switcher" aria-label={ar ? 'أقسام الإدارة' : 'Admin sections'}>
       <div className="admin-workspace-switcher-copy">
@@ -66,7 +77,8 @@ export function AdminWorkspacePage() {
         <button type="button" role="tab" aria-selected={eventsMode === 'events'} className={eventsMode === 'events' ? 'active' : ''} onClick={() => chooseEventsMode('events')}><span>01</span><div><strong>{ar ? 'الفعاليات' : 'Events'}</strong><small>{ar ? 'البيانات، الغلاف والألبوم' : 'Details, cover & album'}</small></div></button>
         <button type="button" role="tab" aria-selected={eventsMode === 'competitions'} className={eventsMode === 'competitions' ? 'active' : ''} onClick={() => chooseEventsMode('competitions')}><span>02</span><div><strong>{ar ? 'المسابقات الأكاديمية' : 'Academic competitions'}</strong><small>{ar ? 'التسجيل، المراحل والنتائج' : 'Registration, stages & results'}</small></div></button>
       </div>
-      {eventsMode === 'events' ? <AdminEventsPanel /> : <AdminCompetitionsWorkspace />}
+      <AdminEventCreateWizard onCreated={handleEventCreated} />
+      {eventsMode === 'events' ? <AdminEventsPanel key={`events-${eventsVersion}`} /> : <AdminCompetitionsWorkspace key={`competitions-${eventsVersion}`} />}
     </div>}
     {tab === 'system' && <div className="admin-system-stack" id="admin-system" role="tabpanel">
       {isSuperAdmin && <AdminBackupRestorePanel />}
