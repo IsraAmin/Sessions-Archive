@@ -124,14 +124,14 @@ export function ExplorePage() {
     <header className="explore-header">
       <span className="events-eyebrow"><Icon name="layers" />{ar ? 'بحث واحد لكل الأرشيف' : 'One search for the archive'}</span>
       <h1>{ar ? 'استكشف الأرشيف' : 'Explore the archive'}</h1>
-      <p>{ar ? 'ابحث في السيشنات والفعاليات من مكان واحد، ثم اختر نوع المحتوى الذي تريد الوصول إليه.' : 'Search sessions and college events in one place, then narrow by the content you want.'}</p>
+      <p>{ar ? 'ابحث في الجلسات والفعاليات من مكان واحد، ثم اختر نوع المحتوى الذي تريد الوصول إليه.' : 'Search sessions and college events in one place, then narrow by the content you want.'}</p>
       <form className="explore-search" onSubmit={submit}>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ar ? 'ابحث عن سيشن، فعالية، متحدث أو مكان…' : 'Search for a session, event, speaker, or place…'} aria-label={ar ? 'البحث في الأرشيف' : 'Search archive'} />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ar ? 'ابحث عن جلسة، فعالية، متحدث أو مكان…' : 'Search for a session, event, speaker, or place…'} aria-label={ar ? 'البحث في الأرشيف' : 'Search archive'} />
         <button className="button button-primary" type="submit">{ar ? 'بحث' : 'Search'}</button>
       </form>
       <div className="explore-type-tabs" role="group" aria-label={ar ? 'نوع المحتوى' : 'Content type'}>
         <button type="button" className={activeType === 'all' ? 'active' : ''} onClick={() => setType('all')}>{ar ? 'الكل' : 'All'}</button>
-        <button type="button" className={activeType === 'sessions' ? 'active' : ''} onClick={() => setType('sessions')}>{ar ? 'السيشنات' : 'Sessions'}</button>
+        <button type="button" className={activeType === 'sessions' ? 'active' : ''} onClick={() => setType('sessions')}>{ar ? 'الجلسات' : 'Sessions'}</button>
         <button type="button" className={activeType === 'events' ? 'active' : ''} onClick={() => setType('events')}>{ar ? 'الفعاليات' : 'Events'}</button>
       </div>
     </header>
@@ -141,8 +141,8 @@ export function ExplorePage() {
       <div className="explore-result-summary"><strong>{total}</strong><span>{appliedQuery ? (ar ? `نتيجة لـ «${appliedQuery}»` : `results for “${appliedQuery}”`) : (ar ? 'عنصر في الأرشيف' : 'items in the archive')}</span></div>
 
       {showSessions && <section className="explore-section">
-        <div className="event-detail-section-head"><div><span>{ar ? 'المحتوى التعليمي' : 'Learning archive'}</span><h2>{ar ? 'السيشنات' : 'Sessions'}</h2></div><small>{sessions.length}</small></div>
-        {sessions.length ? <div className="sessions-grid">{sessions.map((session) => <SessionCard key={session.id} session={session} />)}</div> : <div className="events-empty compact"><Icon name="calendar" /><strong>{ar ? 'ما في سيشنات مطابقة' : 'No matching sessions'}</strong></div>}
+        <div className="event-detail-section-head"><div><span>{ar ? 'المحتوى التعليمي' : 'Learning archive'}</span><h2>{ar ? 'الجلسات' : 'Sessions'}</h2></div><small>{sessions.length}</small></div>
+        {sessions.length ? <div className="sessions-grid">{sessions.map((session) => <SessionCard key={session.id} session={session} />)}</div> : <div className="events-empty compact"><Icon name="calendar" /><strong>{ar ? 'ما في جلسات مطابقة' : 'No matching sessions'}</strong></div>}
       </section>}
 
       {showEvents && <section className="explore-section">
