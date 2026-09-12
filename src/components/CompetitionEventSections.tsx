@@ -3,6 +3,7 @@ import { competitionAttendanceLabel, competitionKindLabel, competitionParticipat
 import { publicSupabase } from '../lib/supabase'
 import type { CollegeEvent, CompetitionDetails, CompetitionStage, CompetitionWinner } from '../types/domain'
 import { Icon } from './Icon'
+import { CompetitionShowcaseSection } from './CompetitionShowcaseSection'
 
 function lines(value: string | null) {
   return (value ?? '').split(/\r?\n/).map((item) => item.trim()).filter(Boolean)
@@ -99,11 +100,6 @@ export function CompetitionEventSections({ event, ar }: { event: CollegeEvent; a
       </div>
     </section>}
 
-    {stages.length > 0 && <section className="competition-public-section">
-      <div className="competition-section-heading"><span>Timeline</span><h2>{ar ? 'رحلة المسابقة' : 'Competition journey'}</h2></div>
-      <div className="competition-public-timeline">{stages.map((stage, index) => <article key={stage.id}><span className="competition-timeline-number">{String(index + 1).padStart(2, '0')}</span><div><time>{dateTime(stage.stage_at) || (ar ? 'الموعد يحدد لاحقًا' : 'Date TBA')}</time><h3 dir="auto">{stage.title}</h3>{stage.description && <p dir="auto">{stage.description}</p>}</div></article>)}</div>
-    </section>}
-
     {details.results_published && orderedWinners.length > 0 && <section className="competition-public-section competition-winners-section">
       <div className="competition-section-heading"><span>{ar ? 'النتائج الرسمية' : 'Official results'}</span><h2>🏆 {ar ? 'الفائزون' : 'Winners'}</h2><p>{ar ? 'النتائج المنشورة والمعتمدة لهذه المسابقة.' : 'Published and approved results for this competition.'}</p></div>
       <div className="competition-winners-list">{orderedWinners.map((winner, index) => <article key={winner.id} className={index === 0 ? 'first' : ''}>
@@ -111,6 +107,13 @@ export function CompetitionEventSections({ event, ar }: { event: CollegeEvent; a
         <div className="competition-winner-copy"><span>{winner.award_title || (winner.rank ? (ar ? `المركز ${winner.rank}` : `Rank ${winner.rank}`) : (ar ? 'فائز' : 'Winner'))}</span><h3 dir="auto">{winner.entry_name}</h3>{winner.project_title && <strong dir="auto">{winner.project_title}</strong>}{winner.members && <p dir="auto">{winner.members}</p>}{winner.prize && <small dir="auto">{ar ? 'الجائزة: ' : 'Prize: '}{winner.prize}</small>}</div>
         {winner.project_url && <a className="competition-winner-link" href={winner.project_url} target="_blank" rel="noopener noreferrer" aria-label={ar ? 'فتح المشروع' : 'Open project'}><Icon name="share" /></a>}
       </article>)}</div>
+    </section>}
+
+    <CompetitionShowcaseSection eventId={event.id} ar={ar} resultsPublished={details.results_published} showcasePublished={Boolean(details.showcase_published)} winners={orderedWinners} />
+
+    {stages.length > 0 && <section className="competition-public-section">
+      <div className="competition-section-heading"><span>Timeline</span><h2>{ar ? 'رحلة المسابقة' : 'Competition journey'}</h2></div>
+      <div className="competition-public-timeline">{stages.map((stage, index) => <article key={stage.id}><span className="competition-timeline-number">{String(index + 1).padStart(2, '0')}</span><div><time>{dateTime(stage.stage_at) || (ar ? 'الموعد يحدد لاحقًا' : 'Date TBA')}</time><h3 dir="auto">{stage.title}</h3>{stage.description && <p dir="auto">{stage.description}</p>}</div></article>)}</div>
     </section>}
   </div>
 }
