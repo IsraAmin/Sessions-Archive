@@ -1,0 +1,201 @@
+/* Adaptive event creation: calm by default, expands only when a competition is chosen. */
+.smart-event-creator {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--v2-border);
+  border-radius: 20px;
+  background: var(--v2-surface);
+  box-shadow: var(--v2-shadow-soft);
+  overflow: hidden;
+}
+.smart-event-creator-trigger {
+  width: 100%;
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--v2-text);
+  text-align: start;
+  cursor: pointer;
+}
+.smart-event-creator-trigger:hover { background: var(--v2-surface-2); }
+.smart-event-creator-trigger-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--v2-brand);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 400;
+}
+.smart-event-creator-trigger > span:nth-child(2) { display: grid; gap: 4px; min-width: 0; }
+.smart-event-creator-trigger strong { font-size: 13px; }
+.smart-event-creator-trigger small { color: var(--v2-muted); font-size: 9.5px; line-height: 1.5; }
+.smart-event-creator-trigger > b { color: var(--v2-muted); font-size: 16px; font-weight: 500; text-align: center; }
+.smart-event-creator.is-open .smart-event-creator-trigger { border-bottom: 1px solid var(--v2-border); }
+
+.smart-event-creator-form {
+  display: grid;
+  gap: 22px;
+  padding: clamp(18px, 3vw, 28px);
+}
+.smart-event-form-heading { max-width: 720px; }
+.smart-event-form-heading h3 { margin: 5px 0 6px; color: var(--v2-text); font-size: clamp(19px, 2.4vw, 25px); }
+.smart-event-form-heading p { margin: 0; color: var(--v2-muted); font-size: 10px; line-height: 1.7; }
+.smart-event-primary-grid,
+.smart-competition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+}
+.smart-event-creator-form label {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  color: var(--v2-text);
+  font-size: 10.5px;
+  font-weight: 750;
+}
+.smart-event-creator-form label > span { color: var(--v2-muted); }
+.smart-event-creator-form input,
+.smart-event-creator-form select,
+.smart-event-creator-form textarea { width: 100%; }
+.smart-event-creator-form input,
+.smart-event-creator-form select { min-height: 48px; }
+.smart-event-creator-form textarea { line-height: 1.7; resize: vertical; }
+
+.academic-subtype-panel {
+  display: grid;
+  gap: 14px;
+  padding: 17px;
+  border: 1px solid color-mix(in srgb, var(--v2-brand) 18%, var(--v2-border));
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--v2-brand-soft) 28%, var(--v2-surface));
+}
+.academic-subtype-copy,
+.smart-common-title { display: flex; align-items: center; gap: 10px; }
+.academic-subtype-copy > span,
+.smart-common-title > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 10px;
+  background: var(--v2-brand-soft);
+  color: var(--v2-brand);
+  font-size: 9px;
+  font-weight: 900;
+}
+.academic-subtype-copy > div,
+.smart-common-title > div { display: grid; gap: 2px; }
+.academic-subtype-copy strong,
+.smart-common-title strong { color: var(--v2-text); font-size: 11px; }
+.academic-subtype-copy small,
+.smart-common-title small { color: var(--v2-muted); font-size: 8.5px; line-height: 1.5; }
+.academic-subtype-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.academic-subtype-options button {
+  min-height: 68px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 11px 12px;
+  border: 1px solid var(--v2-border);
+  border-radius: 13px;
+  background: var(--v2-surface);
+  color: var(--v2-text);
+  text-align: start;
+  cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+}
+.academic-subtype-options button:hover { border-color: color-mix(in srgb, var(--v2-brand) 25%, var(--v2-border)); transform: translateY(-1px); }
+.academic-subtype-options button.active { border-color: color-mix(in srgb, var(--v2-brand) 55%, var(--v2-border)); background: var(--v2-brand-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v2-brand) 12%, transparent); }
+.academic-subtype-options strong { font-size: 10.5px; }
+.academic-subtype-options small { color: var(--v2-muted); font-size: 8.5px; }
+
+.smart-competition-fields {
+  display: grid;
+  gap: 18px;
+  padding: clamp(18px, 3vw, 24px);
+  border: 1px solid color-mix(in srgb, #d6a625 30%, var(--v2-border));
+  border-radius: 19px;
+  background: linear-gradient(145deg, color-mix(in srgb, #d6a625 5%, var(--v2-surface)), var(--v2-surface));
+}
+.smart-competition-title {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid color-mix(in srgb, #d6a625 18%, var(--v2-border));
+}
+.smart-competition-trophy {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: color-mix(in srgb, #d6a625 10%, var(--v2-surface));
+  font-size: 23px;
+}
+.smart-competition-title h4 { margin: 4px 0 4px; color: var(--v2-text); font-size: 17px; }
+.smart-competition-title p { margin: 0; max-width: 720px; color: var(--v2-muted); font-size: 9.5px; line-height: 1.65; }
+
+.smart-event-common-details {
+  display: grid;
+  gap: 16px;
+  padding-top: 4px;
+}
+.smart-featured-check {
+  min-height: 48px;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center !important;
+  align-content: center !important;
+  padding: 10px 12px;
+  border: 1px solid var(--v2-border);
+  border-radius: 12px;
+  background: var(--v2-surface-2);
+}
+.smart-featured-check input { width: 16px; min-height: 16px; }
+.smart-featured-check span { color: var(--v2-text) !important; }
+.smart-event-create-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 4px;
+}
+
+/* The adaptive creator replaces the old duplicate “new event” trigger. */
+.admin-events-mode-stack > .admin-events-workspace .admin-events-v2-head > button { display: none; }
+
+@media (max-width: 760px) {
+  .smart-event-primary-grid,
+  .smart-competition-grid { grid-template-columns: 1fr; gap: 14px; }
+  .academic-subtype-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .smart-event-creator-form { gap: 18px; }
+}
+@media (max-width: 520px) {
+  .smart-event-creator-trigger { grid-template-columns: 38px minmax(0, 1fr) 22px; padding: 12px; }
+  .smart-event-creator-trigger-icon { width: 38px; height: 38px; border-radius: 12px; }
+  .academic-subtype-options { grid-template-columns: 1fr; }
+  .smart-competition-title { grid-template-columns: 44px minmax(0, 1fr); }
+  .smart-competition-trophy { width: 44px; height: 44px; border-radius: 13px; font-size: 20px; }
+  .smart-event-create-actions { align-items: stretch; flex-direction: column; }
+  .smart-event-create-actions .button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .academic-subtype-options button { transition: none; }
+  .academic-subtype-options button:hover { transform: none; }
+}
