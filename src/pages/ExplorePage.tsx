@@ -5,12 +5,16 @@ import { Icon } from '../components/Icon'
 import { SessionCard } from '../components/SessionCard'
 import { useUi } from '../hooks/useUi'
 import { publicSupabase } from '../lib/supabase'
-import type { CollegeEvent, CollegeEventWithMedia, EventMedia, SearchSession } from '../types/domain'
+import type { CollegeEvent, CollegeEventWithMedia, EventMedia, RecordingProvider, SearchSession } from '../types/domain'
 
 type ExploreType = 'all' | 'sessions' | 'events'
 
 function readType(value: string | null): ExploreType {
   return value === 'sessions' || value === 'events' ? value : 'all'
+}
+
+function isRecordingProvider(value: string): value is RecordingProvider {
+  return ['youtube', 'google_drive', 'whatsapp', 'telegram'].includes(value)
 }
 
 export function ExplorePage() {
@@ -40,8 +44,27 @@ export function ExplorePage() {
         if (sessionsResult.error) throw sessionsResult.error
         if (eventsResult.error) throw eventsResult.error
 
-        const nextSessions = (sessionsResult.data ?? []) as SearchSession[]
+        const baseSessions = (sessionsResult.data ?? []) as SearchSession[]
         const baseEvents = (eventsResult.data ?? []) as CollegeEvent[]
+        let nextSessions = baseSessions
+
+        if (baseSessions.length) {
+          const videoResult = await publicSupabase.from('session_videos').select('session_id,video_provider').in('session_id', baseSessions.map((session) => session.id))
+          if (videoResult.error) throw videoResult.error
+          const providersBySession = new Map<string, Set<RecordingProvider>>()
+          for (const row of videoResult.data ?? []) {
+            const provider = String(row.video_provider)
+            if (!isRecordingProvider(provider)) continue
+            const current = providersBySession.get(row.session_id) ?? new Set<RecordingProvider>()
+            current.add(provider)
+            providersBySession.set(row.session_id, current)
+          }
+          nextSessions = baseSessions.map((session) => ({
+            ...session,
+            recording_providers: [...(providersBySession.get(session.id) ?? new Set<RecordingProvider>())],
+          }))
+        }
+
         let eventMedia: EventMedia[] = []
         if (baseEvents.length) {
           const mediaResult = await publicSupabase.from('event_media').select('*').in('event_id', baseEvents.map((event) => event.id)).order('position')
