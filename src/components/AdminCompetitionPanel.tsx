@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import type { CollegeEvent, CompetitionDetails, CompetitionStage, CompetitionWinner } from '../types/domain'
 import { ConfirmDialog } from './ConfirmDialog'
 import { Icon } from './Icon'
+import { CompetitionShowcaseAdmin } from './CompetitionShowcaseAdmin'
 import { useToast } from './ToastProvider'
 import { useUi } from '../hooks/useUi'
 
@@ -325,6 +326,8 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
       </form>
       {orderedWinners.length > 0 && <div className="competition-winner-admin-list">{orderedWinners.map((winner) => <article key={winner.id}><span className="competition-admin-rank">{winner.rank ? `#${winner.rank}` : '★'}</span><div><strong dir="auto">{winner.entry_name}</strong><small dir="auto">{winner.award_title || winner.project_title || (ar ? 'فائز' : 'Winner')}</small>{winner.members && <p dir="auto">{winner.members}</p>}</div><button className="text-action danger-text" type="button" onClick={() => void removeWinner(winner)} disabled={busy}>{ar ? 'حذف' : 'Delete'}</button></article>)}</div>}
     </section>
+
+    <CompetitionShowcaseAdmin eventId={event.id} resultsPublished={details.results_published} showcasePublished={Boolean(details.showcase_published)} winners={orderedWinners} />
 
     <button className="competition-remove-template" type="button" onClick={() => setRemoveTemplate(true)}>{ar ? 'إلغاء قالب المسابقة وإرجاعها فعالية أكاديمية عادية' : 'Remove competition template and return to a regular academic event'}</button>
 
