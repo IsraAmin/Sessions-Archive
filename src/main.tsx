@@ -24,6 +24,7 @@ import './admin-content-launcher.css'
 import './events-v2.css'
 import './event-cover-upload.css'
 import './event-carousel.css'
+import './admin-event-spacing.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
