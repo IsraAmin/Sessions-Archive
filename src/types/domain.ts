@@ -131,6 +131,8 @@ export type CompetitionDetails = {
   tracks: string | null
   results_published: boolean
   results_published_at: string | null
+  showcase_published: boolean | null
+  showcase_published_at: string | null
   created_at: string
   updated_at: string
 }
@@ -159,6 +161,31 @@ export type CompetitionWinner = {
   position: number
   created_at: string
   updated_at: string
+}
+
+export type CompetitionEntry = {
+  id: string
+  event_id: string
+  winner_id: string | null
+  team_name: string
+  leader_name: string | null
+  members: string | null
+  work_title: string
+  work_type: string | null
+  track: string | null
+  description: string | null
+  position: number
+  created_at: string
+  updated_at: string
+}
+
+export type CompetitionEntryLink = {
+  id: string
+  entry_id: string
+  label: string | null
+  link_url: string
+  position: number
+  created_at: string
 }
 
 export type CollegeEvent = {
