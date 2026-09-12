@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { EventCard } from '../components/EventCard'
 import { SessionCard } from '../components/SessionCard'
 import { Icon } from '../components/Icon'
@@ -39,14 +39,23 @@ function HomeSessionSection({ icon, kicker, title, view, sessions, emptyTitle, e
   </section>
 }
 
+function normalizeSearch(value: string) {
+  return value
+    .toLocaleLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u064B-\u065F\u0670]/g, '')
+    .replace(/ـ/g, '')
+    .trim()
+}
+
 export function HomePage() {
   const { language, t } = useUi()
-  const navigate = useNavigate()
   const ar = language === 'ar'
   const [sessions, setSessions] = useState<SearchSession[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [events, setEvents] = useState<CollegeEventWithMedia[]>([])
   const [query, setQuery] = useState('')
+  const [activeQuery, setActiveQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -60,7 +69,7 @@ export function HomePage() {
         const [sessionsResult, categoriesResult, eventsResult] = await Promise.all([
           publicSupabase.rpc('search_sessions', { search_text: undefined, category_filter: undefined }),
           publicSupabase.from('categories').select('*').order('name'),
-          publicSupabase.from('events').select('*').eq('status', 'published').order('featured', { ascending: false }).order('event_date', { ascending: false }).limit(8),
+          publicSupabase.from('events').select('*').eq('status', 'published').order('featured', { ascending: false }).order('event_date', { ascending: false }),
         ])
         if (sessionsResult.error) throw sessionsResult.error
         if (categoriesResult.error) throw categoriesResult.error
@@ -152,13 +161,50 @@ export function HomePage() {
     .sort((a, b) => Number(b.featured) - Number(a.featured) || new Date(b.event_date).getTime() - new Date(a.event_date).getTime())
     .slice(0, 6), [events])
 
+  const searchNeedle = useMemo(() => normalizeSearch(activeQuery), [activeQuery])
+  const searchSessions = useMemo(() => {
+    if (!searchNeedle) return []
+    return sessions.filter((session) => normalizeSearch([
+      session.title,
+      session.description,
+      session.category_name ?? '',
+      session.speaker_name ?? '',
+      session.location ?? '',
+    ].join(' ')).includes(searchNeedle))
+  }, [sessions, searchNeedle])
+  const searchEvents = useMemo(() => {
+    if (!searchNeedle) return []
+    const typeLabels: Record<string, string> = {
+      cultural: ar ? 'ثقافية' : 'cultural',
+      sports: ar ? 'رياضية' : 'sports',
+      initiative: ar ? 'مبادرات إعمار' : 'initiatives renovation',
+      social: ar ? 'اجتماعية' : 'social',
+      academic: ar ? 'أكاديمية' : 'academic',
+      other: ar ? 'أخرى' : 'other',
+    }
+    return events.filter((collegeEvent) => normalizeSearch([
+      collegeEvent.title,
+      collegeEvent.description,
+      collegeEvent.location ?? '',
+      collegeEvent.event_type,
+      typeLabels[collegeEvent.event_type] ?? '',
+    ].join(' ')).includes(searchNeedle))
+  }, [events, searchNeedle, ar])
+
   function submitSearch(event: FormEvent) {
     event.preventDefault()
-    const value = query.trim()
-    navigate(value ? `/explore?search=${encodeURIComponent(value)}` : '/explore')
+    setActiveQuery(query.trim())
+  }
+
+  function clearSearch() {
+    setQuery('')
+    setActiveQuery('')
   }
 
   if (loading) return <div className="page-state">{t('sessions.loading')}</div>
+
+  const searching = Boolean(searchNeedle)
+  const searchTotal = searchSessions.length + searchEvents.length
 
   return <div className="home-page">
     <section className="home-hero">
@@ -179,70 +225,93 @@ export function HomePage() {
 
     {error && <p className="notice error">{error}</p>}
 
-    <HomeSessionSection
-      icon="bookmark"
-      kicker={ar ? 'مهم الآن' : 'Featured'}
-      title={ar ? 'السيشن المثبتة' : 'Pinned session'}
-      view="pinned"
-      sessions={pinnedSessions}
-      emptyTitle={ar ? 'ما في Session مثبتة حاليًا' : 'No pinned session right now'}
-      emptyText={ar ? 'أول ما يتم تثبيت Session من الإدارة ستظهر هنا تلقائيًا.' : 'As soon as a session is pinned by an admin, it will appear here automatically.'}
-      ar={ar}
-    />
-
-    <HomeSessionSection
-      icon="calendar"
-      kicker={ar ? 'على الطريق' : 'Coming up'}
-      title={ar ? 'Sessions قريبة' : 'Upcoming sessions'}
-      view="upcoming"
-      sessions={upcomingSessions}
-      emptyTitle={ar ? 'ما في Sessions قادمة مضافة الآن' : 'No upcoming sessions yet'}
-      emptyText={ar ? 'لما تتم إضافة موعد جديد سيظهر هنا مباشرة.' : 'New scheduled sessions will show up here automatically.'}
-      ar={ar}
-    />
-
-    <section className="home-section home-events-section">
-      <div className="home-section-head">
-        <div><span className="home-section-kicker"><Icon name="layers" />{ar ? 'لحظات تستحق الحفظ' : 'Moments worth keeping'}</span><h2>{ar ? 'من فعاليات الكلية' : 'From college events'}</h2></div>
-        <Link to="/events" className="home-section-link">{ar ? 'عرض كل الفعاليات' : 'View all events'} <span aria-hidden="true">←</span></Link>
+    {searching ? <section className="home-search-results" aria-live="polite">
+      <div className="home-search-results-head">
+        <div>
+          <span className="home-section-kicker"><Icon name="layers" />{ar ? 'نتائج البحث' : 'Search results'}</span>
+          <h2>{ar ? `نتائج «${activeQuery}»` : `Results for “${activeQuery}”`}</h2>
+          <p>{ar ? `${searchTotal} نتيجة في السيشنات والفعاليات` : `${searchTotal} result${searchTotal === 1 ? '' : 's'} across sessions and events`}</p>
+        </div>
+        <button type="button" className="button button-secondary home-search-clear" onClick={clearSearch}>{ar ? 'مسح البحث' : 'Clear search'}</button>
       </div>
-      {homeEvents.length ? <div className="home-event-rail">{homeEvents.map((collegeEvent) => <div className="home-event-rail-item" key={collegeEvent.id}><EventCard event={collegeEvent} ar={ar} /></div>)}</div> : <div className="home-empty"><Icon name="layers" /><div><strong>{ar ? 'لسه ما في فعاليات مضافة' : 'No events added yet'}</strong><span>{ar ? 'أول فعالية منشورة وصورها ستظهر هنا.' : 'The first published event and its photos will appear here.'}</span></div></div>}
-    </section>
 
-    <HomeSessionSection
-      icon="layers"
-      kicker={ar ? 'وصلت للأرشيف' : 'Fresh in the archive'}
-      title={ar ? 'أضيف حديثًا للأرشيف' : 'Recently added'}
-      view="recent"
-      sessions={recentSessions}
-      emptyTitle={ar ? 'الأرشيف فاضي حاليًا' : 'The archive is empty'}
-      emptyText={ar ? 'أول Session منشورة ستظهر هنا.' : 'The first published session will appear here.'}
-      ar={ar}
-    />
+      {searchSessions.length > 0 && <div className="home-search-result-group">
+        <div className="home-search-result-group-head"><strong>{ar ? 'السيشنات' : 'Sessions'}</strong><span>{searchSessions.length}</span></div>
+        <div className="home-search-grid">{searchSessions.map((session) => <SessionCard key={session.id} session={session} />)}</div>
+      </div>}
 
-    <HomeSessionSection
-      icon="chart"
-      kicker={ar ? 'اختيارات الجمهور' : 'Community favorites'}
-      title={ar ? 'أعلى Sessions تقييمًا' : 'Top-rated sessions'}
-      view="top-rated"
-      sessions={topRatedSessions}
-      emptyTitle={ar ? 'لسه ما في تقييمات كفاية' : 'No ratings yet'}
-      emptyText={ar ? 'بعد أول تقييم، أعلى السيشنات ستظهر هنا.' : 'Once ratings arrive, the highest-rated sessions will appear here.'}
-      ar={ar}
-    />
+      {searchEvents.length > 0 && <div className="home-search-result-group">
+        <div className="home-search-result-group-head"><strong>{ar ? 'الفعاليات' : 'Events'}</strong><span>{searchEvents.length}</span></div>
+        <div className="home-search-grid home-search-events-grid">{searchEvents.map((collegeEvent) => <EventCard key={collegeEvent.id} event={collegeEvent} ar={ar} />)}</div>
+      </div>}
 
-    <section className="home-section home-categories-section">
-      <div className="home-section-head"><div><span className="home-section-kicker"><Icon name="layers" />{ar ? 'وصول أسرع' : 'Quick access'}</span><h2>{ar ? 'تصنيفات سريعة' : 'Quick categories'}</h2></div><Link to="/sessions" className="home-section-link">{ar ? 'عرض الكل' : 'View all'} <span aria-hidden="true">←</span></Link></div>
-      <div className="home-category-grid">
-        {categories.map((category) => {
-          const count = sessions.filter((session) => session.category_id === category.id).length
-          return <Link className="home-category-card" key={category.id} to={`/sessions?category=${encodeURIComponent(category.id)}`}>
-            <span className="home-category-icon">{category.name.trim().slice(0, 1).toUpperCase()}</span>
-            <span className="home-category-copy"><strong dir="auto">{category.name}</strong><small>{ar ? `${count} Session` : `${count} session${count === 1 ? '' : 's'}`}</small></span>
-            <span className="home-category-arrow" aria-hidden="true">←</span>
-          </Link>
-        })}
-      </div>
-    </section>
+      {searchTotal === 0 && <div className="home-empty home-search-empty"><Icon name="layers" /><div><strong>{ar ? 'ما لقينا نتيجة مطابقة' : 'No matching results'}</strong><span>{ar ? 'جرّب كلمة أقصر، اسم المتحدث، التصنيف أو اسم الفعالية.' : 'Try a shorter term, speaker, category, or event name.'}</span></div></div>}
+    </section> : <>
+      <HomeSessionSection
+        icon="bookmark"
+        kicker={ar ? 'مهم الآن' : 'Featured'}
+        title={ar ? 'السيشن المثبتة' : 'Pinned session'}
+        view="pinned"
+        sessions={pinnedSessions}
+        emptyTitle={ar ? 'ما في Session مثبتة حاليًا' : 'No pinned session right now'}
+        emptyText={ar ? 'أول ما يتم تثبيت Session من الإدارة ستظهر هنا تلقائيًا.' : 'As soon as a session is pinned by an admin, it will appear here automatically.'}
+        ar={ar}
+      />
+
+      <HomeSessionSection
+        icon="calendar"
+        kicker={ar ? 'على الطريق' : 'Coming up'}
+        title={ar ? 'Sessions قريبة' : 'Upcoming sessions'}
+        view="upcoming"
+        sessions={upcomingSessions}
+        emptyTitle={ar ? 'ما في Sessions قادمة مضافة الآن' : 'No upcoming sessions yet'}
+        emptyText={ar ? 'لما تتم إضافة موعد جديد سيظهر هنا مباشرة.' : 'New scheduled sessions will show up here automatically.'}
+        ar={ar}
+      />
+
+      <section className="home-section home-events-section">
+        <div className="home-section-head">
+          <div><span className="home-section-kicker"><Icon name="layers" />{ar ? 'لحظات تستحق الحفظ' : 'Moments worth keeping'}</span><h2>{ar ? 'من فعاليات الكلية' : 'From college events'}</h2></div>
+          <Link to="/events" className="home-section-link">{ar ? 'عرض كل الفعاليات' : 'View all events'} <span aria-hidden="true">←</span></Link>
+        </div>
+        {homeEvents.length ? <div className="home-event-rail">{homeEvents.map((collegeEvent) => <div className="home-event-rail-item" key={collegeEvent.id}><EventCard event={collegeEvent} ar={ar} /></div>)}</div> : <div className="home-empty"><Icon name="layers" /><div><strong>{ar ? 'لسه ما في فعاليات مضافة' : 'No events added yet'}</strong><span>{ar ? 'أول فعالية منشورة وصورها ستظهر هنا.' : 'The first published event and its photos will appear here.'}</span></div></div>}
+      </section>
+
+      <HomeSessionSection
+        icon="layers"
+        kicker={ar ? 'وصلت للأرشيف' : 'Fresh in the archive'}
+        title={ar ? 'أضيف حديثًا للأرشيف' : 'Recently added'}
+        view="recent"
+        sessions={recentSessions}
+        emptyTitle={ar ? 'الأرشيف فاضي حاليًا' : 'The archive is empty'}
+        emptyText={ar ? 'أول Session منشورة ستظهر هنا.' : 'The first published session will appear here.'}
+        ar={ar}
+      />
+
+      <HomeSessionSection
+        icon="chart"
+        kicker={ar ? 'اختيارات الجمهور' : 'Community favorites'}
+        title={ar ? 'أعلى Sessions تقييمًا' : 'Top-rated sessions'}
+        view="top-rated"
+        sessions={topRatedSessions}
+        emptyTitle={ar ? 'لسه ما في تقييمات كفاية' : 'No ratings yet'}
+        emptyText={ar ? 'بعد أول تقييم، أعلى السيشنات ستظهر هنا.' : 'Once ratings arrive, the highest-rated sessions will appear here.'}
+        ar={ar}
+      />
+
+      <section className="home-section home-categories-section">
+        <div className="home-section-head"><div><span className="home-section-kicker"><Icon name="layers" />{ar ? 'وصول أسرع' : 'Quick access'}</span><h2>{ar ? 'تصنيفات سريعة' : 'Quick categories'}</h2></div><Link to="/sessions" className="home-section-link">{ar ? 'عرض الكل' : 'View all'} <span aria-hidden="true">←</span></Link></div>
+        <div className="home-category-grid">
+          {categories.map((category) => {
+            const count = sessions.filter((session) => session.category_id === category.id).length
+            return <Link className="home-category-card" key={category.id} to={`/sessions?category=${encodeURIComponent(category.id)}`}>
+              <span className="home-category-icon">{category.name.trim().slice(0, 1).toUpperCase()}</span>
+              <span className="home-category-copy"><strong dir="auto">{category.name}</strong><small>{ar ? `${count} Session` : `${count} session${count === 1 ? '' : 's'}`}</small></span>
+              <span className="home-category-arrow" aria-hidden="true">←</span>
+            </Link>
+          })}
+        </div>
+      </section>
+    </>}
   </div>
 }
