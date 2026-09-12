@@ -114,9 +114,9 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
     setBusy(true)
     try {
       const patch = {
-        competition_kind: String(values.get('competition_kind') || 'problem_solving'),
+        competition_kind: String(values.get('competition_kind') || 'problem_solving') as CompetitionDetails['competition_kind'],
         organizer: optionalText(values.get('organizer')),
-        phase: String(values.get('phase') || 'announced'),
+        phase: String(values.get('phase') || 'announced') as CompetitionDetails['phase'],
         registration_opens_at: fromLocalInput(values.get('registration_opens_at')),
         registration_closes_at: fromLocalInput(values.get('registration_closes_at')),
         competition_starts_at: fromLocalInput(values.get('competition_starts_at')),
@@ -124,7 +124,7 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
         participation_mode: participationMode,
         min_team_size: minTeam,
         max_team_size: maxTeam,
-        attendance_mode: String(values.get('attendance_mode') || 'in_person'),
+        attendance_mode: String(values.get('attendance_mode') || 'in_person') as CompetitionDetails['attendance_mode'],
         eligibility: optionalText(values.get('eligibility')),
         registration_url: registrationUrl,
         rules_url: rulesUrl,
@@ -224,7 +224,7 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
       const patch = {
         results_published: publish,
         results_published_at: publish ? new Date().toISOString() : null,
-        phase: publish ? 'completed' : details.phase,
+        phase: (publish ? 'completed' : details.phase) as CompetitionDetails['phase'],
         updated_at: new Date().toISOString(),
       }
       const { error } = await supabase.from('competition_details').update(patch).eq('event_id', event.id)
