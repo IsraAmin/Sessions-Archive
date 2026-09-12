@@ -22,7 +22,6 @@ export function AdminWorkspacePage() {
   const [tab, setTab] = useState<AdminWorkspaceTab>('sessions')
   const [eventsMode, setEventsMode] = useState<EventsWorkspaceMode>('events')
   const [eventsVersion, setEventsVersion] = useState(0)
-  const [lastCreatedEventId, setLastCreatedEventId] = useState('')
 
   useEffect(() => {
     const hash = location.hash.toLowerCase()
@@ -51,10 +50,9 @@ export function AdminWorkspacePage() {
 
   function handleEventCreated(eventId: string, isCompetition: boolean) {
     const nextMode: EventsWorkspaceMode = isCompetition ? 'competitions' : 'events'
-    setLastCreatedEventId(eventId)
     setEventsVersion((version) => version + 1)
     setEventsMode(nextMode)
-    const hash = nextMode === 'competitions' ? '#competitions-admin' : '#events-admin'
+    const hash = nextMode === 'competitions' ? `#competitions-admin:${eventId}` : '#events-admin'
     window.history.replaceState(null, '', `${location.pathname}${location.search}${hash}`)
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)
   }
@@ -67,7 +65,7 @@ export function AdminWorkspacePage() {
         <p>{ar ? 'بدل صفحة طويلة ومزدحمة، اختاري القسم الذي تريدين العمل عليه فقط.' : 'Instead of one long crowded page, open only the workspace you need.'}</p>
       </div>
       <div className="admin-workspace-tabs" role="tablist">
-        <button type="button" role="tab" aria-selected={tab === 'sessions'} className={tab === 'sessions' ? 'active' : ''} onClick={() => choose('sessions')}><Icon name="calendar" /><span><strong>{ar ? 'السيشنات' : 'Sessions'}</strong><small>{ar ? 'المحتوى التعليمي' : 'Learning content'}</small></span></button>
+        <button type="button" role="tab" aria-selected={tab === 'sessions'} className={tab === 'sessions' ? 'active' : ''} onClick={() => choose('sessions')}><Icon name="calendar" /><span><strong>{ar ? 'الجلسات' : 'Sessions'}</strong><small>{ar ? 'المحتوى التعليمي' : 'Learning content'}</small></span></button>
         <button type="button" role="tab" aria-selected={tab === 'events'} className={tab === 'events' ? 'active' : ''} onClick={() => choose('events')}><Icon name="layers" /><span><strong>{ar ? 'الفعاليات' : 'Events'}</strong><small>{ar ? 'الصور والفيديوهات' : 'Photos & videos'}</small></span></button>
         <button type="button" role="tab" aria-selected={tab === 'system'} className={tab === 'system' ? 'active' : ''} onClick={() => choose('system')}><Icon name="shield" /><span><strong>{ar ? 'النظام' : 'System'}</strong><small>{ar ? 'المستخدمون والنسخ الاحتياطي' : 'Users & backup'}</small></span></button>
       </div>
@@ -80,9 +78,7 @@ export function AdminWorkspacePage() {
         <button type="button" role="tab" aria-selected={eventsMode === 'competitions'} className={eventsMode === 'competitions' ? 'active' : ''} onClick={() => chooseEventsMode('competitions')}><span>02</span><div><strong>{ar ? 'المسابقات الأكاديمية' : 'Academic competitions'}</strong><small>{ar ? 'التسجيل، المراحل والنتائج' : 'Registration, stages & results'}</small></div></button>
       </div>
       <AdminEventCreateWizard onCreated={handleEventCreated} />
-      {eventsMode === 'events'
-        ? <AdminEventsPanel key={`events-${eventsVersion}`} />
-        : <AdminCompetitionsWorkspace key={`competitions-${eventsVersion}`} preferredEventId={lastCreatedEventId} />}
+      {eventsMode === 'events' ? <AdminEventsPanel key={`events-${eventsVersion}`} /> : <AdminCompetitionsWorkspace key={`competitions-${eventsVersion}`} />}
     </div>}
     {tab === 'system' && <div className="admin-system-stack" id="admin-system" role="tabpanel">
       {isSuperAdmin && <AdminBackupRestorePanel />}
