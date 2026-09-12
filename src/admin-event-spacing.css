@@ -1,0 +1,89 @@
+/* Event admin form spacing — keep dense editing readable without changing the visual language. */
+.admin-event-v2-form {
+  display: grid;
+  gap: 19px;
+  padding-top: 20px;
+}
+
+.admin-event-v2-form > label,
+.admin-event-v2-form .admin-event-two > label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+}
+
+.admin-event-v2-form > label > span:first-child,
+.admin-event-v2-form .admin-event-two > label > span:first-child {
+  display: block;
+  margin-inline: 2px;
+  color: var(--v2-text);
+  font-size: 11px;
+  font-weight: 780;
+  line-height: 1.35;
+}
+
+.admin-event-v2-form input:not([type='checkbox']),
+.admin-event-v2-form select {
+  min-height: 52px;
+}
+
+.admin-event-v2-form textarea {
+  min-height: 154px;
+  padding-block: 13px;
+  line-height: 1.75;
+  resize: vertical;
+}
+
+.admin-event-v2-form small {
+  display: block;
+  margin-top: 1px;
+  color: var(--v2-muted);
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.65;
+}
+
+.admin-event-v2-form .admin-event-two {
+  gap: 14px;
+  align-items: end;
+}
+
+.admin-event-v2-form .admin-event-check {
+  min-height: 52px;
+  padding-inline: 14px;
+  align-self: end;
+}
+
+.admin-event-v2-form .admin-event-check > span {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.admin-event-v2-form > .button,
+.admin-event-v2-form .admin-event-form-actions {
+  margin-top: 2px;
+}
+
+.admin-event-v2-form .admin-event-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 720px) {
+  .admin-event-v2-form {
+    gap: 17px;
+    padding-top: 18px;
+  }
+
+  .admin-event-v2-form .admin-event-two {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-event-v2-form .admin-event-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
