@@ -88,13 +88,17 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
     const values = new FormData(form)
     const title = String(values.get('title') || '').trim()
     const eventDate = String(values.get('event_date') || '')
+    const description = String(values.get('description') || '').trim()
     const newCover = String(values.get('cover_url') || '').trim()
     const newFolder = String(values.get('drive_folder_url') || '').trim()
     const registrationUrl = optionalText(values.get('registration_url'))
-    const rulesUrl = optionalText(values.get('rules_url'))
 
     if (title.length < 2 || !eventDate) {
       showToast({ kind: 'error', title: ar ? 'بيانات ناقصة' : 'Missing details', message: ar ? 'اكتبي اسم الفعالية وتاريخها.' : 'Add the event name and date.' })
+      return
+    }
+    if (isCompetition && !description) {
+      showToast({ kind: 'error', title: ar ? 'وصف المسابقة مطلوب' : 'Competition description required', message: ar ? 'اكتبي وصف المسابقة، ومنه تقدري توضحي القوانين والشروط للمشاركين.' : 'Add a competition description where you can also explain rules and participation terms.' })
       return
     }
     if (newCover && !parseEventImageSource(newCover)) {
@@ -105,15 +109,15 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
       showToast({ kind: 'error', title: ar ? 'رابط غير صالح' : 'Invalid link', message: ar ? 'رابط مجلد Google Drive غير صالح.' : 'The Google Drive folder link is not valid.' })
       return
     }
-    if (isCompetition && (!isPublicUrl(registrationUrl) || !isPublicUrl(rulesUrl))) {
-      showToast({ kind: 'error', title: ar ? 'رابط غير صالح' : 'Invalid link', message: ar ? 'راجعي رابط التسجيل أو رابط القوانين.' : 'Check the registration or rules link.' })
+    if (isCompetition && !isPublicUrl(registrationUrl)) {
+      showToast({ kind: 'error', title: ar ? 'رابط غير صالح' : 'Invalid link', message: ar ? 'راجعي رابط التسجيل.' : 'Check the registration URL.' })
       return
     }
 
     const minTeam = participationMode === 'individual' ? null : optionalNumber(values.get('min_team_size'))
     const maxTeam = participationMode === 'individual' ? null : optionalNumber(values.get('max_team_size'))
     if (isCompetition && minTeam && maxTeam && minTeam > maxTeam) {
-      showToast({ kind: 'error', title: ar ? 'حجم الفريق غير صحيح' : 'Invalid team size', message: ar ? 'الحد الأدنى للفريق ما ممكن يكون أكبر من الحد الأقصى.' : 'Minimum team size cannot exceed the maximum.' })
+      showToast({ kind: 'error', title: ar ? 'حجم الفريق غير صحيح' : 'Invalid team size', message: ar ? 'عدد أعضاء الفريق «من» ما ممكن يكون أكبر من عدد «إلى».' : 'The minimum team size cannot exceed the maximum.' })
       return
     }
 
@@ -123,7 +127,7 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
       const eventPayload = {
         title,
         slug: slugify(title),
-        description: String(values.get('description') || '').trim(),
+        description,
         event_type: eventType,
         event_date: eventDate,
         location: optionalText(values.get('location')),
@@ -155,7 +159,7 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
           attendance_mode: String(values.get('attendance_mode') || 'in_person') as CompetitionAttendanceMode,
           eligibility: optionalText(values.get('eligibility')),
           registration_url: registrationUrl,
-          rules_url: rulesUrl,
+          rules_url: null,
           prizes: optionalText(values.get('prizes')),
           tracks: optionalText(values.get('tracks')),
           results_published: false,
@@ -233,23 +237,20 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
           <label><span>{ar ? 'نهاية المسابقة' : 'Competition ends'}</span><input name="competition_ends_at" type="datetime-local" /></label>
           <label><span>{ar ? 'المشاركة' : 'Participation'}</span><select name="participation_mode" value={participationMode} onChange={(event) => setParticipationMode(event.target.value as CompetitionParticipationMode)}><option value="individual">{ar ? 'فردي' : 'Individual'}</option><option value="team">{ar ? 'فرق' : 'Teams'}</option><option value="both">{ar ? 'فردي أو فرق' : 'Individual or teams'}</option></select></label>
           <label><span>{ar ? 'طريقة الحضور' : 'Attendance'}</span><select name="attendance_mode" defaultValue="in_person"><option value="in_person">{ar ? 'حضوري' : 'In person'}</option><option value="online">Online</option><option value="hybrid">Hybrid</option></select></label>
-          {participationMode !== 'individual' && <><label><span>{ar ? 'أقل عدد للفريق' : 'Minimum team size'}</span><input name="min_team_size" type="number" min="1" defaultValue="2" /></label><label><span>{ar ? 'أقصى عدد للفريق' : 'Maximum team size'}</span><input name="max_team_size" type="number" min="1" defaultValue="4" /></label></>}
+          {participationMode !== 'individual' && <><label><span>{ar ? 'عدد أعضاء الفريق — من' : 'Team size — from'}</span><input name="min_team_size" type="number" min="1" defaultValue="2" /></label><label><span>{ar ? 'عدد أعضاء الفريق — إلى' : 'Team size — to'}</span><input name="max_team_size" type="number" min="1" defaultValue="4" /></label></>}
         </div>
 
         <label><span>{ar ? 'من يقدر يشارك؟' : 'Eligibility'}</span><textarea name="eligibility" rows={3} placeholder={ar ? 'مثال: طلاب كلية علوم الحاسوب من كل المستويات…' : 'Example: Computer Science students from all levels…'} /></label>
+        <label><span>{ar ? 'رابط التسجيل' : 'Registration URL'}</span><input name="registration_url" type="url" placeholder="https://..." /></label>
         <div className="smart-event-primary-grid">
-          <label><span>{ar ? 'رابط التسجيل' : 'Registration URL'}</span><input name="registration_url" type="url" placeholder="https://..." /></label>
-          <label><span>{ar ? 'رابط القوانين / التفاصيل' : 'Rules / details URL'}</span><input name="rules_url" type="url" placeholder="https://..." /></label>
-        </div>
-        <div className="smart-event-primary-grid">
-          <label><span>{ar ? 'الجوائز' : 'Prizes'}</span><textarea name="prizes" rows={3} placeholder={ar ? 'المركز الأول… المركز الثاني…' : '1st place… 2nd place…'} /></label>
-          <label><span>{ar ? 'المسارات / Tracks' : 'Tracks'}</span><textarea name="tracks" rows={3} placeholder={ar ? 'Web، AI، Security…' : 'Web, AI, Security…'} /></label>
+          <label><span>{ar ? 'الجوائز — اختياري' : 'Prizes — optional'}</span><textarea name="prizes" rows={3} placeholder={ar ? 'المركز الأول… المركز الثاني… أو اتركيها فاضية.' : '1st place… 2nd place… or leave blank.'} /></label>
+          <label><span>{ar ? 'المسارات / Tracks — اختياري' : 'Tracks — optional'}</span><textarea name="tracks" rows={3} placeholder={ar ? 'Web، AI، Security… أو اتركيها فاضية.' : 'Web, AI, Security… or leave blank.'} /></label>
         </div>
       </section>}
 
       <section className="smart-event-common-details">
-        <div className="smart-common-title"><span>02</span><div><strong>{ar ? 'التفاصيل العامة' : 'General details'}</strong><small>{ar ? 'الغلاف والألبوم تقدرِ تعدليهم بعد الحفظ أيضًا.' : 'Cover and album can still be edited after saving.'}</small></div></div>
-        <label><span>{ar ? 'الوصف' : 'Description'}</span><textarea name="description" rows={5} /></label>
+        <div className="smart-common-title"><span>02</span><div><strong>{isCompetition ? (ar ? 'وصف المسابقة والتفاصيل العامة' : 'Competition description & general details') : (ar ? 'التفاصيل العامة' : 'General details')}</strong><small>{isCompetition ? (ar ? 'اكتبي الوصف والقوانين والشروط هنا كنص واضح للمشارك، بدون رابط منفصل للقوانين.' : 'Write the description, rules, and participation terms here as clear text; there is no separate rules link.') : (ar ? 'الغلاف والألبوم تقدرِ تعدليهم بعد الحفظ أيضًا.' : 'Cover and album can still be edited after saving.')}</small></div></div>
+        <label><span>{isCompetition ? (ar ? 'وصف المسابقة' : 'Competition description') : (ar ? 'الوصف' : 'Description')}</span><textarea name="description" rows={5} required={isCompetition} placeholder={isCompetition ? (ar ? 'اكتبي فكرة المسابقة، طريقة المشاركة، وأي قوانين أو شروط مهمة…' : 'Describe the competition, participation flow, and any important rules or terms…') : undefined} /></label>
         <div className="smart-event-primary-grid">
           <label><span>{ar ? 'رابط مجلد Drive — اختياري' : 'Drive folder — optional'}</span><input name="drive_folder_url" type="url" placeholder="https://drive.google.com/drive/folders/..." /></label>
           <label><span>{ar ? 'رابط غلاف — اختياري' : 'Cover URL — optional'}</span><input name="cover_url" type="url" placeholder={ar ? 'أو ارفعيه من الجهاز بعد الحفظ' : 'Or upload it from your device after saving'} /></label>
