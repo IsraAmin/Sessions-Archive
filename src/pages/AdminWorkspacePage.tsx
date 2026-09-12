@@ -22,6 +22,7 @@ export function AdminWorkspacePage() {
   const [tab, setTab] = useState<AdminWorkspaceTab>('sessions')
   const [eventsMode, setEventsMode] = useState<EventsWorkspaceMode>('events')
   const [eventsVersion, setEventsVersion] = useState(0)
+  const [lastCreatedEventId, setLastCreatedEventId] = useState('')
 
   useEffect(() => {
     const hash = location.hash.toLowerCase()
@@ -48,8 +49,9 @@ export function AdminWorkspacePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function handleEventCreated(_eventId: string, isCompetition: boolean) {
+  function handleEventCreated(eventId: string, isCompetition: boolean) {
     const nextMode: EventsWorkspaceMode = isCompetition ? 'competitions' : 'events'
+    setLastCreatedEventId(eventId)
     setEventsVersion((version) => version + 1)
     setEventsMode(nextMode)
     const hash = nextMode === 'competitions' ? '#competitions-admin' : '#events-admin'
@@ -78,7 +80,9 @@ export function AdminWorkspacePage() {
         <button type="button" role="tab" aria-selected={eventsMode === 'competitions'} className={eventsMode === 'competitions' ? 'active' : ''} onClick={() => chooseEventsMode('competitions')}><span>02</span><div><strong>{ar ? 'المسابقات الأكاديمية' : 'Academic competitions'}</strong><small>{ar ? 'التسجيل، المراحل والنتائج' : 'Registration, stages & results'}</small></div></button>
       </div>
       <AdminEventCreateWizard onCreated={handleEventCreated} />
-      {eventsMode === 'events' ? <AdminEventsPanel key={`events-${eventsVersion}`} /> : <AdminCompetitionsWorkspace key={`competitions-${eventsVersion}`} />}
+      {eventsMode === 'events'
+        ? <AdminEventsPanel key={`events-${eventsVersion}`} />
+        : <AdminCompetitionsWorkspace key={`competitions-${eventsVersion}`} preferredEventId={lastCreatedEventId} />}
     </div>}
     {tab === 'system' && <div className="admin-system-stack" id="admin-system" role="tabpanel">
       {isSuperAdmin && <AdminBackupRestorePanel />}
