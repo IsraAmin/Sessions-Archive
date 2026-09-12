@@ -5,7 +5,11 @@ import { useUi } from '../hooks/useUi'
 import { Icon } from './Icon'
 import { AdminCompetitionPanel } from './AdminCompetitionPanel'
 
-export function AdminCompetitionsWorkspace() {
+type Props = {
+  preferredEventId?: string
+}
+
+export function AdminCompetitionsWorkspace({ preferredEventId = '' }: Props) {
   const { language } = useUi()
   const ar = language === 'ar'
   const [events, setEvents] = useState<CollegeEvent[]>([])
@@ -29,7 +33,11 @@ export function AdminCompetitionsWorkspace() {
         const nextEvents = (eventsResult.data ?? []) as CollegeEvent[]
         setEvents(nextEvents)
         setDetails((detailsResult.data ?? []) as CompetitionDetails[])
-        setSelectedId((current) => current && nextEvents.some((item) => item.id === current) ? current : (nextEvents[0]?.id ?? ''))
+        setSelectedId((current) => {
+          if (preferredEventId && nextEvents.some((item) => item.id === preferredEventId)) return preferredEventId
+          if (current && nextEvents.some((item) => item.id === current)) return current
+          return nextEvents[0]?.id ?? ''
+        })
       } catch (error) {
         console.error('Could not load academic competitions workspace', error)
       } finally {
@@ -38,7 +46,7 @@ export function AdminCompetitionsWorkspace() {
     }
     void load()
     return () => { active = false }
-  }, [])
+  }, [preferredEventId])
 
   const competitionIds = useMemo(() => new Set(details.map((item) => item.event_id)), [details])
   const filtered = useMemo(() => {
