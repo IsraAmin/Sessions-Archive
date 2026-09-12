@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { CompetitionEventSections } from '../components/CompetitionEventSections'
 import { eventTypeLabel } from '../components/EventCard'
 import { Icon } from '../components/Icon'
 import { useToast } from '../components/ToastProvider'
@@ -141,6 +142,8 @@ export function EventDetailsPage() {
         <div className="event-story-cover-meta"><span><Icon name="calendar" /><time dateTime={event.event_date}>{date}</time></span>{event.location && <span><Icon name="layers" /><bdi>{event.location}</bdi></span>}</div>
       </div>
     </header>
+
+    {event.event_type === 'academic' && <CompetitionEventSections event={event} ar={ar} />}
 
     <section className="event-story-intro">
       <div>
