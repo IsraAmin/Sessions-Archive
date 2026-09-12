@@ -222,13 +222,13 @@ export function HomePage() {
       <div className="home-hero-copy">
         <div className="home-hero-eyebrow">{ar ? 'أرشيف الكلية في مكان واحد' : 'The college archive, in one place'}</div>
         <h1>{ar ? 'مرحبًا بك' : 'Welcome'}</h1>
-        <p>{ar ? 'ابحث في السيشنات والفعاليات، واستكشف الأرشيف بسهولة من مكان واحد.' : 'Search sessions and college events, and explore the archive from one place.'}</p>
+        <p>{ar ? 'ابحث في الجلسات والفعاليات، واستكشف الأرشيف بسهولة من مكان واحد.' : 'Search sessions and college events, and explore the archive from one place.'}</p>
         <form className="home-search" onSubmit={submitSearch}>
-          <input aria-label={ar ? 'ابحث في الأرشيف' : 'Search archive'} placeholder={ar ? 'ابحث عن سيشن، فعالية، مسابقة، متحدث أو تصنيف...' : 'Search for a session, event, competition, speaker, or category...'} value={query} onChange={(event) => setQuery(event.target.value)} />
+          <input aria-label={ar ? 'ابحث في الأرشيف' : 'Search archive'} placeholder={ar ? 'ابحث عن جلسة، فعالية، مسابقة، متحدث أو تصنيف...' : 'Search for a session, event, competition, speaker, or category...'} value={query} onChange={(event) => setQuery(event.target.value)} />
           <button className="button button-primary" type="submit">{t('common.search')}</button>
         </form>
         <div className="home-hero-actions">
-          <Link className="button home-secondary-button" to="/sessions">{ar ? 'استعراض السيشنات' : 'Browse sessions'}</Link>
+          <Link className="button home-secondary-button" to="/sessions">{ar ? 'استعراض الجلسات' : 'Browse sessions'}</Link>
           <Link className="button home-secondary-button" to="/events">{ar ? 'استعراض الفعاليات' : 'Browse events'}</Link>
         </div>
       </div>
@@ -241,13 +241,13 @@ export function HomePage() {
         <div>
           <span className="home-section-kicker"><Icon name="layers" />{ar ? 'نتائج البحث' : 'Search results'}</span>
           <h2>{ar ? `نتائج «${activeQuery}»` : `Results for “${activeQuery}”`}</h2>
-          <p>{ar ? `${searchTotal} نتيجة في السيشنات والفعاليات` : `${searchTotal} result${searchTotal === 1 ? '' : 's'} across sessions and events`}</p>
+          <p>{ar ? `${searchTotal} نتيجة في الجلسات والفعاليات` : `${searchTotal} result${searchTotal === 1 ? '' : 's'} across sessions and events`}</p>
         </div>
         <button type="button" className="button button-secondary home-search-clear" onClick={clearSearch}>{ar ? 'مسح البحث' : 'Clear search'}</button>
       </div>
 
       {searchSessions.length > 0 && <div className="home-search-result-group">
-        <div className="home-search-result-group-head"><strong>{ar ? 'السيشنات' : 'Sessions'}</strong><span>{searchSessions.length}</span></div>
+        <div className="home-search-result-group-head"><strong>{ar ? 'الجلسات' : 'Sessions'}</strong><span>{searchSessions.length}</span></div>
         <div className="home-search-grid">{searchSessions.map((session) => <SessionCard key={session.id} session={session} />)}</div>
       </div>}
 
@@ -261,21 +261,21 @@ export function HomePage() {
       <HomeSessionSection
         icon="bookmark"
         kicker={ar ? 'مهم الآن' : 'Featured'}
-        title={ar ? 'السيشن المثبتة' : 'Pinned session'}
+        title={ar ? 'الجلسة المثبتة' : 'Pinned session'}
         view="pinned"
         sessions={pinnedSessions}
-        emptyTitle={ar ? 'ما في Session مثبتة حاليًا' : 'No pinned session right now'}
-        emptyText={ar ? 'أول ما يتم تثبيت Session من الإدارة ستظهر هنا تلقائيًا.' : 'As soon as a session is pinned by an admin, it will appear here automatically.'}
+        emptyTitle={ar ? 'ما في جلسة مثبتة حاليًا' : 'No pinned session right now'}
+        emptyText={ar ? 'أول ما يتم تثبيت جلسة من الإدارة ستظهر هنا تلقائيًا.' : 'As soon as a session is pinned by an admin, it will appear here automatically.'}
         ar={ar}
       />
 
       <HomeSessionSection
         icon="calendar"
         kicker={ar ? 'على الطريق' : 'Coming up'}
-        title={ar ? 'Sessions قريبة' : 'Upcoming sessions'}
+        title={ar ? 'جلسات قريبة' : 'Upcoming sessions'}
         view="upcoming"
         sessions={upcomingSessions}
-        emptyTitle={ar ? 'ما في Sessions قادمة مضافة الآن' : 'No upcoming sessions yet'}
+        emptyTitle={ar ? 'ما في جلسات قادمة مضافة الآن' : 'No upcoming sessions yet'}
         emptyText={ar ? 'لما تتم إضافة موعد جديد سيظهر هنا مباشرة.' : 'New scheduled sessions will show up here automatically.'}
         ar={ar}
       />
@@ -295,18 +295,18 @@ export function HomePage() {
         view="recent"
         sessions={recentSessions}
         emptyTitle={ar ? 'الأرشيف فاضي حاليًا' : 'The archive is empty'}
-        emptyText={ar ? 'أول Session منشورة ستظهر هنا.' : 'The first published session will appear here.'}
+        emptyText={ar ? 'أول جلسة منشورة ستظهر هنا.' : 'The first published session will appear here.'}
         ar={ar}
       />
 
       <HomeSessionSection
         icon="chart"
         kicker={ar ? 'اختيارات الجمهور' : 'Community favorites'}
-        title={ar ? 'أعلى Sessions تقييمًا' : 'Top-rated sessions'}
+        title={ar ? 'أعلى الجلسات تقييمًا' : 'Top-rated sessions'}
         view="top-rated"
         sessions={topRatedSessions}
         emptyTitle={ar ? 'لسه ما في تقييمات كفاية' : 'No ratings yet'}
-        emptyText={ar ? 'بعد أول تقييم، أعلى السيشنات ستظهر هنا.' : 'Once ratings arrive, the highest-rated sessions will appear here.'}
+        emptyText={ar ? 'بعد أول تقييم، أعلى الجلسات ستظهر هنا.' : 'Once ratings arrive, the highest-rated sessions will appear here.'}
         ar={ar}
       />
 
@@ -317,7 +317,7 @@ export function HomePage() {
             const count = sessions.filter((session) => session.category_id === category.id).length
             return <Link className="home-category-card" key={category.id} to={`/sessions?category=${encodeURIComponent(category.id)}`}>
               <span className="home-category-icon">{category.name.trim().slice(0, 1).toUpperCase()}</span>
-              <span className="home-category-copy"><strong dir="auto">{category.name}</strong><small>{ar ? `${count} Session` : `${count} session${count === 1 ? '' : 's'}`}</small></span>
+              <span className="home-category-copy"><strong dir="auto">{category.name}</strong><small>{ar ? `${count} جلسة` : `${count} session${count === 1 ? '' : 's'}`}</small></span>
               <span className="home-category-arrow" aria-hidden="true">←</span>
             </Link>
           })}
