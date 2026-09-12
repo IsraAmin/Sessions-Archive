@@ -4,8 +4,9 @@ import { EventCard } from '../components/EventCard'
 import { SessionCard } from '../components/SessionCard'
 import { Icon } from '../components/Icon'
 import { useUi } from '../hooks/useUi'
+import { competitionKindLabel, competitionPublicStatus } from '../lib/competition'
 import { publicSupabase } from '../lib/supabase'
-import type { Category, CollegeEvent, CollegeEventWithMedia, EventMedia, RecordingProvider, SearchSession } from '../types/domain'
+import type { Category, CollegeEvent, CollegeEventWithMedia, CompetitionDetails, EventMedia, RecordingProvider, SearchSession } from '../types/domain'
 
 function isRecordingProvider(value: string): value is RecordingProvider {
   return ['youtube', 'google_drive', 'whatsapp', 'telegram'].includes(value)
@@ -114,10 +115,17 @@ export function HomePage() {
         }
 
         let eventMedia: EventMedia[] = []
+        let competitionDetails: CompetitionDetails[] = []
         if (baseEvents.length) {
-          const mediaResult = await publicSupabase.from('event_media').select('*').in('event_id', baseEvents.map((event) => event.id)).order('position')
+          const ids = baseEvents.map((event) => event.id)
+          const [mediaResult, competitionResult] = await Promise.all([
+            publicSupabase.from('event_media').select('*').in('event_id', ids).order('position'),
+            publicSupabase.from('competition_details').select('*').in('event_id', ids),
+          ])
           if (mediaResult.error) throw mediaResult.error
+          if (competitionResult.error) throw competitionResult.error
           eventMedia = (mediaResult.data ?? []) as EventMedia[]
+          competitionDetails = (competitionResult.data ?? []) as CompetitionDetails[]
         }
         const mediaByEvent = new Map<string, EventMedia[]>()
         for (const item of eventMedia) {
@@ -125,7 +133,8 @@ export function HomePage() {
           current.push(item)
           mediaByEvent.set(item.event_id, current)
         }
-        const enrichedEvents = baseEvents.map((event) => ({ ...event, media: mediaByEvent.get(event.id) ?? [] }))
+        const competitionByEvent = new Map<string, CompetitionDetails>(competitionDetails.map((item) => [item.event_id, item]))
+        const enrichedEvents = baseEvents.map((event) => ({ ...event, media: mediaByEvent.get(event.id) ?? [], competition: competitionByEvent.get(event.id) ?? null }))
 
         if (active) {
           setSessions(enrichedSessions)
@@ -179,7 +188,7 @@ export function HomePage() {
       sports: ar ? 'رياضية' : 'sports',
       initiative: ar ? 'مبادرات إعمار' : 'initiatives renovation',
       social: ar ? 'اجتماعية' : 'social',
-      academic: ar ? 'أكاديمية' : 'academic',
+      academic: ar ? 'أكاديمية مسابقة هاكاثون problem solving ctf' : 'academic competition hackathon problem solving ctf',
       other: ar ? 'أخرى' : 'other',
     }
     return events.filter((collegeEvent) => normalizeSearch([
@@ -188,6 +197,8 @@ export function HomePage() {
       collegeEvent.location ?? '',
       collegeEvent.event_type,
       typeLabels[collegeEvent.event_type] ?? '',
+      collegeEvent.competition ? competitionKindLabel(collegeEvent.competition.competition_kind, ar) : '',
+      collegeEvent.competition ? competitionPublicStatus(collegeEvent.competition, ar) : '',
     ].join(' ')).includes(searchNeedle))
   }, [events, searchNeedle, ar])
 
@@ -213,7 +224,7 @@ export function HomePage() {
         <h1>{ar ? 'مرحبًا بك' : 'Welcome'}</h1>
         <p>{ar ? 'ابحث في السيشنات والفعاليات، واستكشف الأرشيف بسهولة من مكان واحد.' : 'Search sessions and college events, and explore the archive from one place.'}</p>
         <form className="home-search" onSubmit={submitSearch}>
-          <input aria-label={ar ? 'ابحث في الأرشيف' : 'Search archive'} placeholder={ar ? 'ابحث عن سيشن، فعالية، متحدث أو تصنيف...' : 'Search for a session, event, speaker, or category...'} value={query} onChange={(event) => setQuery(event.target.value)} />
+          <input aria-label={ar ? 'ابحث في الأرشيف' : 'Search archive'} placeholder={ar ? 'ابحث عن سيشن، فعالية، مسابقة، متحدث أو تصنيف...' : 'Search for a session, event, competition, speaker, or category...'} value={query} onChange={(event) => setQuery(event.target.value)} />
           <button className="button button-primary" type="submit">{t('common.search')}</button>
         </form>
         <div className="home-hero-actions">
@@ -241,11 +252,11 @@ export function HomePage() {
       </div>}
 
       {searchEvents.length > 0 && <div className="home-search-result-group">
-        <div className="home-search-result-group-head"><strong>{ar ? 'الفعاليات' : 'Events'}</strong><span>{searchEvents.length}</span></div>
+        <div className="home-search-result-group-head"><strong>{ar ? 'الفعاليات والمسابقات' : 'Events & competitions'}</strong><span>{searchEvents.length}</span></div>
         <div className="home-search-grid home-search-events-grid">{searchEvents.map((collegeEvent) => <EventCard key={collegeEvent.id} event={collegeEvent} ar={ar} />)}</div>
       </div>}
 
-      {searchTotal === 0 && <div className="home-empty home-search-empty"><Icon name="layers" /><div><strong>{ar ? 'ما لقينا نتيجة مطابقة' : 'No matching results'}</strong><span>{ar ? 'جرّب كلمة أقصر، اسم المتحدث، التصنيف أو اسم الفعالية.' : 'Try a shorter term, speaker, category, or event name.'}</span></div></div>}
+      {searchTotal === 0 && <div className="home-empty home-search-empty"><Icon name="layers" /><div><strong>{ar ? 'ما لقينا نتيجة مطابقة' : 'No matching results'}</strong><span>{ar ? 'جرّب كلمة أقصر، اسم المتحدث، التصنيف، المسابقة أو اسم الفعالية.' : 'Try a shorter term, speaker, category, competition, or event name.'}</span></div></div>}
     </section> : <>
       <HomeSessionSection
         icon="bookmark"
