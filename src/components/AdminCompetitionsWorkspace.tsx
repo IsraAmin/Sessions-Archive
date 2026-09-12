@@ -52,11 +52,11 @@ export function AdminCompetitionsWorkspace() {
 
   return <section className="admin-competitions-workspace" id="competitions-admin">
     <header className="admin-competitions-head">
-      <div><span className="eyebrow">{ar ? 'داخل الفعاليات الأكاديمية' : 'Inside academic events'}</span><h2>{ar ? 'استوديو المسابقات' : 'Competition studio'}</h2><p>{ar ? 'اختاري أي فعالية أكاديمية وفعّلي لها قالب مسابقة عند الحاجة. الفعاليات الأكاديمية العادية تظل كما هي.' : 'Choose any academic event and enable the competition template only when needed. Regular academic events stay unchanged.'}</p></div>
+      <div><span className="eyebrow">{ar ? 'داخل الفعاليات الأكاديمية' : 'Inside academic events'}</span><h2>{ar ? 'استوديو المسابقات' : 'Competition studio'}</h2><p>{ar ? 'المسابقة الجديدة تنشئيها مباشرة من زر «إضافة فعالية جديدة» فوق. هنا تكملي المراحل، تعدلي البيانات، وتضيفي الفائزين وتنشري النتائج.' : 'Create a new competition directly from “Create new event” above. Use this studio to manage stages, edit details, add winners, and publish results.'}</p></div>
       <span className="admin-competition-count">{details.length} {ar ? 'مسابقة مفعلة' : 'enabled'}</span>
     </header>
 
-    {!events.length ? <div className="competition-workspace-empty"><Icon name="calendar" /><strong>{ar ? 'ما في فعاليات أكاديمية حتى الآن' : 'No academic events yet'}</strong><span>{ar ? 'أضيفي فعالية من قسم «الفعاليات» واختاري النوع «أكاديمية»، وبعدها ارجعي هنا لتفعيل قالب المسابقة.' : 'Create an event in Events, choose “Academic”, then return here to enable the competition template.'}</span></div> : <div className="admin-competitions-layout">
+    {!events.length ? <div className="competition-workspace-empty"><Icon name="calendar" /><strong>{ar ? 'ما في فعاليات أكاديمية حتى الآن' : 'No academic events yet'}</strong><span>{ar ? 'استخدمي «إضافة فعالية جديدة» فوق، اختاري «أكاديمية»، وبعدها اختاري نوع المسابقة. كل بيانات المسابقة حتظهر ليك قبل الحفظ.' : 'Use “Create new event” above, choose Academic, then choose a competition subtype. Competition fields will appear before you save.'}</span></div> : <div className="admin-competitions-layout">
       <aside className="admin-competition-browser">
         <div className="admin-event-browser-search"><Icon name="layers" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ar ? 'ابحث في الفعاليات الأكاديمية…' : 'Search academic events…'} /></div>
         <div className="admin-competition-browser-list">{filtered.map((item) => {
