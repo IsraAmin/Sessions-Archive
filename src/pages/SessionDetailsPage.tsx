@@ -120,7 +120,7 @@ export function SessionDetailsPage() {
         return
       }
       await navigator.clipboard.writeText(url)
-      showToast({ kind: 'success', title: t('common.success'), message: ar ? 'تم نسخ رابط السيشن، جاهز للمشاركة.' : 'Session link copied and ready to share.' })
+      showToast({ kind: 'success', title: t('common.success'), message: ar ? 'تم نسخ رابط الجلسة، جاهز للمشاركة.' : 'Session link copied and ready to share.' })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
       showToast({ kind: 'error', title: t('common.error'), message: ar ? 'تعذر مشاركة الرابط الآن.' : 'Could not share the link right now.' })
@@ -178,7 +178,7 @@ export function SessionDetailsPage() {
             {hasRecording && <span className="session-recording-providers">{recordingProviders.map((provider) => <small key={provider}>{providerLabel(provider)}</small>)}</span>}
           </div>
         </div>
-        <button type="button" className="button button-secondary session-share-button" onClick={() => void shareSession()}><Icon name="share" />{ar ? 'مشاركة السيشن' : 'Share session'}</button>
+        <button type="button" className="button button-secondary session-share-button" onClick={() => void shareSession()}><Icon name="share" />{ar ? 'مشاركة الجلسة' : 'Share session'}</button>
       </div>
 
       {sessionSpeakers.length > 0 && <div className="speaker-summary-list">
@@ -239,13 +239,13 @@ export function SessionDetailsPage() {
     </div>
 
     <aside className="panel action-panel action-panel-v2">
-      {!user ? <><p>{ar ? 'سجّل الدخول لحفظ السيشن وإضافة تقييم أو تعليق.' : 'Sign in to save this session and leave a rating or comment.'}</p><Link className="button button-primary full" to="/auth">{t('common.signIn')}</Link></> : <>
+      {!user ? <><p>{ar ? 'سجّل الدخول لحفظ الجلسة وإضافة تقييم أو تعليق.' : 'Sign in to save this session and leave a rating or comment.'}</p><Link className="button button-primary full" to="/auth">{t('common.signIn')}</Link></> : <>
         <button className="button button-secondary full" disabled={busy} onClick={() => void action(async () => {
           if (bookmarked) { const { error } = await supabase.from('bookmarks').delete().eq('session_id', session.id).eq('user_id', user.id); if (error) throw error }
           else { const { error } = await supabase.from('bookmarks').insert({ session_id: session.id, user_id: user.id, note: null }); if (error) throw error }
         }, bookmarked ? t('details.unsavedToast') : t('details.savedToast'))}>{bookmarked ? t('details.unbookmark') : t('details.bookmark')}</button>
 
-        <button type="button" className="button button-ghost full" onClick={() => void shareSession()}><Icon name="share" />{ar ? 'مشاركة السيشن' : 'Share session'}</button>
+        <button type="button" className="button button-ghost full" onClick={() => void shareSession()}><Icon name="share" />{ar ? 'مشاركة الجلسة' : 'Share session'}</button>
 
         <div className="feedback-box">
           <h3>{t('details.rating')}</h3>
