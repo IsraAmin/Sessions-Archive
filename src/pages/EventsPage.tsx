@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom'
 import { eventTypeLabel } from '../components/EventCard'
 import { Icon } from '../components/Icon'
 import { useUi } from '../hooks/useUi'
+import { competitionKindLabel, competitionPublicStatus } from '../lib/competition'
 import { eventCoverDisplayUrl, eventImageDisplayUrl } from '../lib/eventMedia'
 import { publicSupabase } from '../lib/supabase'
-import type { CollegeEvent, CollegeEventWithMedia, EventMedia, EventType } from '../types/domain'
+import type { CollegeEvent, CollegeEventWithMedia, CompetitionDetails, EventMedia, EventType } from '../types/domain'
 
 const eventTypes: Array<{ value: 'all' | EventType; ar: string; en: string }> = [
   { value: 'all', ar: 'الكل', en: 'All' },
@@ -50,14 +51,15 @@ function EventLead({ event, ar }: { event: CollegeEventWithMedia; ar: boolean })
       <div className="event-editorial-date" aria-hidden="true"><strong>{String(date.getDate()).padStart(2, '0')}</strong><span>{month}</span></div>
     </div>
     <div className="event-editorial-lead-copy">
-      <div className="event-editorial-kickers"><span>{eventTypeLabel(event.event_type, ar)}</span>{event.featured && <em>{ar ? 'مميزة' : 'Featured'}</em>}</div>
+      <div className="event-editorial-kickers"><span>{eventTypeLabel(event.event_type, ar)}</span>{event.competition ? <em>🏆 {competitionKindLabel(event.competition.competition_kind, ar)}</em> : event.featured && <em>{ar ? 'مميزة' : 'Featured'}</em>}</div>
       <h2 dir="auto">{event.title}</h2>
+      {event.competition && <span className="event-memory-competition">{competitionPublicStatus(event.competition, ar)}</span>}
       {event.description && <p dir="auto">{event.description.slice(0, 230)}{event.description.length > 230 ? '…' : ''}</p>}
       <div className="event-editorial-meta">
         {event.location && <span dir="auto">{event.location}</span>}
         {counts.map((item) => <span key={item}>{item}</span>)}
       </div>
-      <span className="event-editorial-open">{ar ? 'افتح الذكرى' : 'Open the memory'} <b aria-hidden="true">←</b></span>
+      <span className="event-editorial-open">{event.competition ? (ar ? 'افتح تفاصيل المسابقة' : 'Open competition') : (ar ? 'افتح الذكرى' : 'Open the memory')} <b aria-hidden="true">←</b></span>
     </div>
   </Link>
 }
@@ -78,6 +80,7 @@ function EventChapter({ event, ar, index }: { event: CollegeEventWithMedia; ar: 
     <div className="event-memory-copy">
       <div className="event-memory-topline"><time dateTime={event.event_date}>{dateLabel}</time><span>{eventTypeLabel(event.event_type, ar)}</span></div>
       <h3 dir="auto">{event.title}</h3>
+      {event.competition && <span className="event-memory-competition">🏆 {competitionKindLabel(event.competition.competition_kind, ar)} · {competitionPublicStatus(event.competition, ar)}</span>}
       {event.description && <p dir="auto">{event.description.slice(0, 150)}{event.description.length > 150 ? '…' : ''}</p>}
       <div className="event-memory-meta">{event.location && <span dir="auto">{event.location}</span>}{counts.map((item) => <span key={item}>{item}</span>)}</div>
     </div>
@@ -114,22 +117,23 @@ export function EventsPage() {
           return
         }
 
-        const { data: mediaData, error: mediaError } = await publicSupabase
-          .from('event_media')
-          .select('*')
-          .in('event_id', base.map((event) => event.id))
-          .order('position')
-          .order('created_at')
-        if (mediaError) throw mediaError
+        const ids = base.map((event) => event.id)
+        const [mediaResult, competitionResult] = await Promise.all([
+          publicSupabase.from('event_media').select('*').in('event_id', ids).order('position').order('created_at'),
+          publicSupabase.from('competition_details').select('*').in('event_id', ids),
+        ])
+        if (mediaResult.error) throw mediaResult.error
+        if (competitionResult.error) throw competitionResult.error
 
         const byEvent = new Map<string, EventMedia[]>()
-        for (const item of (mediaData ?? []) as EventMedia[]) {
+        for (const item of (mediaResult.data ?? []) as EventMedia[]) {
           const current = byEvent.get(item.event_id) ?? []
           current.push(item)
           byEvent.set(item.event_id, current)
         }
+        const competitions = new Map<string, CompetitionDetails>(((competitionResult.data ?? []) as CompetitionDetails[]).map((item) => [item.event_id, item]))
 
-        if (active) setEvents(base.map((event) => ({ ...event, media: byEvent.get(event.id) ?? [] })))
+        if (active) setEvents(base.map((event) => ({ ...event, media: byEvent.get(event.id) ?? [], competition: competitions.get(event.id) ?? null })))
       } catch (loadError) {
         console.error('Could not load events', loadError)
         if (active) setError(ar ? 'تعذر تحميل الفعاليات الآن. حاول مرة أخرى.' : 'Could not load events right now. Please try again.')
@@ -147,7 +151,8 @@ export function EventsPage() {
     return events.filter((event) => {
       if (type !== 'all' && event.event_type !== type) return false
       if (!needle) return true
-      return [event.title, event.description, event.location ?? '']
+      const competitionTerms = event.competition ? `${competitionKindLabel(event.competition.competition_kind, ar)} ${competitionPublicStatus(event.competition, ar)}` : ''
+      return [event.title, event.description, event.location ?? '', competitionTerms]
         .join(' ')
         .toLocaleLowerCase(ar ? 'ar' : 'en')
         .includes(needle)
@@ -164,13 +169,13 @@ export function EventsPage() {
       <div>
         <span className="events-eyebrow"><Icon name="calendar" />{ar ? 'ذاكرة الكلية' : 'College memories'}</span>
         <h1>{ar ? 'فعاليات عشناها، محفوظة هنا' : 'Moments we lived, kept here'}</h1>
-        <p>{ar ? 'أيام ثقافية، رياضة، مبادرات ولحظات من الكلية — مرتبة كحكايات، مش مجرد ملفات.' : 'Cultural days, sports, initiatives, and campus moments — arranged as stories, not just files.'}</p>
+        <p>{ar ? 'أيام ثقافية، رياضة، مبادرات، مسابقات أكاديمية ولحظات من الكلية — مرتبة كحكايات، مش مجرد ملفات.' : 'Cultural days, sports, initiatives, academic competitions, and campus moments — arranged as stories, not just files.'}</p>
       </div>
       <Link className="events-editorial-search-link" to="/explore?type=events">{ar ? 'بحث شامل' : 'Full search'} <span aria-hidden="true">↗</span></Link>
     </header>
 
     <section className="events-editorial-filter" aria-label={ar ? 'فلترة الفعاليات' : 'Filter events'}>
-      <div className="events-search-box"><Icon name="layers" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ar ? 'ابحث باسم الفعالية أو المكان…' : 'Search by event or place…'} aria-label={ar ? 'البحث في الفعاليات' : 'Search events'} /></div>
+      <div className="events-search-box"><Icon name="layers" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ar ? 'ابحث باسم الفعالية، المسابقة أو المكان…' : 'Search by event, competition, or place…'} aria-label={ar ? 'البحث في الفعاليات' : 'Search events'} /></div>
       <div className="event-type-chips" role="group" aria-label={ar ? 'نوع الفعالية' : 'Event type'}>
         {eventTypes.map((item) => <button key={item.value} type="button" className={type === item.value ? 'active' : ''} onClick={() => setType(item.value)}>{ar ? item.ar : item.en}</button>)}
       </div>
