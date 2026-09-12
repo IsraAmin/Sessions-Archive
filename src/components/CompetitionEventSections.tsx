@@ -90,13 +90,12 @@ export function CompetitionEventSections({ event, ar }: { event: CollegeEvent; a
       </div>
     </section>
 
-    {(details.eligibility || prizes.length || tracks.length || details.rules_url) && <section className="competition-public-section">
+    {(details.eligibility || prizes.length || tracks.length) && <section className="competition-public-section">
       <div className="competition-section-heading"><span>{ar ? 'قبل المشاركة' : 'Before you join'}</span><h2>{ar ? 'تفاصيل المسابقة' : 'Competition details'}</h2></div>
       <div className="competition-info-layout">
         {details.eligibility && <article><span className="competition-info-index">01</span><div><strong>{ar ? 'من يقدر يشارك؟' : 'Who can participate?'}</strong><p dir="auto">{details.eligibility}</p></div></article>}
         {prizes.length > 0 && <article><span className="competition-info-index">02</span><div><strong>{ar ? 'الجوائز' : 'Prizes'}</strong><ul>{prizes.map((prize) => <li key={prize} dir="auto">{prize}</li>)}</ul></div></article>}
         {tracks.length > 0 && <article><span className="competition-info-index">03</span><div><strong>{ar ? 'المجالات / Tracks' : 'Tracks'}</strong><div className="competition-track-list">{tracks.map((track) => <span key={track} dir="auto">{track}</span>)}</div></div></article>}
-        {details.rules_url && <article><span className="competition-info-index">04</span><div><strong>{ar ? 'القوانين والتفاصيل' : 'Rules & details'}</strong><a className="text-action" href={details.rules_url} target="_blank" rel="noopener noreferrer">{ar ? 'فتح ملف القوانين' : 'Open rules'} ↗</a></div></article>}
       </div>
     </section>}
 
