@@ -5,11 +5,13 @@ import { AdminUserDirectoryPanel } from '../components/AdminUserDirectoryPanel'
 import { AdminActivityLog } from '../components/AdminActivityLog'
 import { AdminBackupRestorePanel } from '../components/AdminBackupRestorePanel'
 import { AdminEventsPanel } from '../components/AdminEventsPanel'
+import { AdminCompetitionsWorkspace } from '../components/AdminCompetitionsWorkspace'
 import { Icon } from '../components/Icon'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
 
 type AdminWorkspaceTab = 'sessions' | 'events' | 'system'
+type EventsWorkspaceMode = 'events' | 'competitions'
 
 export function AdminWorkspacePage() {
   const { isSuperAdmin } = useAuth()
@@ -17,16 +19,29 @@ export function AdminWorkspacePage() {
   const location = useLocation()
   const ar = language === 'ar'
   const [tab, setTab] = useState<AdminWorkspaceTab>('sessions')
+  const [eventsMode, setEventsMode] = useState<EventsWorkspaceMode>('events')
 
   useEffect(() => {
     const hash = location.hash.toLowerCase()
-    if (hash.includes('events')) setTab('events')
-    else if (hash.includes('backup') || hash.includes('activity') || hash.includes('users')) setTab('system')
+    if (hash.includes('competition')) {
+      setTab('events')
+      setEventsMode('competitions')
+    } else if (hash.includes('events')) {
+      setTab('events')
+      setEventsMode('events')
+    } else if (hash.includes('backup') || hash.includes('activity') || hash.includes('users')) setTab('system')
   }, [location.hash])
 
   function choose(next: AdminWorkspaceTab) {
     setTab(next)
-    const hash = next === 'events' ? '#events-admin' : next === 'system' ? '#admin-system' : '#sessions-admin'
+    const hash = next === 'events' ? (eventsMode === 'competitions' ? '#competitions-admin' : '#events-admin') : next === 'system' ? '#admin-system' : '#sessions-admin'
+    window.history.replaceState(null, '', `${location.pathname}${location.search}${hash}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function chooseEventsMode(next: EventsWorkspaceMode) {
+    setEventsMode(next)
+    const hash = next === 'competitions' ? '#competitions-admin' : '#events-admin'
     window.history.replaceState(null, '', `${location.pathname}${location.search}${hash}`)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -46,7 +61,13 @@ export function AdminWorkspacePage() {
     </section>
 
     {tab === 'sessions' && <div id="sessions-admin" role="tabpanel"><AdminPage /></div>}
-    {tab === 'events' && <div role="tabpanel"><AdminEventsPanel /></div>}
+    {tab === 'events' && <div className="admin-events-mode-stack" role="tabpanel">
+      <div className="admin-events-mode-switcher" role="tablist" aria-label={ar ? 'نوع إدارة الفعاليات' : 'Events management mode'}>
+        <button type="button" role="tab" aria-selected={eventsMode === 'events'} className={eventsMode === 'events' ? 'active' : ''} onClick={() => chooseEventsMode('events')}><span>01</span><div><strong>{ar ? 'الفعاليات' : 'Events'}</strong><small>{ar ? 'البيانات، الغلاف والألبوم' : 'Details, cover & album'}</small></div></button>
+        <button type="button" role="tab" aria-selected={eventsMode === 'competitions'} className={eventsMode === 'competitions' ? 'active' : ''} onClick={() => chooseEventsMode('competitions')}><span>02</span><div><strong>{ar ? 'المسابقات الأكاديمية' : 'Academic competitions'}</strong><small>{ar ? 'التسجيل، المراحل والنتائج' : 'Registration, stages & results'}</small></div></button>
+      </div>
+      {eventsMode === 'events' ? <AdminEventsPanel /> : <AdminCompetitionsWorkspace />}
+    </div>}
     {tab === 'system' && <div className="admin-system-stack" id="admin-system" role="tabpanel">
       {isSuperAdmin && <AdminBackupRestorePanel />}
       {isSuperAdmin && <AdminActivityLog />}
