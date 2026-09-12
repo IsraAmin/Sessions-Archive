@@ -26,6 +26,7 @@ import './event-cover-upload.css'
 import './event-carousel.css'
 import './admin-event-spacing.css'
 import './competition.css'
+import './admin-event-create-wizard.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
