@@ -106,6 +106,61 @@ export type EventType = 'cultural' | 'sports' | 'initiative' | 'social' | 'acade
 export type EventStatus = 'draft' | 'published'
 export type EventMediaProvider = 'google_drive' | 'youtube' | 'external' | 'whatsapp' | 'telegram'
 
+export type CompetitionKind = 'problem_solving' | 'hackathon' | 'ctf' | 'innovation' | 'other'
+export type CompetitionPhase = 'announced' | 'registration' | 'in_progress' | 'judging' | 'completed'
+export type CompetitionParticipationMode = 'individual' | 'team' | 'both'
+export type CompetitionAttendanceMode = 'in_person' | 'online' | 'hybrid'
+
+export type CompetitionDetails = {
+  event_id: string
+  competition_kind: CompetitionKind
+  organizer: string | null
+  phase: CompetitionPhase
+  registration_opens_at: string | null
+  registration_closes_at: string | null
+  competition_starts_at: string | null
+  competition_ends_at: string | null
+  participation_mode: CompetitionParticipationMode
+  min_team_size: number | null
+  max_team_size: number | null
+  attendance_mode: CompetitionAttendanceMode
+  eligibility: string | null
+  registration_url: string | null
+  rules_url: string | null
+  prizes: string | null
+  tracks: string | null
+  results_published: boolean
+  results_published_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type CompetitionStage = {
+  id: string
+  event_id: string
+  title: string
+  stage_at: string | null
+  description: string | null
+  position: number
+  created_at: string
+}
+
+export type CompetitionWinner = {
+  id: string
+  event_id: string
+  rank: number | null
+  award_title: string | null
+  entry_name: string
+  members: string | null
+  project_title: string | null
+  prize: string | null
+  project_url: string | null
+  image_url: string | null
+  position: number
+  created_at: string
+  updated_at: string
+}
+
 export type CollegeEvent = {
   id: string
   title: string
@@ -141,4 +196,5 @@ export type EventMedia = {
 
 export type CollegeEventWithMedia = CollegeEvent & {
   media: EventMedia[]
+  competition?: CompetitionDetails | null
 }
