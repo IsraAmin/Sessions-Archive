@@ -102,14 +102,15 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
     formEvent.preventDefault()
     if (!details) return
     const values = new FormData(formEvent.currentTarget)
+    const description = String(values.get('description') || '').trim()
     const registrationUrl = optionalText(values.get('registration_url'))
-    const rulesUrl = optionalText(values.get('rules_url'))
-    if (!isPublicUrl(registrationUrl) || !isPublicUrl(rulesUrl)) return fail(new Error(ar ? 'رابط التسجيل أو القوانين غير صالح.' : 'Registration or rules URL is invalid.'))
+    if (!description) return fail(new Error(ar ? 'وصف المسابقة مطلوب.' : 'Competition description is required.'))
+    if (!isPublicUrl(registrationUrl)) return fail(new Error(ar ? 'رابط التسجيل غير صالح.' : 'Registration URL is invalid.'))
 
     const participationMode = String(values.get('participation_mode') || 'team') as CompetitionDetails['participation_mode']
     const minTeam = participationMode === 'individual' ? null : optionalNumber(values.get('min_team_size'))
     const maxTeam = participationMode === 'individual' ? null : optionalNumber(values.get('max_team_size'))
-    if (minTeam && maxTeam && minTeam > maxTeam) return fail(new Error(ar ? 'الحد الأدنى للفريق لا يمكن أن يكون أكبر من الحد الأقصى.' : 'Minimum team size cannot exceed the maximum.'))
+    if (minTeam && maxTeam && minTeam > maxTeam) return fail(new Error(ar ? 'عدد أعضاء الفريق «من» لا يمكن أن يكون أكبر من عدد «إلى».' : 'Minimum team size cannot exceed the maximum.'))
 
     setBusy(true)
     try {
@@ -127,13 +128,17 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
         attendance_mode: String(values.get('attendance_mode') || 'in_person') as CompetitionDetails['attendance_mode'],
         eligibility: optionalText(values.get('eligibility')),
         registration_url: registrationUrl,
-        rules_url: rulesUrl,
+        rules_url: null,
         prizes: optionalText(values.get('prizes')),
         tracks: optionalText(values.get('tracks')),
         updated_at: new Date().toISOString(),
       }
-      const { error } = await supabase.from('competition_details').update(patch).eq('event_id', event.id)
-      if (error) throw error
+      const [competitionResult, eventResult] = await Promise.all([
+        supabase.from('competition_details').update(patch).eq('event_id', event.id),
+        supabase.from('events').update({ description }).eq('id', event.id),
+      ])
+      if (competitionResult.error) throw competitionResult.error
+      if (eventResult.error) throw eventResult.error
       success(ar ? 'تم حفظ بيانات المسابقة.' : 'Competition details saved.')
       await load()
     } catch (error) { fail(error) }
@@ -262,19 +267,20 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
     </section>
 
     <form className="competition-details-form" onSubmit={saveDetails}>
-      <div className="competition-form-section-title"><span>01</span><div><strong>{ar ? 'هوية المسابقة' : 'Competition identity'}</strong><small>{ar ? 'النوع، الجهة المنظمة، وطريقة المشاركة.' : 'Type, organizer, and participation model.'}</small></div></div>
+      <div className="competition-form-section-title"><span>01</span><div><strong>{ar ? 'هوية المسابقة' : 'Competition identity'}</strong><small>{ar ? 'النوع، الوصف، الجهة المنظمة، وطريقة المشاركة.' : 'Type, description, organizer, and participation model.'}</small></div></div>
       <div className="admin-event-two">
         <label><span>{ar ? 'نوع المسابقة' : 'Competition type'}</span><select name="competition_kind" defaultValue={details.competition_kind}><option value="problem_solving">Problem Solving</option><option value="hackathon">{ar ? 'هاكاثون' : 'Hackathon'}</option><option value="ctf">CTF</option><option value="innovation">{ar ? 'ابتكار' : 'Innovation'}</option><option value="other">{ar ? 'أخرى' : 'Other'}</option></select></label>
         <label><span>{ar ? 'المرحلة الحالية' : 'Current phase'}</span><select name="phase" defaultValue={details.phase}><option value="announced">{ar ? 'تم الإعلان — التسجيل قريبًا' : 'Announced — registration soon'}</option><option value="registration">{ar ? 'مرحلة التسجيل' : 'Registration'}</option><option value="in_progress">{ar ? 'المسابقة جارية' : 'In progress'}</option><option value="judging">{ar ? 'التحكيم / انتظار النتائج' : 'Judging / awaiting results'}</option><option value="completed">{ar ? 'انتهت' : 'Completed'}</option></select></label>
       </div>
+      <label><span>{ar ? 'وصف المسابقة' : 'Competition description'}</span><textarea name="description" rows={5} required defaultValue={event.description ?? ''} placeholder={ar ? 'اكتبي فكرة المسابقة، طريقة المشاركة، وأي قوانين أو شروط مهمة…' : 'Describe the competition, participation flow, and any important rules or terms…'} /><small className="field-hint">{ar ? 'القوانين والشروط تُكتب هنا كنص؛ ما في رابط منفصل للقوانين.' : 'Write rules and participation terms here as text; there is no separate rules link.'}</small></label>
       <label><span>{ar ? 'الجهة المنظمة' : 'Organizer'}</span><input name="organizer" defaultValue={details.organizer ?? ''} placeholder={ar ? 'مثلاً: نادي البرمجة — كلية علوم الحاسوب' : 'e.g. Programming Club — CS College'} /></label>
       <div className="admin-event-two">
         <label><span>{ar ? 'المشاركة' : 'Participation'}</span><select name="participation_mode" defaultValue={details.participation_mode}><option value="individual">{ar ? 'فردي' : 'Individual'}</option><option value="team">{ar ? 'فرق' : 'Teams'}</option><option value="both">{ar ? 'فردي أو فرق' : 'Individual or teams'}</option></select></label>
         <label><span>{ar ? 'طريقة الحضور' : 'Attendance'}</span><select name="attendance_mode" defaultValue={details.attendance_mode}><option value="in_person">{ar ? 'حضوري' : 'In person'}</option><option value="online">{ar ? 'أونلاين' : 'Online'}</option><option value="hybrid">{ar ? 'هجين' : 'Hybrid'}</option></select></label>
       </div>
       <div className="admin-event-two">
-        <label><span>{ar ? 'أقل عدد للفريق' : 'Min team size'}</span><input name="min_team_size" type="number" min="1" max="50" defaultValue={details.min_team_size ?? ''} /></label>
-        <label><span>{ar ? 'أقصى عدد للفريق' : 'Max team size'}</span><input name="max_team_size" type="number" min="1" max="50" defaultValue={details.max_team_size ?? ''} /></label>
+        <label><span>{ar ? 'عدد أعضاء الفريق — من' : 'Team size — from'}</span><input name="min_team_size" type="number" min="1" max="50" defaultValue={details.min_team_size ?? ''} /></label>
+        <label><span>{ar ? 'عدد أعضاء الفريق — إلى' : 'Team size — to'}</span><input name="max_team_size" type="number" min="1" max="50" defaultValue={details.max_team_size ?? ''} /></label>
       </div>
 
       <div className="competition-form-section-title"><span>02</span><div><strong>{ar ? 'التسجيل والمواعيد' : 'Registration and dates'}</strong><small>{ar ? 'زر «سجّل الآن» يعتمد على هذه المرحلة والمواعيد فقط.' : 'The “Register now” CTA depends only on this phase and these dates.'}</small></div></div>
@@ -289,10 +295,9 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
       <label><span>{ar ? 'رابط التسجيل' : 'Registration URL'}</span><input name="registration_url" type="url" defaultValue={details.registration_url ?? ''} placeholder="https://..." /></label>
       <label><span>{ar ? 'من يقدر يشارك؟' : 'Eligibility'}</span><textarea name="eligibility" rows={3} defaultValue={details.eligibility ?? ''} placeholder={ar ? 'مثلاً: طلاب الجامعة، جميع المستويات، أساسيات البرمجة مطلوبة…' : 'e.g. university students, all levels, basic programming required…'} /></label>
 
-      <div className="competition-form-section-title"><span>03</span><div><strong>{ar ? 'المحتوى والجوائز' : 'Content and prizes'}</strong><small>{ar ? 'تفاصيل تظهر في صفحة المسابقة للطلاب.' : 'Details shown on the public competition page.'}</small></div></div>
-      <label><span>{ar ? 'الجوائز' : 'Prizes'}</span><textarea name="prizes" rows={3} defaultValue={details.prizes ?? ''} placeholder={ar ? 'كل جائزة في سطر لو حبيتي.' : 'One prize per line if you like.'} /></label>
-      <label><span>{ar ? 'المجالات / Tracks' : 'Tracks'}</span><textarea name="tracks" rows={3} defaultValue={details.tracks ?? ''} placeholder={ar ? 'Web، AI، Security… أو اتركيها فاضية.' : 'Web, AI, Security… or leave blank.'} /></label>
-      <label><span>{ar ? 'رابط القوانين أو التفاصيل' : 'Rules / details URL'}</span><input name="rules_url" type="url" defaultValue={details.rules_url ?? ''} placeholder="https://..." /></label>
+      <div className="competition-form-section-title"><span>03</span><div><strong>{ar ? 'معلومات إضافية' : 'Additional details'}</strong><small>{ar ? 'الجوائز والمسارات اختيارية بالكامل؛ اتركي أي واحدة فاضية لو ما كانت موجودة.' : 'Prizes and tracks are fully optional; leave either blank when not applicable.'}</small></div></div>
+      <label><span>{ar ? 'الجوائز — اختياري' : 'Prizes — optional'}</span><textarea name="prizes" rows={3} defaultValue={details.prizes ?? ''} placeholder={ar ? 'كل جائزة في سطر، أو اتركيها فاضية.' : 'One prize per line, or leave blank.'} /></label>
+      <label><span>{ar ? 'المسارات / Tracks — اختياري' : 'Tracks — optional'}</span><textarea name="tracks" rows={3} defaultValue={details.tracks ?? ''} placeholder={ar ? 'Web، AI، Security… أو اتركيها فاضية.' : 'Web, AI, Security… or leave blank.'} /></label>
       <button className="button button-primary" disabled={busy}>{ar ? 'حفظ بيانات المسابقة' : 'Save competition details'}</button>
     </form>
 
