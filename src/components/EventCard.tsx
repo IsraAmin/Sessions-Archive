@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { competitionKindLabel, competitionPublicStatus } from '../lib/competition'
+import { competitionKindLabel } from '../lib/competition'
 import { Icon } from './Icon'
 import { eventCoverDisplayUrl, eventImageDisplayUrl } from '../lib/eventMedia'
 import type { CollegeEventWithMedia, EventMedia, EventType } from '../types/domain'
@@ -55,7 +55,6 @@ export function EventCard({ event, ar }: { event: CollegeEventWithMedia; ar: boo
       <h3 dir="auto">{event.title}</h3>
       {event.location && <p dir="auto">{event.location}</p>}
       <div className="event-card-counts">
-        {competition && <span>🏆 {competitionPublicStatus(competition, ar)}</span>}
         {imageCount > 0 && <span><Icon name="layers" />{ar ? `${imageCount} صورة` : `${imageCount} photos`}</span>}
         {videoCount > 0 && <span><Icon name="play" />{ar ? `${videoCount} فيديو` : `${videoCount} videos`}</span>}
         {event.drive_folder_url && <span><Icon name="layers" />{ar ? 'ألبوم Drive' : 'Drive album'}</span>}
