@@ -97,20 +97,16 @@ export function EventDetailsPage() {
     if (!event) return
     const url = eventShareUrl(event.id)
     const title = event.title.replace(/\s+/g, ' ').trim()
-    const caption = (event.description ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)
-    const shareData = {
-      title,
-      text: `Archive Repeat:\n${title}${caption ? `\n${caption}` : ''}`,
-      url,
-    }
+    const shareText = `Archive Repeat:\n${title}`
+    const shareData = { title, text: shareText, url }
 
     try {
       if (navigator.share) {
         await navigator.share(shareData)
         return
       }
-      await navigator.clipboard.writeText(url)
-      showToast({ kind: 'success', title: ar ? 'تم بنجاح' : 'Success', message: ar ? 'تم نسخ رابط الفعالية، جاهز للمشاركة.' : 'Event link copied and ready to share.' })
+      await navigator.clipboard.writeText(`${shareText}\n${url}`)
+      showToast({ kind: 'success', title: ar ? 'تم بنجاح' : 'Success', message: ar ? 'تم نسخ اسم الفعالية والرابط، جاهزين للمشاركة.' : 'Event title and link copied and ready to share.' })
     } catch (shareError) {
       if (shareError instanceof DOMException && shareError.name === 'AbortError') return
       showToast({ kind: 'error', title: ar ? 'تعذر التنفيذ' : 'Could not complete action', message: ar ? 'تعذر مشاركة الفعالية الآن.' : 'Could not share the event right now.' })
@@ -129,8 +125,14 @@ export function EventDetailsPage() {
   const folderEmbed = event.drive_folder_url ? googleDriveFolderEmbedUrl(event.drive_folder_url) : null
   const galleryImage = images[galleryIndex] ?? null
   const galleryAlt = galleryImage ? (galleryImage.caption || galleryImage.title || `${event.title} — ${galleryIndex + 1}`) : ''
+  const hasPhotoStory = images.length > 0 || Boolean(folderEmbed)
+  const detailHeading = hasPhotoStory
+    ? (ar ? 'الحكاية وراء الصور' : 'The story behind the photos')
+    : event.event_type === 'academic'
+      ? (ar ? 'تفاصيل المسابقة' : 'Competition details')
+      : (ar ? 'تفاصيل الفعالية' : 'Event details')
 
-  return <article className="event-details-page event-story-page">
+  return <article className="event-details-page event-story-page" dir={ar ? 'rtl' : 'ltr'}>
     <div className="event-details-back"><Link to="/events">← {ar ? 'كل الفعاليات' : 'All events'}</Link></div>
 
     <header className={`event-story-cover ${cover ? 'has-cover' : 'no-cover'}`}>
@@ -138,7 +140,7 @@ export function EventDetailsPage() {
       <div className="event-story-cover-shade" aria-hidden="true" />
       <div className="event-story-cover-copy">
         <div className="event-details-badges"><span>{eventTypeLabel(event.event_type, ar)}</span>{event.featured && <span>{ar ? 'فعالية مميزة' : 'Featured event'}</span>}</div>
-        <h1 dir="auto">{event.title}</h1>
+        <h1>{event.title}</h1>
         <div className="event-story-cover-meta"><span><Icon name="calendar" /><time dateTime={event.event_date}>{date}</time></span>{event.location && <span><Icon name="layers" /><bdi>{event.location}</bdi></span>}</div>
       </div>
     </header>
@@ -147,15 +149,15 @@ export function EventDetailsPage() {
 
     <section className="event-story-intro">
       <div>
-        <span className="events-eyebrow">{ar ? 'عن الفعالية' : 'About the event'}</span>
-        <h2>{ar ? 'الحكاية وراء الصور' : 'The story behind the photos'}</h2>
-        <p dir="auto">{event.description || (ar ? 'لم تتم إضافة وصف للفعالية بعد.' : 'No event description has been added yet.')}</p>
+        <span className="events-eyebrow">{event.event_type === 'academic' ? (ar ? 'عن المسابقة' : 'About the competition') : (ar ? 'عن الفعالية' : 'About the event')}</span>
+        <h2>{detailHeading}</h2>
+        <p>{event.description || (ar ? 'لم تتم إضافة وصف للفعالية بعد.' : 'No event description has been added yet.')}</p>
       </div>
       <div className="event-story-actions">
         <button type="button" className="button button-secondary event-share-button" onClick={() => void shareEvent()}><Icon name="share" />{ar ? 'مشاركة الفعالية' : 'Share event'}</button>
         {event.drive_folder_url && <a className="button event-drive-album-button" href={event.drive_folder_url} target="_blank" rel="noopener noreferrer"><Icon name="layers" />{ar ? 'فتح الأصل على Drive' : 'Open original on Drive'} ↗</a>}
-        <span>{images.length ? (ar ? `${images.length} صورة مختارة` : `${images.length} selected photos`) : (ar ? 'بدون صور مختارة' : 'No selected photos')}</span>
-        <span>{videos.length ? (ar ? `${videos.length} فيديو` : `${videos.length} videos`) : (ar ? 'بدون فيديو' : 'No videos')}</span>
+        {images.length > 0 && <span>{ar ? `${images.length} صورة مختارة` : `${images.length} selected photos`}</span>}
+        {videos.length > 0 && <span>{ar ? `${videos.length} فيديو` : `${videos.length} videos`}</span>}
       </div>
     </section>
 
@@ -165,7 +167,7 @@ export function EventDetailsPage() {
         <button type="button" className="event-carousel-stage" onClick={() => setLightboxIndex(galleryIndex)} aria-label={ar ? 'فتح الصورة بالحجم الكامل' : 'Open full-size image'}>
           <img src={eventImageDisplayUrl(galleryImage)} alt={galleryAlt} referrerPolicy="no-referrer" />
           <span className="event-carousel-counter">{galleryIndex + 1} / {images.length}</span>
-          {(galleryImage.caption || galleryImage.title) && <span className="event-carousel-caption" dir="auto">{galleryImage.caption || galleryImage.title}</span>}
+          {(galleryImage.caption || galleryImage.title) && <span className="event-carousel-caption">{galleryImage.caption || galleryImage.title}</span>}
         </button>
         {images.length > 1 && <>
           <button type="button" className="event-carousel-nav event-carousel-prev" onClick={() => moveGallery(-1)} aria-label={ar ? 'الصورة السابقة' : 'Previous photo'}>‹</button>
@@ -199,16 +201,14 @@ export function EventDetailsPage() {
           const title = item.title || item.caption || `${event.title} — ${ar ? 'فيديو' : 'Video'} ${index + 1}`
           const playerId = eventVideoPlayerId(item)
           return <article className="event-video-card" key={item.id}>
-            <div className="event-video-title"><span>{String(index + 1).padStart(2, '0')}</span><h3 dir="auto">{title}</h3></div>
+            <div className="event-video-title"><span>{String(index + 1).padStart(2, '0')}</span><h3>{title}</h3></div>
             {playerId ? <YouTubePlayer videoId={playerId} title={title} /> : <video controls preload="metadata" src={item.source_url}>{ar ? 'متصفحك لا يدعم تشغيل هذا الفيديو.' : 'Your browser cannot play this video.'}</video>}
-            {item.caption && item.caption !== title && <p dir="auto">{item.caption}</p>}
+            {item.caption && item.caption !== title && <p>{item.caption}</p>}
             <a className="text-action event-original-link" href={item.source_url} target="_blank" rel="noopener noreferrer">{ar ? 'فتح المصدر الأصلي' : 'Open original source'} ↗</a>
           </article>
         })}
       </div>
     </section>}
-
-    {!images.length && !videos.length && !folderEmbed && <div className="events-empty event-details-empty"><Icon name="layers" /><strong>{ar ? 'الألبوم لسه فاضي' : 'The album is empty'}</strong><span>{ar ? 'سيظهر هنا أي مجلد Drive أو صور أو فيديوهات تُضاف لهذه الفعالية.' : 'A Drive folder, photos, or videos added to this event will appear here.'}</span></div>}
 
     {activeImage && lightboxIndex !== null && <div className="event-lightbox" role="dialog" aria-modal="true" aria-label={ar ? 'عارض الصور' : 'Photo viewer'}>
       <button type="button" className="event-lightbox-scrim" onClick={() => setLightboxIndex(null)} aria-label={ar ? 'إغلاق' : 'Close'} />
@@ -218,7 +218,7 @@ export function EventDetailsPage() {
           <div><a href={activeImage.source_url} target="_blank" rel="noopener noreferrer">{ar ? 'فتح الأصل' : 'Open original'} ↗</a><button type="button" onClick={() => setLightboxIndex(null)} aria-label={ar ? 'إغلاق' : 'Close'}><Icon name="close" /></button></div>
         </div>
         <img src={eventImageDisplayUrl(activeImage)} alt={activeImage.caption || activeImage.title || event.title} referrerPolicy="no-referrer" />
-        {(activeImage.caption || activeImage.title) && <p dir="auto">{activeImage.caption || activeImage.title}</p>}
+        {(activeImage.caption || activeImage.title) && <p>{activeImage.caption || activeImage.title}</p>}
         {images.length > 1 && <><button type="button" className="event-lightbox-nav event-lightbox-prev" onClick={() => setLightboxIndex((lightboxIndex - 1 + images.length) % images.length)} aria-label={ar ? 'الصورة السابقة' : 'Previous image'}>‹</button><button type="button" className="event-lightbox-nav event-lightbox-next" onClick={() => setLightboxIndex((lightboxIndex + 1) % images.length)} aria-label={ar ? 'الصورة التالية' : 'Next image'}>›</button></>}
       </div>
     </div>}
