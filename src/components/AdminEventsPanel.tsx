@@ -54,6 +54,7 @@ export function AdminEventsPanel() {
   const [focusY, setFocusY] = useState(50)
   const [busy, setBusy] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<CollegeEvent | null>(null)
+  const [mediaDeleteTarget, setMediaDeleteTarget] = useState<EventMedia | null>(null)
 
   function success(message: string) { showToast({ kind: 'success', title: ar ? 'تم بنجاح' : 'Success', message }) }
   function fail(error: unknown) { showToast({ kind: 'error', title: ar ? 'تعذر التنفيذ' : 'Could not complete action', message: errorMessage(error) }) }
@@ -307,12 +308,14 @@ export function AdminEventsPanel() {
     finally { setBusy(false) }
   }
 
-  async function removeMedia(item: EventMedia) {
+  async function removeMedia() {
+    if (!mediaDeleteTarget) return
     setBusy(true)
     try {
-      const { error } = await supabase.from('event_media').delete().eq('id', item.id)
+      const { error } = await supabase.from('event_media').delete().eq('id', mediaDeleteTarget.id)
       if (error) throw error
       success(ar ? 'تم حذف الرابط من الألبوم.' : 'Media link removed from the album.')
+      setMediaDeleteTarget(null)
       await load(selected?.id)
     } catch (error) { fail(error) }
     finally { setBusy(false) }
@@ -415,7 +418,7 @@ export function AdminEventsPanel() {
               <div className="admin-event-media-list">{selectedMedia.map((item, index) => <article key={item.id} className="admin-event-media-item">
                 <div className="admin-event-media-preview">{item.media_type === 'image' ? <img src={eventImageDisplayUrl(item)} alt="" referrerPolicy="no-referrer" loading="lazy" /> : <Icon name="play" />}</div>
                 <div className="admin-event-media-copy"><strong>{item.media_type === 'image' ? (ar ? `صورة ${index + 1}` : `Photo ${index + 1}`) : (ar ? `فيديو ${index + 1}` : `Video ${index + 1}`)}</strong><span>{item.provider === 'google_drive' ? 'Google Drive' : item.provider}</span>{item.is_cover && <em>{ar ? 'الغلاف' : 'Cover'}</em>}</div>
-                <div className="admin-event-media-actions"><a href={item.source_url} target="_blank" rel="noopener noreferrer" className="text-action">{ar ? 'فتح' : 'Open'} ↗</a>{item.media_type === 'image' && <button type="button" className="text-action" onClick={() => void useAsCover(item)} disabled={busy}>{ar ? 'استخدام كغلاف' : 'Use as cover'}</button>}<button type="button" className="text-action danger-text" onClick={() => void removeMedia(item)} disabled={busy}>{ar ? 'حذف' : 'Remove'}</button></div>
+                <div className="admin-event-media-actions"><a href={item.source_url} target="_blank" rel="noopener noreferrer" className="text-action">{ar ? 'فتح' : 'Open'} ↗</a>{item.media_type === 'image' && <button type="button" className="text-action" onClick={() => void useAsCover(item)} disabled={busy}>{ar ? 'استخدام كغلاف' : 'Use as cover'}</button>}<button type="button" className="text-action danger-text" onClick={() => setMediaDeleteTarget(item)} disabled={busy}>{ar ? 'حذف' : 'Remove'}</button></div>
               </article>)}</div>
             </section>}
           </div>}
@@ -425,6 +428,7 @@ export function AdminEventsPanel() {
       </div>
     </div>
 
+    <ConfirmDialog open={Boolean(mediaDeleteTarget)} title={ar ? 'حذف العنصر من الألبوم؟' : 'Remove media from album?'} description={ar ? 'هل أنتِ متأكدة؟ سيتم حذف هذا الرابط من ألبوم الفعالية فقط، ولن يتم حذف الملف الأصلي من Google Drive أو المصدر الخارجي.' : 'Are you sure? This removes the link from the event album only; the original Google Drive or external file will not be deleted.'} confirmLabel={ar ? 'نعم، حذف العنصر' : 'Yes, remove item'} cancelLabel={ar ? 'إلغاء' : 'Cancel'} tone="danger" busy={busy} onCancel={() => !busy && setMediaDeleteTarget(null)} onConfirm={() => void removeMedia()} />
     <ConfirmDialog open={Boolean(deleteTarget)} title={ar ? 'حذف الفعالية؟' : 'Delete event?'} description={ar ? 'سيتم حذف الفعالية وروابط الميديا التابعة لها من المنصة. ملفات Google Drive الأصلية لن تُحذف.' : 'The event and its media links will be removed from the platform. Original Google Drive files will not be deleted.'} confirmLabel={ar ? 'نعم، حذف الفعالية' : 'Yes, delete event'} cancelLabel={ar ? 'إلغاء' : 'Cancel'} tone="danger" busy={busy} onCancel={() => !busy && setDeleteTarget(null)} onConfirm={() => void deleteEvent()} />
   </section>
 }
