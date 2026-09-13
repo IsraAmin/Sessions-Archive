@@ -20,10 +20,10 @@ type SessionMetaRow = {
 }
 
 type HomeSectionProps = {
-  icon: 'bookmark' | 'calendar' | 'layers' | 'chart'
+  icon: 'bookmark' | 'layers' | 'chart'
   kicker: string
   title: string
-  view: 'pinned' | 'upcoming' | 'recent' | 'top-rated'
+  view: 'pinned' | 'recent' | 'top-rated'
   sessions: SearchSession[]
   emptyTitle: string
   emptyText: string
@@ -153,12 +153,7 @@ export function HomePage() {
     return () => { active = false }
   }, [ar])
 
-  const now = Date.now()
   const pinnedSessions = useMemo(() => sessions.filter((session) => Boolean(session.is_pinned)).slice(0, 6), [sessions])
-  const upcomingSessions = useMemo(() => [...sessions]
-    .filter((session) => new Date(session.starts_at).getTime() >= now)
-    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
-    .slice(0, 6), [sessions, now])
   const recentSessions = useMemo(() => [...sessions]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 6), [sessions])
@@ -260,23 +255,12 @@ export function HomePage() {
     </section> : <>
       <HomeSessionSection
         icon="bookmark"
-        kicker={ar ? 'مهم الآن' : 'Featured'}
-        title={ar ? 'الجلسة المثبتة' : 'Pinned session'}
+        kicker={ar ? 'مهم في الأرشيف' : 'Featured in the archive'}
+        title={ar ? 'الجلسات المثبتة' : 'Pinned sessions'}
         view="pinned"
         sessions={pinnedSessions}
-        emptyTitle={ar ? 'ما في جلسة مثبتة حاليًا' : 'No pinned session right now'}
+        emptyTitle={ar ? 'ما في جلسات مثبتة حاليًا' : 'No pinned sessions right now'}
         emptyText={ar ? 'أول ما يتم تثبيت جلسة من الإدارة ستظهر هنا تلقائيًا.' : 'As soon as a session is pinned by an admin, it will appear here automatically.'}
-        ar={ar}
-      />
-
-      <HomeSessionSection
-        icon="calendar"
-        kicker={ar ? 'على الطريق' : 'Coming up'}
-        title={ar ? 'جلسات قريبة' : 'Upcoming sessions'}
-        view="upcoming"
-        sessions={upcomingSessions}
-        emptyTitle={ar ? 'ما في جلسات قادمة مضافة الآن' : 'No upcoming sessions yet'}
-        emptyText={ar ? 'لما تتم إضافة موعد جديد سيظهر هنا مباشرة.' : 'New scheduled sessions will show up here automatically.'}
         ar={ar}
       />
 
