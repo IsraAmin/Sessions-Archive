@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { eventTypeLabel } from '../components/EventCard'
 import { Icon } from '../components/Icon'
 import { useUi } from '../hooks/useUi'
-import { competitionKindLabel, competitionPublicStatus } from '../lib/competition'
+import { competitionKindLabel } from '../lib/competition'
 import { eventCoverDisplayUrl, eventImageDisplayUrl } from '../lib/eventMedia'
 import { publicSupabase } from '../lib/supabase'
 import type { CollegeEvent, CollegeEventWithMedia, CompetitionDetails, EventMedia, EventType } from '../types/domain'
@@ -33,7 +33,7 @@ function eventCounts(event: CollegeEventWithMedia, ar: boolean) {
   const parts: string[] = []
   if (photos) parts.push(ar ? `${photos} صورة` : `${photos} photos`)
   if (videos) parts.push(ar ? `${videos} فيديو` : `${videos} videos`)
-  if (event.drive_folder_url) parts.push(ar ? 'ألبوم Drive مباشر' : 'Live Drive album')
+  if (event.drive_folder_url) parts.push(ar ? 'ألبوم Drive' : 'Drive album')
   return parts
 }
 
@@ -53,13 +53,12 @@ function EventLead({ event, ar }: { event: CollegeEventWithMedia; ar: boolean })
     <div className="event-editorial-lead-copy">
       <div className="event-editorial-kickers"><span>{eventTypeLabel(event.event_type, ar)}</span>{event.competition ? <em>🏆 {competitionKindLabel(event.competition.competition_kind, ar)}</em> : event.featured && <em>{ar ? 'مميزة' : 'Featured'}</em>}</div>
       <h2 dir="auto">{event.title}</h2>
-      {event.competition && <span className="event-memory-competition">{competitionPublicStatus(event.competition, ar)}</span>}
       {event.description && <p dir="auto">{event.description.slice(0, 230)}{event.description.length > 230 ? '…' : ''}</p>}
       <div className="event-editorial-meta">
         {event.location && <span dir="auto">{event.location}</span>}
         {counts.map((item) => <span key={item}>{item}</span>)}
       </div>
-      <span className="event-editorial-open">{event.competition ? (ar ? 'افتح تفاصيل المسابقة' : 'Open competition') : (ar ? 'افتح الذكرى' : 'Open the memory')} <b aria-hidden="true">←</b></span>
+      <span className="event-editorial-open">{event.competition ? (ar ? 'افتح أرشيف المسابقة' : 'Open competition archive') : (ar ? 'افتح الذكرى' : 'Open the memory')} <b aria-hidden="true">←</b></span>
     </div>
   </Link>
 }
@@ -80,7 +79,7 @@ function EventChapter({ event, ar, index }: { event: CollegeEventWithMedia; ar: 
     <div className="event-memory-copy">
       <div className="event-memory-topline"><time dateTime={event.event_date}>{dateLabel}</time><span>{eventTypeLabel(event.event_type, ar)}</span></div>
       <h3 dir="auto">{event.title}</h3>
-      {event.competition && <span className="event-memory-competition">🏆 {competitionKindLabel(event.competition.competition_kind, ar)} · {competitionPublicStatus(event.competition, ar)}</span>}
+      {event.competition && <span className="event-memory-competition">🏆 {competitionKindLabel(event.competition.competition_kind, ar)}</span>}
       {event.description && <p dir="auto">{event.description.slice(0, 150)}{event.description.length > 150 ? '…' : ''}</p>}
       <div className="event-memory-meta">{event.location && <span dir="auto">{event.location}</span>}{counts.map((item) => <span key={item}>{item}</span>)}</div>
     </div>
@@ -151,7 +150,7 @@ export function EventsPage() {
     return events.filter((event) => {
       if (type !== 'all' && event.event_type !== type) return false
       if (!needle) return true
-      const competitionTerms = event.competition ? `${competitionKindLabel(event.competition.competition_kind, ar)} ${competitionPublicStatus(event.competition, ar)}` : ''
+      const competitionTerms = event.competition ? competitionKindLabel(event.competition.competition_kind, ar) : ''
       return [event.title, event.description, event.location ?? '', competitionTerms]
         .join(' ')
         .toLocaleLowerCase(ar ? 'ar' : 'en')
