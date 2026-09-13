@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { competitionAttendanceLabel, competitionKindLabel, competitionParticipationLabel, competitionPublicStatus, competitionRegistrationOpen } from '../lib/competition'
+import { competitionAttendanceLabel, competitionKindLabel, competitionParticipationLabel } from '../lib/competition'
 import { publicSupabase } from '../lib/supabase'
 import type { CollegeEvent, CompetitionDetails, CompetitionStage, CompetitionWinner } from '../types/domain'
 import { Icon } from './Icon'
@@ -7,13 +7,6 @@ import { CompetitionShowcaseSection } from './CompetitionShowcaseSection'
 
 function lines(value: string | null) {
   return (value ?? '').split(/\r?\n/).map((item) => item.trim()).filter(Boolean)
-}
-
-function phaseProgress(details: CompetitionDetails) {
-  if (details.results_published) return 3
-  if (details.phase === 'judging' || details.phase === 'completed') return 2
-  if (details.phase === 'in_progress') return 1
-  return 0
 }
 
 export function CompetitionEventSections({ event, ar }: { event: CollegeEvent; ar: boolean }) {
@@ -59,42 +52,41 @@ export function CompetitionEventSections({ event, ar }: { event: CollegeEvent; a
 
   const locale = ar ? 'ar-SA' : 'en-US'
   const dateTime = (value: string | null) => value ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : null
-  const registrationOpen = competitionRegistrationOpen(details)
-  const progress = phaseProgress(details)
   const participation = details.participation_mode === 'individual'
     ? competitionParticipationLabel(details.participation_mode, ar)
     : `${competitionParticipationLabel(details.participation_mode, ar)}${details.min_team_size || details.max_team_size ? ` ${details.min_team_size ?? 1}–${details.max_team_size ?? '+'}` : ''}`
   const prizes = lines(details.prizes)
   const tracks = lines(details.tracks)
   const steps = ar ? ['التسجيل', 'المسابقة', 'التحكيم', 'النتائج'] : ['Registration', 'Competition', 'Judging', 'Results']
+  const startAt = dateTime(details.competition_starts_at)
+  const endAt = dateTime(details.competition_ends_at)
 
   return <div className="competition-public-experience">
-    <section className="competition-status-shell">
+    <section className="competition-status-shell competition-archive-shell">
       <div className="competition-status-main">
         <div className="competition-status-copy">
           <span className="competition-kind-badge">🏆 {competitionKindLabel(details.competition_kind, ar)}</span>
-          <strong>{competitionPublicStatus(details, ar)}</strong>
-          <small>{registrationOpen && details.registration_closes_at ? (ar ? `التسجيل متاح حتى ${dateTime(details.registration_closes_at)}` : `Registration open until ${dateTime(details.registration_closes_at)}`) : details.competition_starts_at ? (ar ? `موعد المسابقة: ${dateTime(details.competition_starts_at)}` : `Competition starts: ${dateTime(details.competition_starts_at)}`) : (ar ? 'تابع الصفحة لمعرفة آخر التحديثات.' : 'Follow this page for the latest updates.')}</small>
+          <strong>{ar ? 'أرشيف المسابقة' : 'Competition archive'}</strong>
+          {(startAt || endAt) && <small>{startAt && endAt ? (ar ? `أقيمت من ${startAt} إلى ${endAt}` : `Held from ${startAt} to ${endAt}`) : endAt ? (ar ? `انتهت في ${endAt}` : `Ended ${endAt}`) : (ar ? `أقيمت في ${startAt}` : `Held ${startAt}`)}</small>}
         </div>
-        {registrationOpen && details.registration_url ? <a className="button button-primary competition-register-cta" href={details.registration_url} target="_blank" rel="noopener noreferrer">{ar ? 'سجّل الآن' : 'Register now'} <span aria-hidden="true">↗</span></a> : <span className="competition-cta-state">{competitionPublicStatus(details, ar)}</span>}
       </div>
 
-      <div className="competition-phase-track" aria-label={ar ? 'مراحل المسابقة' : 'Competition phases'}>
-        {steps.map((step, index) => <div key={step} className={`competition-phase-step ${index < progress ? 'done' : ''} ${index === progress ? 'active' : ''}`}><span>{index < progress ? '✓' : index + 1}</span><strong>{step}</strong></div>)}
+      <div className="competition-phase-track is-archive" aria-label={ar ? 'تسلسل المسابقة' : 'Competition sequence'}>
+        {steps.map((step, index) => <div key={step} className="competition-phase-step done"><span>✓</span><strong>{step}</strong></div>)}
       </div>
 
       <div className="competition-facts-grid">
         <div><span>{ar ? 'المشاركة' : 'Participation'}</span><strong>{participation}</strong></div>
         <div><span>{ar ? 'النمط' : 'Format'}</span><strong>{competitionAttendanceLabel(details.attendance_mode, ar)}</strong></div>
-        <div><span>{ar ? 'إغلاق التسجيل' : 'Registration closes'}</span><strong>{dateTime(details.registration_closes_at) || (ar ? 'يُعلن لاحقًا' : 'TBA')}</strong></div>
-        <div><span>{ar ? 'الجهة المنظمة' : 'Organizer'}</span><strong dir="auto">{details.organizer || (ar ? 'غير مضافة' : 'Not added')}</strong></div>
+        {endAt && <div><span>{ar ? 'نهاية المسابقة' : 'Competition ended'}</span><strong>{endAt}</strong></div>}
+        {details.organizer && <div><span>{ar ? 'الجهة المنظمة' : 'Organizer'}</span><strong dir="auto">{details.organizer}</strong></div>}
       </div>
     </section>
 
     {(details.eligibility || prizes.length || tracks.length) && <section className="competition-public-section">
-      <div className="competition-section-heading"><span>{ar ? 'قبل المشاركة' : 'Before you join'}</span><h2>{ar ? 'تفاصيل المسابقة' : 'Competition details'}</h2></div>
+      <div className="competition-section-heading"><span>{ar ? 'معلومات موثقة' : 'Archived details'}</span><h2>{ar ? 'تفاصيل المسابقة' : 'Competition details'}</h2></div>
       <div className="competition-info-layout">
-        {details.eligibility && <article><span className="competition-info-index">01</span><div><strong>{ar ? 'من يقدر يشارك؟' : 'Who can participate?'}</strong><p dir="auto">{details.eligibility}</p></div></article>}
+        {details.eligibility && <article><span className="competition-info-index">01</span><div><strong>{ar ? 'الفئة التي كانت مؤهلة للمشاركة' : 'Eligibility'}</strong><p dir="auto">{details.eligibility}</p></div></article>}
         {prizes.length > 0 && <article><span className="competition-info-index">02</span><div><strong>{ar ? 'الجوائز' : 'Prizes'}</strong><ul>{prizes.map((prize) => <li key={prize} dir="auto">{prize}</li>)}</ul></div></article>}
         {tracks.length > 0 && <article><span className="competition-info-index">03</span><div><strong>{ar ? 'المجالات / Tracks' : 'Tracks'}</strong><div className="competition-track-list">{tracks.map((track) => <span key={track} dir="auto">{track}</span>)}</div></div></article>}
       </div>
@@ -113,7 +105,7 @@ export function CompetitionEventSections({ event, ar }: { event: CollegeEvent; a
 
     {stages.length > 0 && <section className="competition-public-section">
       <div className="competition-section-heading"><span>Timeline</span><h2>{ar ? 'رحلة المسابقة' : 'Competition journey'}</h2></div>
-      <div className="competition-public-timeline">{stages.map((stage, index) => <article key={stage.id}><span className="competition-timeline-number">{String(index + 1).padStart(2, '0')}</span><div><time>{dateTime(stage.stage_at) || (ar ? 'الموعد يحدد لاحقًا' : 'Date TBA')}</time><h3 dir="auto">{stage.title}</h3>{stage.description && <p dir="auto">{stage.description}</p>}</div></article>)}</div>
+      <div className="competition-public-timeline">{stages.map((stage, index) => <article key={stage.id}><span className="competition-timeline-number">{String(index + 1).padStart(2, '0')}</span><div>{stage.stage_at && <time>{dateTime(stage.stage_at)}</time>}<h3 dir="auto">{stage.title}</h3>{stage.description && <p dir="auto">{stage.description}</p>}</div></article>)}</div>
     </section>}
   </div>
 }
