@@ -25,13 +25,11 @@ type NotificationPreferences = {
   language: 'ar' | 'en'
 }
 
-const REMINDER_OPTIONS = [5, 10, 15, 30, 60, 120, 1440] as const
-
 function defaultPreferences(userId: string, language: string): NotificationPreferences {
   return {
     user_id: userId,
     push_enabled: true,
-    session_reminders: true,
+    session_reminders: false,
     session_updates: true,
     new_content: true,
     announcements: true,
@@ -222,7 +220,7 @@ export function ProfilePage() {
         <div>
           <div className="eyebrow">Push Notifications</div>
           <h2 id="notification-settings-title">{ar ? 'إشعارات الجهاز' : 'Device notifications'}</h2>
-          <p>{ar ? 'استلم التذكيرات والتحديثات حتى عندما تكون المنصة مغلقة.' : 'Receive reminders and updates even when the app is closed.'}</p>
+          <p>{ar ? 'استلم تحديثات الأرشيف والمحتوى الجديد حتى عندما تكون المنصة مغلقة.' : 'Receive archive updates and new content even when the app is closed.'}</p>
           <span className={`push-status-pill ${pushEnabled ? 'is-enabled' : ''}`}>{pushStatusLabel}</span>
         </div>
         <button
@@ -243,24 +241,12 @@ export function ProfilePage() {
 
       {preferences && <div className="notification-settings-list" aria-busy={preferencesBusy}>
         <label className="notification-setting-row">
-          <span className="notification-setting-copy"><strong>{ar ? 'تذكيرات السيشنات' : 'Session reminders'}</strong><small>{ar ? 'تنبيه قبل موعد السيشن المسجل فيها.' : 'Get alerted before a session you are registered for.'}</small></span>
-          <input type="checkbox" checked={preferences.session_reminders} disabled={preferencesBusy} onChange={(event) => void savePreferences({ session_reminders: event.target.checked })} />
-        </label>
-
-        {preferences.session_reminders && <label className="notification-setting-row notification-reminder-row">
-          <span className="notification-setting-copy"><strong>{ar ? 'وقت التذكير' : 'Reminder time'}</strong><small>{ar ? 'اختر المدة قبل بداية السيشن.' : 'Choose how early the reminder should arrive.'}</small></span>
-          <select className="notification-reminder-select" value={preferences.reminder_minutes} disabled={preferencesBusy} onChange={(event) => void savePreferences({ reminder_minutes: Number(event.target.value) })}>
-            {REMINDER_OPTIONS.map((minutes) => <option key={minutes} value={minutes}>{minutes === 1440 ? (ar ? 'قبل يوم' : '1 day before') : minutes >= 60 ? (ar ? `قبل ${minutes / 60} ساعة` : `${minutes / 60}h before`) : (ar ? `قبل ${minutes} دقيقة` : `${minutes}m before`)}</option>)}
-          </select>
-        </label>}
-
-        <label className="notification-setting-row">
-          <span className="notification-setting-copy"><strong>{ar ? 'تحديثات السيشن' : 'Session updates'}</strong><small>{ar ? 'تغيير الموعد أو المكان وإضافة تسجيل أو ملف.' : 'Time/location changes and new recordings or resources.'}</small></span>
+          <span className="notification-setting-copy"><strong>{ar ? 'تحديثات الجلسات' : 'Session updates'}</strong><small>{ar ? 'إشعار عند إضافة تسجيل أو ملف جديد إلى جلسة موجودة في الأرشيف.' : 'New recordings or resources added to sessions already in the archive.'}</small></span>
           <input type="checkbox" checked={preferences.session_updates} disabled={preferencesBusy} onChange={(event) => void savePreferences({ session_updates: event.target.checked })} />
         </label>
 
         <label className="notification-setting-row">
-          <span className="notification-setting-copy"><strong>{ar ? 'محتوى جديد' : 'New content'}</strong><small>{ar ? 'إشعار عند نشر سيشن أو سلسلة جديدة.' : 'Notify me when a new session or series is published.'}</small></span>
+          <span className="notification-setting-copy"><strong>{ar ? 'محتوى جديد' : 'New content'}</strong><small>{ar ? 'إشعار عند إضافة جلسة أو سلسلة جديدة إلى الأرشيف.' : 'Notify me when a new session or series is added to the archive.'}</small></span>
           <input type="checkbox" checked={preferences.new_content} disabled={preferencesBusy} onChange={(event) => void savePreferences({ new_content: event.target.checked })} />
         </label>
 
