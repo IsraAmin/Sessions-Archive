@@ -1,4 +1,29 @@
 /* Event admin form spacing — keep dense editing readable without changing the visual language. */
+.admin-events-workspace,
+.admin-events-v2-layout,
+.admin-event-editor,
+.admin-event-v2-form,
+.smart-event-creator,
+.smart-event-creator-form,
+.smart-competition-fields,
+.smart-event-common-details,
+.admin-competition-panel,
+.competition-details-form,
+.competition-admin-section,
+.competition-showcase-admin,
+.competition-showcase-form {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.admin-event-editor,
+.admin-competition-panel,
+.smart-event-creator-form {
+  overflow-x: clip;
+}
+
 .admin-event-v2-form {
   display: grid;
   gap: 19px;
@@ -6,11 +31,20 @@
 }
 
 .admin-event-v2-form > label,
+.admin-event-v2-form .admin-event-two > label,
+.competition-details-form > label,
+.competition-details-form .admin-event-two > label,
+.smart-event-creator-form label,
+.competition-showcase-form label {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+}
+
+.admin-event-v2-form > label,
 .admin-event-v2-form .admin-event-two > label {
   display: grid;
   gap: 8px;
-  min-width: 0;
-  margin: 0;
 }
 
 .admin-event-v2-form > label > span:first-child,
@@ -35,6 +69,24 @@
   resize: vertical;
 }
 
+.admin-event-v2-form input,
+.admin-event-v2-form select,
+.admin-event-v2-form textarea,
+.competition-details-form input,
+.competition-details-form select,
+.competition-details-form textarea,
+.smart-event-creator-form input,
+.smart-event-creator-form select,
+.smart-event-creator-form textarea,
+.competition-showcase-form input,
+.competition-showcase-form select,
+.competition-showcase-form textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .admin-event-v2-form small {
   display: block;
   margin-top: 1px;
@@ -44,8 +96,18 @@
   line-height: 1.65;
 }
 
-.admin-event-v2-form .admin-event-two {
+.admin-event-v2-form .admin-event-two,
+.competition-details-form .admin-event-two,
+.competition-winner-form .admin-event-two,
+.competition-showcase-form .admin-event-two,
+.smart-event-primary-grid,
+.smart-competition-grid {
+  min-width: 0;
   gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-event-v2-form .admin-event-two {
   align-items: end;
 }
 
@@ -71,13 +133,25 @@
   gap: 10px;
 }
 
+.competition-details-form,
+.competition-showcase-form,
+.smart-event-creator-form {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 720px) {
   .admin-event-v2-form {
     gap: 17px;
     padding-top: 18px;
   }
 
-  .admin-event-v2-form .admin-event-two {
+  .admin-event-v2-form .admin-event-two,
+  .competition-details-form .admin-event-two,
+  .competition-winner-form .admin-event-two,
+  .competition-showcase-form .admin-event-two,
+  .smart-event-primary-grid,
+  .smart-competition-grid {
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
   }
 }
