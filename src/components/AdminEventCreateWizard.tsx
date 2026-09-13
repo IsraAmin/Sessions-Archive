@@ -8,11 +8,9 @@ import type {
   CompetitionAttendanceMode,
   CompetitionKind,
   CompetitionParticipationMode,
-  CompetitionPhase,
   EventStatus,
   EventType,
 } from '../types/domain'
-import { Icon } from './Icon'
 import { useToast } from './ToastProvider'
 
 const eventTypes: Array<{ value: EventType; ar: string; en: string }> = [
@@ -53,16 +51,6 @@ function fromLocalInput(value: FormDataEntryValue | null) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 
-function isPublicUrl(value: string | null) {
-  if (!value) return true
-  try {
-    const url = new URL(value)
-    return url.protocol === 'https:' || url.protocol === 'http:'
-  } catch {
-    return false
-  }
-}
-
 export function AdminEventCreateWizard({ onCreated }: Props) {
   const { user } = useAuth()
   const { language } = useUi()
@@ -91,14 +79,13 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
     const description = String(values.get('description') || '').trim()
     const newCover = String(values.get('cover_url') || '').trim()
     const newFolder = String(values.get('drive_folder_url') || '').trim()
-    const registrationUrl = optionalText(values.get('registration_url'))
 
     if (title.length < 2 || !eventDate) {
       showToast({ kind: 'error', title: ar ? 'بيانات ناقصة' : 'Missing details', message: ar ? 'اكتبي اسم الفعالية وتاريخها.' : 'Add the event name and date.' })
       return
     }
     if (isCompetition && !description) {
-      showToast({ kind: 'error', title: ar ? 'وصف المسابقة مطلوب' : 'Competition description required', message: ar ? 'اكتبي وصف المسابقة، ومنه تقدري توضحي القوانين والشروط للمشاركين.' : 'Add a competition description where you can also explain rules and participation terms.' })
+      showToast({ kind: 'error', title: ar ? 'وصف المسابقة مطلوب' : 'Competition description required', message: ar ? 'اكتبي وصف المسابقة، ومنه تقدري توضحي القوانين والشروط التي كانت مطبقة.' : 'Add a competition description where you can also document the rules and terms that applied.' })
       return
     }
     if (newCover && !parseEventImageSource(newCover)) {
@@ -107,10 +94,6 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
     }
     if (newFolder && !googleDriveFolderEmbedUrl(newFolder)) {
       showToast({ kind: 'error', title: ar ? 'رابط غير صالح' : 'Invalid link', message: ar ? 'رابط مجلد Google Drive غير صالح.' : 'The Google Drive folder link is not valid.' })
-      return
-    }
-    if (isCompetition && !isPublicUrl(registrationUrl)) {
-      showToast({ kind: 'error', title: ar ? 'رابط غير صالح' : 'Invalid link', message: ar ? 'راجعي رابط التسجيل.' : 'Check the registration URL.' })
       return
     }
 
@@ -148,9 +131,9 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
           event_id: created.id,
           competition_kind: academicSubtype as CompetitionKind,
           organizer: optionalText(values.get('organizer')),
-          phase: String(values.get('phase') || 'announced') as CompetitionPhase,
-          registration_opens_at: fromLocalInput(values.get('registration_opens_at')),
-          registration_closes_at: fromLocalInput(values.get('registration_closes_at')),
+          phase: 'completed' as const,
+          registration_opens_at: null,
+          registration_closes_at: null,
           competition_starts_at: fromLocalInput(values.get('competition_starts_at')),
           competition_ends_at: fromLocalInput(values.get('competition_ends_at')),
           participation_mode: participationMode,
@@ -158,7 +141,7 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
           max_team_size: maxTeam,
           attendance_mode: String(values.get('attendance_mode') || 'in_person') as CompetitionAttendanceMode,
           eligibility: optionalText(values.get('eligibility')),
-          registration_url: registrationUrl,
+          registration_url: null,
           rules_url: null,
           prizes: optionalText(values.get('prizes')),
           tracks: optionalText(values.get('tracks')),
@@ -180,7 +163,7 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
         kind: 'success',
         title: ar ? 'تم الإنشاء' : 'Created',
         message: isCompetition
-          ? (ar ? 'تم إنشاء المسابقة مع بياناتها الأساسية. تقدري تكملي المراحل والفائزين من استوديو المسابقات.' : 'Competition created with its core details. Continue with stages and winners in Competition Studio.')
+          ? (ar ? 'تم إنشاء أرشيف المسابقة. تقدري تكملي الرحلة والنتائج والمشاركين من استوديو المسابقات.' : 'Competition archive created. Continue with the journey, results, and participant work in Competition Studio.')
           : (ar ? 'تمت إضافة الفعالية.' : 'Event created.'),
       })
       onCreated(created.id, isCompetition)
@@ -195,7 +178,7 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
   return <section className={`smart-event-creator ${open ? 'is-open' : ''}`}>
     <button type="button" className="smart-event-creator-trigger" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
       <span className="smart-event-creator-trigger-icon">＋</span>
-      <span><strong>{ar ? 'إضافة فعالية جديدة' : 'Create new event'}</strong><small>{ar ? 'فعالية عادية أو مسابقة أكاديمية من نفس المكان' : 'Regular event or academic competition from one place'}</small></span>
+      <span><strong>{ar ? 'إضافة فعالية جديدة' : 'Create new event'}</strong><small>{ar ? 'فعالية عادية أو مسابقة أكاديمية مؤرشفة من نفس المكان' : 'Regular event or archived academic competition from one place'}</small></span>
       <b aria-hidden="true">{open ? '−' : '↓'}</b>
     </button>
 
@@ -203,7 +186,7 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
       <div className="smart-event-form-heading">
         <span className="eyebrow">{ar ? 'ابدئي بالنوع' : 'Start with the type'}</span>
         <h3>{ar ? 'البيانات تتغير حسب الفعالية' : 'The form adapts to the event'}</h3>
-        <p>{ar ? 'اختيار «أكاديمية» يفتح النوع الأكاديمي، واختيار مسابقة يضيف فورًا التسجيل والفرق والجوائز والمواعيد.' : 'Choosing Academic reveals the academic subtype; choosing a competition immediately adds registration, team, prize, and schedule fields.'}</p>
+        <p>{ar ? 'اختيار «أكاديمية» يفتح النوع الأكاديمي، واختيار مسابقة يضيف بيانات التوثيق والفرق والجوائز والتواريخ.' : 'Choosing Academic reveals the academic subtype; choosing a competition adds archive, team, prize, and historical date fields.'}</p>
       </div>
 
       <div className="smart-event-primary-grid">
@@ -226,22 +209,18 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
       </section>}
 
       {isCompetition && <section className="smart-competition-fields">
-        <div className="smart-competition-title"><span className="smart-competition-trophy" aria-hidden="true">🏆</span><div><span className="eyebrow">{ar ? 'قالب المسابقة' : 'Competition template'}</span><h4>{ar ? 'بيانات تظهر فقط للمسابقات' : 'Competition-only details'}</h4><p>{ar ? 'التسجيل مستقل عن موعد المسابقة، والنتائج تضاف بعدين كمسودة ثم تنشريها وقت ما تكون جاهزة.' : 'Registration is independent from the competition date, and results can be drafted and published later.'}</p></div></div>
+        <div className="smart-competition-title"><span className="smart-competition-trophy" aria-hidden="true">🏆</span><div><span className="eyebrow">{ar ? 'قالب المسابقة' : 'Competition template'}</span><h4>{ar ? 'توثيق مسابقة انتهت' : 'Archive a completed competition'}</h4><p>{ar ? 'ما في حالة تسجيل أو تسجيل مفتوح/مغلق. أضيفي فقط البيانات التاريخية المفيدة للأرشيف.' : 'There is no live registration status. Add only historical information that is useful in the archive.'}</p></div></div>
 
         <div className="smart-competition-grid">
           <label><span>{ar ? 'الجهة المنظمة' : 'Organizer'}</span><input name="organizer" /></label>
-          <label><span>{ar ? 'المرحلة الحالية' : 'Current phase'}</span><select name="phase" defaultValue="announced"><option value="announced">{ar ? 'تم الإعلان — التسجيل قريبًا' : 'Announced — registration soon'}</option><option value="registration">{ar ? 'التسجيل مفتوح' : 'Registration open'}</option><option value="in_progress">{ar ? 'المسابقة جارية' : 'Competition in progress'}</option><option value="judging">{ar ? 'التحكيم / انتظار النتائج' : 'Judging / awaiting results'}</option><option value="completed">{ar ? 'انتهت' : 'Completed'}</option></select></label>
-          <label><span>{ar ? 'فتح التسجيل' : 'Registration opens'}</span><input name="registration_opens_at" type="datetime-local" /></label>
-          <label><span>{ar ? 'قفل التسجيل' : 'Registration closes'}</span><input name="registration_closes_at" type="datetime-local" /></label>
-          <label><span>{ar ? 'بداية المسابقة' : 'Competition starts'}</span><input name="competition_starts_at" type="datetime-local" /></label>
-          <label><span>{ar ? 'نهاية المسابقة' : 'Competition ends'}</span><input name="competition_ends_at" type="datetime-local" /></label>
-          <label><span>{ar ? 'المشاركة' : 'Participation'}</span><select name="participation_mode" value={participationMode} onChange={(event) => setParticipationMode(event.target.value as CompetitionParticipationMode)}><option value="individual">{ar ? 'فردي' : 'Individual'}</option><option value="team">{ar ? 'فرق' : 'Teams'}</option><option value="both">{ar ? 'فردي أو فرق' : 'Individual or teams'}</option></select></label>
           <label><span>{ar ? 'طريقة الحضور' : 'Attendance'}</span><select name="attendance_mode" defaultValue="in_person"><option value="in_person">{ar ? 'حضوري' : 'In person'}</option><option value="online">Online</option><option value="hybrid">Hybrid</option></select></label>
+          <label><span>{ar ? 'بداية المسابقة — اختياري' : 'Competition started — optional'}</span><input name="competition_starts_at" type="datetime-local" /></label>
+          <label><span>{ar ? 'نهاية المسابقة — اختياري' : 'Competition ended — optional'}</span><input name="competition_ends_at" type="datetime-local" /></label>
+          <label><span>{ar ? 'المشاركة' : 'Participation'}</span><select name="participation_mode" value={participationMode} onChange={(event) => setParticipationMode(event.target.value as CompetitionParticipationMode)}><option value="individual">{ar ? 'فردي' : 'Individual'}</option><option value="team">{ar ? 'فرق' : 'Teams'}</option><option value="both">{ar ? 'فردي أو فرق' : 'Individual or teams'}</option></select></label>
           {participationMode !== 'individual' && <><label><span>{ar ? 'عدد أعضاء الفريق — من' : 'Team size — from'}</span><input name="min_team_size" type="number" min="1" defaultValue="2" /></label><label><span>{ar ? 'عدد أعضاء الفريق — إلى' : 'Team size — to'}</span><input name="max_team_size" type="number" min="1" defaultValue="4" /></label></>}
         </div>
 
-        <label><span>{ar ? 'من يقدر يشارك؟' : 'Eligibility'}</span><textarea name="eligibility" rows={3} placeholder={ar ? 'مثال: طلاب كلية علوم الحاسوب من كل المستويات…' : 'Example: Computer Science students from all levels…'} /></label>
-        <label><span>{ar ? 'رابط التسجيل' : 'Registration URL'}</span><input name="registration_url" type="url" placeholder="https://..." /></label>
+        <label><span>{ar ? 'من كان يقدر يشارك؟ — اختياري' : 'Eligibility — optional'}</span><textarea name="eligibility" rows={3} placeholder={ar ? 'مثال: طلاب كلية علوم الحاسوب من كل المستويات…' : 'Example: Computer Science students from all levels…'} /></label>
         <div className="smart-event-primary-grid">
           <label><span>{ar ? 'الجوائز — اختياري' : 'Prizes — optional'}</span><textarea name="prizes" rows={3} placeholder={ar ? 'المركز الأول… المركز الثاني… أو اتركيها فاضية.' : '1st place… 2nd place… or leave blank.'} /></label>
           <label><span>{ar ? 'المسارات / Tracks — اختياري' : 'Tracks — optional'}</span><textarea name="tracks" rows={3} placeholder={ar ? 'Web، AI، Security… أو اتركيها فاضية.' : 'Web, AI, Security… or leave blank.'} /></label>
@@ -249,18 +228,18 @@ export function AdminEventCreateWizard({ onCreated }: Props) {
       </section>}
 
       <section className="smart-event-common-details">
-        <div className="smart-common-title"><span>02</span><div><strong>{isCompetition ? (ar ? 'وصف المسابقة والتفاصيل العامة' : 'Competition description & general details') : (ar ? 'التفاصيل العامة' : 'General details')}</strong><small>{isCompetition ? (ar ? 'اكتبي الوصف والقوانين والشروط هنا كنص واضح للمشارك، بدون رابط منفصل للقوانين.' : 'Write the description, rules, and participation terms here as clear text; there is no separate rules link.') : (ar ? 'الغلاف والألبوم تقدرِ تعدليهم بعد الحفظ أيضًا.' : 'Cover and album can still be edited after saving.')}</small></div></div>
-        <label><span>{isCompetition ? (ar ? 'وصف المسابقة' : 'Competition description') : (ar ? 'الوصف' : 'Description')}</span><textarea name="description" rows={5} required={isCompetition} placeholder={isCompetition ? (ar ? 'اكتبي فكرة المسابقة، طريقة المشاركة، وأي قوانين أو شروط مهمة…' : 'Describe the competition, participation flow, and any important rules or terms…') : undefined} /></label>
+        <div className="smart-common-title"><span>02</span><div><strong>{isCompetition ? (ar ? 'وصف المسابقة والتفاصيل العامة' : 'Competition description & general details') : (ar ? 'التفاصيل العامة' : 'General details')}</strong><small>{isCompetition ? (ar ? 'اكتبي الوصف والقوانين والشروط التي كانت مطبقة كنص واضح داخل الأرشيف.' : 'Document the description, rules, and terms that applied as clear archive text.') : (ar ? 'الغلاف والألبوم تقدري تعدليهم بعد الحفظ أيضًا.' : 'Cover and album can still be edited after saving.')}</small></div></div>
+        <label><span>{isCompetition ? (ar ? 'وصف المسابقة' : 'Competition description') : (ar ? 'الوصف' : 'Description')}</span><textarea name="description" rows={5} required={isCompetition} placeholder={isCompetition ? (ar ? 'اكتبي فكرة المسابقة، كيف تمت، وأي قوانين أو شروط مهمة…' : 'Describe the competition, how it ran, and any important rules or terms…') : undefined} /></label>
         <div className="smart-event-primary-grid">
           <label><span>{ar ? 'رابط مجلد Drive — اختياري' : 'Drive folder — optional'}</span><input name="drive_folder_url" type="url" placeholder="https://drive.google.com/drive/folders/..." /></label>
           <label><span>{ar ? 'رابط غلاف — اختياري' : 'Cover URL — optional'}</span><input name="cover_url" type="url" placeholder={ar ? 'أو ارفعيه من الجهاز بعد الحفظ' : 'Or upload it from your device after saving'} /></label>
-          <label><span>{ar ? 'الحالة' : 'Status'}</span><select name="status" defaultValue="published"><option value="published">{ar ? 'منشورة' : 'Published'}</option><option value="draft">{ar ? 'مسودة' : 'Draft'}</option></select></label>
+          <label><span>{ar ? 'حالة النشر' : 'Publishing status'}</span><select name="status" defaultValue="published"><option value="published">{ar ? 'منشورة' : 'Published'}</option><option value="draft">{ar ? 'مسودة' : 'Draft'}</option></select></label>
           <label className="smart-featured-check"><input name="featured" type="checkbox" /><span>{ar ? 'فعالية مميزة' : 'Featured event'}</span></label>
         </div>
       </section>
 
       <div className="smart-event-create-actions">
-        <button className="button button-primary" disabled={busy}>{busy ? (ar ? 'جارٍ الإنشاء…' : 'Creating…') : isCompetition ? (ar ? 'إنشاء المسابقة' : 'Create competition') : (ar ? 'إنشاء الفعالية' : 'Create event')}</button>
+        <button className="button button-primary" disabled={busy}>{busy ? (ar ? 'جارٍ الإنشاء…' : 'Creating…') : isCompetition ? (ar ? 'إنشاء أرشيف المسابقة' : 'Create competition archive') : (ar ? 'إنشاء الفعالية' : 'Create event')}</button>
         <button className="button" type="button" onClick={() => { setOpen(false); resetSmartFields() }} disabled={busy}>{ar ? 'إلغاء' : 'Cancel'}</button>
       </div>
     </form>}
