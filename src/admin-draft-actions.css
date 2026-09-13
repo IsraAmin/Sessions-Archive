@@ -1,0 +1,130 @@
+/* Draft/admin actions — clear, quiet, reversible action pairs. */
+
+.competition-winner-admin-list article > .admin-event-form-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(76px, 1fr));
+  gap: 8px;
+  min-width: 172px;
+  margin: 0;
+  align-self: center;
+}
+
+.competition-winner-admin-list article > .admin-event-form-actions > button.text-action,
+.competition-showcase-admin-card-head > button.text-action.danger-text,
+.admin-event-editor-header > button.text-action.danger-text {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 13px;
+  border: 1px solid var(--v2-border);
+  border-radius: 11px;
+  background: var(--v2-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--v2-text) 6%, transparent);
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .16s ease, border-color .16s ease, background-color .16s ease, box-shadow .16s ease;
+}
+
+.competition-winner-admin-list article > .admin-event-form-actions > button.text-action:first-child {
+  border-color: color-mix(in srgb, var(--v2-brand) 24%, var(--v2-border));
+  background: color-mix(in srgb, var(--v2-brand-soft) 56%, var(--v2-surface));
+  color: var(--v2-brand);
+}
+
+.competition-winner-admin-list article > .admin-event-form-actions > button.text-action.danger-text,
+.competition-showcase-admin-card-head > button.text-action.danger-text,
+.admin-event-editor-header > button.text-action.danger-text {
+  border-color: color-mix(in srgb, var(--v2-danger) 24%, var(--v2-border));
+  background: color-mix(in srgb, var(--v2-danger) 7%, var(--v2-surface));
+  color: var(--v2-danger);
+}
+
+.competition-winner-admin-list article > .admin-event-form-actions > button.text-action:hover:not(:disabled),
+.competition-showcase-admin-card-head > button.text-action.danger-text:hover:not(:disabled),
+.admin-event-editor-header > button.text-action.danger-text:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--v2-text) 9%, transparent);
+}
+
+.competition-winner-admin-list article > .admin-event-form-actions > button.text-action:first-child:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--v2-brand) 40%, var(--v2-border));
+  background: color-mix(in srgb, var(--v2-brand-soft) 78%, var(--v2-surface));
+}
+
+.competition-winner-admin-list article > .admin-event-form-actions > button.text-action.danger-text:hover:not(:disabled),
+.competition-showcase-admin-card-head > button.text-action.danger-text:hover:not(:disabled),
+.admin-event-editor-header > button.text-action.danger-text:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--v2-danger) 42%, var(--v2-border));
+  background: color-mix(in srgb, var(--v2-danger) 11%, var(--v2-surface));
+}
+
+.competition-winner-admin-list article > .admin-event-form-actions > button.text-action:focus-visible,
+.competition-showcase-admin-card-head > button.text-action.danger-text:focus-visible,
+.admin-event-editor-header > button.text-action.danger-text:focus-visible,
+.admin-v3-actions .button-ghost:focus-visible,
+.admin-v3-actions .button.danger:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--v2-brand) 24%, transparent);
+  outline-offset: 2px;
+}
+
+.competition-winner-admin-list article > .admin-event-form-actions > button.text-action:disabled,
+.competition-showcase-admin-card-head > button.text-action.danger-text:disabled,
+.admin-event-editor-header > button.text-action.danger-text:disabled {
+  opacity: .52;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Session management already has real buttons; give its Edit/Delete pair the same quality floor. */
+.admin-v3-actions .button-ghost,
+.admin-v3-actions .button.danger {
+  min-height: 40px;
+  padding-inline: 13px;
+  border-radius: 11px;
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.admin-v3-actions .button-ghost {
+  border: 1px solid color-mix(in srgb, var(--v2-brand) 22%, var(--v2-border));
+  background: color-mix(in srgb, var(--v2-brand-soft) 44%, var(--v2-surface));
+  color: var(--v2-brand);
+}
+
+.admin-v3-actions .button.danger {
+  border: 1px solid color-mix(in srgb, var(--v2-danger) 24%, var(--v2-border));
+  background: color-mix(in srgb, var(--v2-danger) 7%, var(--v2-surface));
+  color: var(--v2-danger);
+}
+
+@media (max-width: 520px) {
+  .competition-winner-admin-list article > .admin-event-form-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .competition-winner-admin-list article > .admin-event-form-actions > button.text-action {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .competition-showcase-admin-card-head > button.text-action.danger-text,
+  .admin-event-editor-header > button.text-action.danger-text {
+    min-height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .competition-winner-admin-list article > .admin-event-form-actions > button.text-action,
+  .competition-showcase-admin-card-head > button.text-action.danger-text,
+  .admin-event-editor-header > button.text-action.danger-text {
+    transition: none;
+  }
+}
