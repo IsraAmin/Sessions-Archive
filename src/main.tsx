@@ -29,6 +29,7 @@ import './competition.css'
 import './competition-showcase.css'
 import './admin-event-create-wizard.css'
 import './event-detail-direction.css'
+import './admin-draft-actions.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
