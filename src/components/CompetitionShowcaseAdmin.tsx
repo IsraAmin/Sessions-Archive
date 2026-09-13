@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { errorMessage } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import type { CompetitionEntry, CompetitionEntryLink, CompetitionWinner } from '../types/domain'
+import { ConfirmDialog } from './ConfirmDialog'
 import { useToast } from './ToastProvider'
 import { useUi } from '../hooks/useUi'
 
@@ -50,6 +51,9 @@ export function CompetitionShowcaseAdmin({ eventId, resultsPublished, showcasePu
   const [published, setPublished] = useState(showcasePublished)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [entryDeleteTarget, setEntryDeleteTarget] = useState<CompetitionEntry | null>(null)
+  const [linkDeleteTarget, setLinkDeleteTarget] = useState<CompetitionEntryLink | null>(null)
 
   useEffect(() => setPublished(showcasePublished), [showcasePublished])
 
@@ -152,6 +156,40 @@ export function CompetitionShowcaseAdmin({ eventId, resultsPublished, showcasePu
     }
   }
 
+  async function saveEntry(entry: CompetitionEntry, formEvent: FormEvent<HTMLFormElement>) {
+    formEvent.preventDefault()
+    const values = new FormData(formEvent.currentTarget)
+    const teamName = String(values.get('team_name') || '').trim()
+    const workTitle = String(values.get('work_title') || '').trim()
+    if (!teamName || !workTitle) {
+      showToast({ kind: 'error', title: ar ? 'بيانات ناقصة' : 'Missing details', message: ar ? 'اسم الفريق واسم المشروع/العمل مطلوبان.' : 'Team name and work title are required.' })
+      return
+    }
+
+    setBusy(true)
+    try {
+      const { error } = await db.from('competition_entries').update({
+        winner_id: optionalText(values.get('winner_id')),
+        team_name: teamName,
+        leader_name: optionalText(values.get('leader_name')),
+        members: optionalText(values.get('members')),
+        work_title: workTitle,
+        work_type: optionalText(values.get('work_type')),
+        track: optionalText(values.get('track')),
+        description: optionalText(values.get('description')),
+        updated_at: new Date().toISOString(),
+      }).eq('id', entry.id)
+      if (error) throw error
+      setEditingId(null)
+      showToast({ kind: 'success', title: ar ? 'تم حفظ التعديل' : 'Changes saved', message: ar ? 'تم تحديث بيانات المشاركة في الأرشيف.' : 'Participant archive entry updated.' })
+      await load()
+    } catch (error) {
+      showToast({ kind: 'error', title: ar ? 'تعذر حفظ التعديل' : 'Could not save changes', message: errorMessage(error) })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function addLink(entryId: string, formEvent: FormEvent<HTMLFormElement>) {
     formEvent.preventDefault()
     const form = formEvent.currentTarget
@@ -176,11 +214,14 @@ export function CompetitionShowcaseAdmin({ eventId, resultsPublished, showcasePu
     }
   }
 
-  async function removeEntry(entryId: string) {
+  async function removeEntry() {
+    if (!entryDeleteTarget) return
     setBusy(true)
     try {
-      const { error } = await db.from('competition_entries').delete().eq('id', entryId)
+      const { error } = await db.from('competition_entries').delete().eq('id', entryDeleteTarget.id)
       if (error) throw error
+      if (editingId === entryDeleteTarget.id) setEditingId(null)
+      setEntryDeleteTarget(null)
       await load()
     } catch (error) {
       showToast({ kind: 'error', title: ar ? 'تعذر حذف المشاركة' : 'Could not delete entry', message: errorMessage(error) })
@@ -189,11 +230,13 @@ export function CompetitionShowcaseAdmin({ eventId, resultsPublished, showcasePu
     }
   }
 
-  async function removeLink(linkId: string) {
+  async function removeLink() {
+    if (!linkDeleteTarget) return
     setBusy(true)
     try {
-      const { error } = await db.from('competition_entry_links').delete().eq('id', linkId)
+      const { error } = await db.from('competition_entry_links').delete().eq('id', linkDeleteTarget.id)
       if (error) throw error
+      setLinkDeleteTarget(null)
       await load()
     } catch (error) {
       showToast({ kind: 'error', title: ar ? 'تعذر حذف الرابط' : 'Could not delete link', message: errorMessage(error) })
@@ -266,15 +309,38 @@ export function CompetitionShowcaseAdmin({ eventId, resultsPublished, showcasePu
       {entries.map((entry, index) => {
         const entryLinks = linksByEntry.get(entry.id) ?? []
         const winner = entry.winner_id ? winners.find((item) => item.id === entry.winner_id) : null
-        return <article key={entry.id} className="competition-showcase-admin-card">
-          <div className="competition-showcase-admin-card-head"><span>{String(index + 1).padStart(2, '0')}</span><div><strong dir="auto">{entry.team_name}</strong><small dir="auto">{entry.work_title}</small></div>{winner && <b>{winner.rank ? `#${winner.rank}` : '★'} {winner.award_title || (ar ? 'فائز' : 'Winner')}</b>}<button type="button" className="text-action danger-text" disabled={busy} onClick={() => void removeEntry(entry.id)}>{ar ? 'حذف' : 'Delete'}</button></div>
-          <div className="competition-showcase-admin-meta">{entry.leader_name && <span><small>{ar ? 'القائد' : 'Leader'}</small><strong dir="auto">{entry.leader_name}</strong></span>}{entry.work_type && <span><small>{ar ? 'نوع العمل' : 'Type'}</small><strong dir="auto">{entry.work_type}</strong></span>}{entry.track && <span><small>{ar ? 'المسار' : 'Track'}</small><strong dir="auto">{entry.track}</strong></span>}</div>
-          {entry.description && <p dir="auto">{entry.description}</p>}
-          {entry.members && <details><summary>{ar ? 'أعضاء الفريق' : 'Team members'}</summary><p dir="auto">{entry.members}</p></details>}
-          {entryLinks.length > 0 && <div className="competition-showcase-admin-links">{entryLinks.map((link) => <span key={link.id}><a href={link.link_url} target="_blank" rel="noopener noreferrer">{linkName(link.link_url, link.label)} ↗</a><button type="button" disabled={busy} onClick={() => void removeLink(link.id)} aria-label={ar ? 'حذف الرابط' : 'Delete link'}>×</button></span>)}</div>}
+        const editing = editingId === entry.id
+        return <article key={entry.id} className={`competition-showcase-admin-card ${editing ? 'is-editing' : ''}`}>
+          <div className="competition-showcase-admin-card-head">
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <div><strong dir="auto">{entry.team_name}</strong><small dir="auto">{entry.work_title}</small></div>
+            {winner && <b>{winner.rank ? `#${winner.rank}` : '★'} {winner.award_title || (ar ? 'فائز' : 'Winner')}</b>}
+            <div className="competition-showcase-card-actions">
+              <button type="button" className="text-action" disabled={busy} onClick={() => setEditingId(editing ? null : entry.id)}>{editing ? (ar ? 'إغلاق التعديل' : 'Close edit') : (ar ? 'تعديل' : 'Edit')}</button>
+              <button type="button" className="text-action danger-text" disabled={busy} onClick={() => setEntryDeleteTarget(entry)}>{ar ? 'حذف' : 'Delete'}</button>
+            </div>
+          </div>
+
+          {editing ? <form className="competition-showcase-form competition-showcase-edit-form" onSubmit={(formEvent) => void saveEntry(entry, formEvent)}>
+            <div className="admin-event-two"><label><span>{ar ? 'اسم الفريق / المشارك' : 'Team / participant name'}</span><input name="team_name" required defaultValue={entry.team_name} /></label><label><span>{ar ? 'قائد الفريق — اختياري' : 'Team leader — optional'}</span><input name="leader_name" defaultValue={entry.leader_name ?? ''} /></label></div>
+            <label><span>{ar ? 'أعضاء الفريق — اختياري' : 'Team members — optional'}</span><textarea name="members" rows={3} defaultValue={entry.members ?? ''} /></label>
+            <div className="admin-event-two"><label><span>{ar ? 'اسم المشروع / الفكرة / العمل' : 'Project / idea / work title'}</span><input name="work_title" required defaultValue={entry.work_title} /></label><label><span>{ar ? 'نوع العمل — اختياري' : 'Work type — optional'}</span><input name="work_type" defaultValue={entry.work_type ?? ''} /></label></div>
+            <div className="admin-event-two"><label><span>{ar ? 'المسار — اختياري' : 'Track — optional'}</span><input name="track" defaultValue={entry.track ?? ''} /></label><label><span>{ar ? 'ربطه بفائز — اختياري' : 'Link to a winner — optional'}</span><select name="winner_id" defaultValue={entry.winner_id ?? ''}><option value="">{ar ? 'ليس ضمن الفائزين / بدون ربط' : 'Not a winner / no link'}</option>{winners.map((item) => <option key={item.id} value={item.id}>{item.rank ? `#${item.rank} — ` : ''}{item.entry_name}</option>)}</select></label></div>
+            <label><span>{ar ? 'وصف العمل — اختياري' : 'Work description — optional'}</span><textarea name="description" rows={4} defaultValue={entry.description ?? ''} /></label>
+            <div className="admin-event-form-actions"><button className="button button-primary" disabled={busy}>{ar ? 'حفظ التعديل' : 'Save changes'}</button><button className="button" type="button" onClick={() => setEditingId(null)} disabled={busy}>{ar ? 'إلغاء' : 'Cancel'}</button></div>
+          </form> : <>
+            <div className="competition-showcase-admin-meta">{entry.leader_name && <span><small>{ar ? 'القائد' : 'Leader'}</small><strong dir="auto">{entry.leader_name}</strong></span>}{entry.work_type && <span><small>{ar ? 'نوع العمل' : 'Type'}</small><strong dir="auto">{entry.work_type}</strong></span>}{entry.track && <span><small>{ar ? 'المسار' : 'Track'}</small><strong dir="auto">{entry.track}</strong></span>}</div>
+            {entry.description && <p dir="auto">{entry.description}</p>}
+            {entry.members && <details><summary>{ar ? 'أعضاء الفريق' : 'Team members'}</summary><p dir="auto">{entry.members}</p></details>}
+          </>}
+
+          {entryLinks.length > 0 && <div className="competition-showcase-admin-links">{entryLinks.map((link) => <span key={link.id}><a href={link.link_url} target="_blank" rel="noopener noreferrer">{linkName(link.link_url, link.label)} ↗</a><button type="button" disabled={busy} onClick={() => setLinkDeleteTarget(link)} aria-label={ar ? 'حذف الرابط' : 'Delete link'}>×</button></span>)}</div>}
           <form className="competition-showcase-link-form" onSubmit={(formEvent) => void addLink(entry.id, formEvent)}><input name="label" placeholder={ar ? 'اسم الرابط — اختياري' : 'Link label — optional'} /><input name="link_url" type="url" required placeholder="https://..." /><button className="button" disabled={busy}>{ar ? 'إضافة رابط' : 'Add link'}</button></form>
         </article>
       })}
     </div> : <div className="competition-showcase-empty"><strong>{ar ? 'ما أضفتِ أي فريق بعد' : 'No teams added yet'}</strong><span>{ar ? 'ابدئي بأول فريق ومشروعه، وسيظل كل شيء مخفيًا حتى تضغطي نشر.' : 'Add the first team and its work. Everything stays hidden until you publish.'}</span></div>}
+
+    <ConfirmDialog open={Boolean(entryDeleteTarget)} title={ar ? 'حذف المشاركة من الأرشيف؟' : 'Delete this archive entry?'} description={ar ? `هل أنتِ متأكدة من حذف ${entryDeleteTarget?.team_name ?? 'هذه المشاركة'}؟ سيُحذف المشروع وروابطه من أرشيف المسابقة.` : `Are you sure you want to delete ${entryDeleteTarget?.team_name ?? 'this entry'}? Its project links will also be removed.`} confirmLabel={ar ? 'نعم، حذف المشاركة' : 'Yes, delete entry'} cancelLabel={ar ? 'إلغاء' : 'Cancel'} tone="danger" busy={busy} onCancel={() => !busy && setEntryDeleteTarget(null)} onConfirm={() => void removeEntry()} />
+    <ConfirmDialog open={Boolean(linkDeleteTarget)} title={ar ? 'حذف الرابط؟' : 'Delete link?'} description={ar ? 'هل أنتِ متأكدة من حذف هذا الرابط من مشروع الفريق؟' : 'Are you sure you want to remove this link from the team project?'} confirmLabel={ar ? 'نعم، حذف الرابط' : 'Yes, delete link'} cancelLabel={ar ? 'إلغاء' : 'Cancel'} tone="danger" busy={busy} onCancel={() => !busy && setLinkDeleteTarget(null)} onConfirm={() => void removeLink()} />
   </section>
 }
