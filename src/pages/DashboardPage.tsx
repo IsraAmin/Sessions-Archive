@@ -9,6 +9,7 @@ import { errorMessage } from '../lib/errors'
 
 type ViewedRow = { id: string; session_id: string; viewed_at: string; session: { id: string; title: string; starts_at: string } | null }
 type ProgressRow = { id: string; video_id: string; seconds: number; percent: number; updated_at: string; video: { id: string; title: string; session_id: string; session: { id: string; title: string } | null } | null }
+type ArchiveSessionRow = { id: string; title: string; starts_at: string }
 
 export function DashboardPage() {
   const { user } = useAuth()
@@ -17,6 +18,7 @@ export function DashboardPage() {
   const [bookmarks, setBookmarks] = useState(0)
   const [feedback, setFeedback] = useState(0)
   const [progress, setProgress] = useState<ProgressRow[]>([])
+  const [archiveSessions, setArchiveSessions] = useState<ArchiveSessionRow[]>([])
   const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
@@ -27,17 +29,18 @@ export function DashboardPage() {
       supabase.from('bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
       supabase.from('feedback').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
       supabase.from('video_progress').select('id,video_id,seconds,percent,updated_at,video:session_videos(id,title,session_id,session:sessions(id,title))').eq('user_id', user.id).lt('percent', 95).order('updated_at', { ascending: false }).limit(6),
-    ]).then(([viewResult, bookmarkResult, feedbackResult, progressResult]) => {
-      const firstError = viewResult.error || bookmarkResult.error || feedbackResult.error || progressResult.error
+      supabase.from('sessions').select('id,title,starts_at').eq('status', 'published').lte('starts_at', new Date().toISOString()).order('starts_at', { ascending: false }),
+    ]).then(([viewResult, bookmarkResult, feedbackResult, progressResult, archiveResult]) => {
+      const firstError = viewResult.error || bookmarkResult.error || feedbackResult.error || progressResult.error || archiveResult.error
       if (firstError) { setLoadError(errorMessage(firstError)); return }
       setViews((viewResult.data ?? []) as unknown as ViewedRow[])
       setBookmarks(bookmarkResult.count ?? 0)
       setFeedback(feedbackResult.count ?? 0)
       setProgress((progressResult.data ?? []) as unknown as ProgressRow[])
+      setArchiveSessions((archiveResult.data ?? []) as ArchiveSessionRow[])
     })
   }, [user?.id])
 
-  const calendarSessions = views.flatMap((row) => row.session ? [row.session] : [])
   const ar = language === 'ar'
 
   return <section>
@@ -50,7 +53,7 @@ export function DashboardPage() {
       <StatCard label={t('dashboard.progress')} value={progress.length} />
     </div>
 
-    <SessionCalendar sessions={calendarSessions} />
+    <SessionCalendar sessions={archiveSessions} />
 
     <div className="dashboard-columns">
       <section className="panel"><div className="panel-heading"><h2>{ar ? 'آخر الجلسات التي فتحتها' : 'Recently viewed sessions'}</h2></div><div className="list">
