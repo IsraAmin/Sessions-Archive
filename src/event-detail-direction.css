@@ -1,0 +1,26 @@
+.event-story-page[dir='rtl'] {
+  direction: rtl;
+  text-align: right;
+}
+
+.event-story-page[dir='ltr'] {
+  direction: ltr;
+  text-align: left;
+}
+
+.event-story-page[dir='rtl'] [dir='auto'] {
+  direction: rtl;
+  text-align: inherit;
+}
+
+.event-story-page[dir='ltr'] [dir='auto'] {
+  direction: ltr;
+  text-align: inherit;
+}
+
+.event-story-page .competition-phase-step,
+.event-story-page .competition-timeline-number,
+.event-story-page .competition-winner-rank,
+.event-story-page .competition-info-index {
+  text-align: center;
+}
