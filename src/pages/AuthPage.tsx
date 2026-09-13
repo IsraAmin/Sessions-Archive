@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useUi } from '../hooks/useUi'
 import { errorMessage } from '../lib/errors'
@@ -32,30 +32,19 @@ function authErrorMessage(error: unknown, language: 'ar' | 'en') {
   return base
 }
 
-function safeNextPath(value: string | null) {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return null
-  return value
-}
-
 export function AuthPage() {
   const { user, signIn, signUp } = useAuth()
   const { t, language } = useUi()
   const { showToast } = useToast()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const requestedMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
-  const requestedPath = safeNextPath(searchParams.get('next'))
-  const contentGate = searchParams.get('reason') === 'content'
-  const [mode, setMode] = useState<'signin' | 'signup'>(requestedMode)
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => { setMode(requestedMode) }, [requestedMode])
-
-  if (user) return <Navigate to={requestedPath ?? '/dashboard'} replace />
+  if (user) return <Navigate to="/dashboard" replace />
 
   async function submit(event: FormEvent) {
     event.preventDefault(); setBusy(true); setMessage('')
@@ -63,7 +52,7 @@ export function AuthPage() {
       if (mode === 'signin') {
         await signIn(email.trim(), password)
         showToast({ kind: 'success', title: t('common.success'), message: t('auth.signIn') })
-        navigate(requestedPath ?? '/dashboard', { replace: true })
+        navigate('/dashboard', { replace: true })
       } else {
         await signUp(email.trim(), password, fullName.trim())
         setMessage(t('auth.checkEmail'))
@@ -78,7 +67,6 @@ export function AuthPage() {
 
   return <section className="auth-panel panel narrow auth-panel-v2">
     <div className="eyebrow">{t('auth.welcome')}</div><h1>{mode === 'signin' ? t('auth.signIn') : t('auth.signUp')}</h1>
-    {contentGate && <p className="notice" role="note">{language === 'ar' ? 'أنشئ حسابًا أو سجّل دخولك أولًا لمشاهدة تفاصيل الجلسات والفعاليات والمحتوى الكامل.' : 'Create an account or sign in first to view session and event details and full content.'}</p>}
     <form onSubmit={submit} className="stack">
       {mode === 'signup' && <label>{t('auth.fullName')}<input value={fullName} onChange={(e) => setFullName(e.target.value)} required /></label>}
       <label>{t('auth.email')}<input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
