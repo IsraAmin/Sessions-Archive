@@ -6,6 +6,7 @@ import type { CollegeEvent, CompetitionDetails, CompetitionStage, CompetitionWin
 import { ConfirmDialog } from './ConfirmDialog'
 import { Icon } from './Icon'
 import { CompetitionShowcaseAdmin } from './CompetitionShowcaseAdmin'
+import { CompetitionWinnerEditor } from './CompetitionWinnerEditor'
 import { useToast } from './ToastProvider'
 import { useUi } from '../hooks/useUi'
 
@@ -303,7 +304,8 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
     </form>
 
     <section className="competition-admin-section">
-      <div className="competition-admin-section-head"><div><span className="eyebrow">{ar ? 'Timeline' : 'Timeline'}</span><h4>{ar ? 'مراحل المسابقة' : 'Competition stages'}</h4></div><small>{ar ? 'اختياري' : 'Optional'}</small></div>
+      <div className="competition-admin-section-head"><div><span className="eyebrow">Timeline</span><h4>{ar ? 'مراحل المسابقة' : 'Competition stages'}</h4></div><small>{ar ? 'اختياري' : 'Optional'}</small></div>
+      <p className="competition-results-note">{ar ? 'هذا القسم اختياري. أضيفي فقط المراحل الفعلية التي تهم المشاركين، مثل: فتح التسجيل، التصفيات، تسليم المشاريع، النهائي، التحكيم، أو إعلان النتائج. لو المسابقة ما عندها مراحل واضحة اتركيه فارغًا.' : 'This section is optional. Add only meaningful milestones such as registration opening, qualifiers, project submission, finals, judging, or results. Leave it empty if the competition has no clear stages.'}</p>
       <form className="competition-inline-form" onSubmit={addStage}>
         <input name="title" required maxLength={160} placeholder={ar ? 'اسم المرحلة — مثال: التصفيات' : 'Stage — e.g. Qualifiers'} />
         <input name="stage_at" type="datetime-local" />
@@ -315,7 +317,7 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
 
     <section className="competition-admin-section competition-results-admin">
       <div className="competition-admin-section-head"><div><span className="eyebrow">{ar ? 'النتائج والفائزون' : 'Results & winners'}</span><h4>{details.results_published ? (ar ? 'النتائج منشورة للطلاب' : 'Results are public') : (ar ? 'النتائج ما زالت مسودة' : 'Results are still draft')}</h4></div><button type="button" className={`button ${details.results_published ? '' : 'button-primary'}`} onClick={() => void toggleResults(!details.results_published)} disabled={busy}>{details.results_published ? (ar ? 'إخفاء النتائج' : 'Unpublish results') : (ar ? 'نشر النتائج' : 'Publish results')}</button></div>
-      <p className="competition-results-note">{ar ? 'أضيفي الفائزين براحتك. الأسماء لا تظهر للعامة إطلاقًا قبل الضغط على «نشر النتائج».' : 'Add winners at your pace. Names remain completely private until you press “Publish results”.'}</p>
+      <p className="competition-results-note">{ar ? 'أضيفي الفائزين براحتك. قبل النشر تظل الأسماء مخفية، وبعد النشر تقدري تعدّلي أي فائز في أي وقت بدون إرجاع النتائج لمسودة.' : 'Add winners at your pace. Before publishing they stay hidden, and after publishing you can still edit any winner without returning results to draft.'}</p>
       <form className="competition-winner-form" onSubmit={addWinner}>
         <div className="admin-event-two"><label><span>{ar ? 'المركز' : 'Rank'}</span><input name="rank" type="number" min="1" max="100" placeholder="1" /></label><label><span>{ar ? 'اسم الجائزة' : 'Award label'}</span><input name="award_title" placeholder={ar ? 'المركز الأول / أفضل فكرة…' : '1st place / Best idea…'} /></label></div>
         <label><span>{ar ? 'اسم الفائز أو الفريق' : 'Winner / team name'}</span><input name="entry_name" required /></label>
@@ -324,7 +326,7 @@ export function AdminCompetitionPanel({ event }: { event: CollegeEvent }) {
         <label><span>{ar ? 'رابط المشروع — اختياري' : 'Project URL — optional'}</span><input name="project_url" type="url" /></label>
         <button className="button" disabled={busy}>{ar ? 'إضافة الفائز كمسودة' : 'Add winner as draft'}</button>
       </form>
-      {orderedWinners.length > 0 && <div className="competition-winner-admin-list">{orderedWinners.map((winner) => <article key={winner.id}><span className="competition-admin-rank">{winner.rank ? `#${winner.rank}` : '★'}</span><div><strong dir="auto">{winner.entry_name}</strong><small dir="auto">{winner.award_title || winner.project_title || (ar ? 'فائز' : 'Winner')}</small>{winner.members && <p dir="auto">{winner.members}</p>}</div><button className="text-action danger-text" type="button" onClick={() => void removeWinner(winner)} disabled={busy}>{ar ? 'حذف' : 'Delete'}</button></article>)}</div>}
+      {orderedWinners.length > 0 && <div className="competition-winner-admin-list">{orderedWinners.map((winner) => <CompetitionWinnerEditor key={winner.id} winner={winner} ar={ar} busy={busy} onSaved={load} onDelete={() => void removeWinner(winner)} />)}</div>}
     </section>
 
     <CompetitionShowcaseAdmin eventId={event.id} resultsPublished={details.results_published} showcasePublished={Boolean(details.showcase_published)} winners={orderedWinners} />
