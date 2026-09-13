@@ -39,8 +39,6 @@ type SubscriptionRow = {
   auth: string
 }
 
-type SessionRow = { id: string; title: string; starts_at: string }
-type RegistrationRow = { user_id: string; session_id: string }
 type VapidRow = { public_key: string; private_key: string; subject: string }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -61,7 +59,7 @@ function defaults(userId: string): PreferenceRow {
   return {
     user_id: userId,
     push_enabled: true,
-    session_reminders: true,
+    session_reminders: false,
     session_updates: true,
     new_content: true,
     announcements: true,
@@ -72,7 +70,7 @@ function defaults(userId: string): PreferenceRow {
 
 function shouldPush(type: string, preference: PreferenceRow) {
   if (!preference.push_enabled) return false
-  if (type === 'session_reminder') return preference.session_reminders
+  if (type === 'session_reminder') return false
   if (['recording_added', 'resource_added', 'session_changed', 'certificate_ready'].includes(type)) return preference.session_updates
   if (['session_added', 'series_added'].includes(type)) return preference.new_content
   if (type === 'system') return preference.announcements
@@ -96,75 +94,9 @@ export default {
 
     const now = new Date()
     const nowIso = now.toISOString()
-    const horizonIso = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
-    let remindersCreated = 0
+    const remindersCreated = 0
 
     try {
-      const { data: upcomingData, error: upcomingError } = await ctx.supabaseAdmin
-        .from('sessions')
-        .select('id, title, starts_at')
-        .eq('status', 'published')
-        .gt('starts_at', nowIso)
-        .lte('starts_at', horizonIso)
-
-      if (upcomingError) throw upcomingError
-      const upcoming = (upcomingData ?? []) as SessionRow[]
-
-      if (upcoming.length) {
-        const sessionIds = upcoming.map((session) => session.id)
-        const { data: registrationData, error: registrationError } = await ctx.supabaseAdmin
-          .from('registrations')
-          .select('user_id, session_id')
-          .in('session_id', sessionIds)
-          .eq('attendance_status', 'registered')
-
-        if (registrationError) throw registrationError
-        const registrations = (registrationData ?? []) as RegistrationRow[]
-        const userIds = [...new Set(registrations.map((row) => row.user_id))]
-        let preferences = new Map<string, PreferenceRow>()
-
-        if (userIds.length) {
-          const { data: preferenceData, error: preferenceError } = await ctx.supabaseAdmin
-            .from('notification_preferences')
-            .select('user_id, push_enabled, session_reminders, session_updates, new_content, announcements, reminder_minutes, language')
-            .in('user_id', userIds)
-          if (preferenceError) throw preferenceError
-          preferences = new Map(((preferenceData ?? []) as PreferenceRow[]).map((row) => [row.user_id, row]))
-        }
-
-        const sessionsById = new Map(upcoming.map((session) => [session.id, session]))
-        const reminderRows = registrations.flatMap((registration) => {
-          const session = sessionsById.get(registration.session_id)
-          if (!session) return []
-          const preference = preferences.get(registration.user_id) ?? defaults(registration.user_id)
-          if (!preference.push_enabled || !preference.session_reminders) return []
-
-          const minutesUntil = (new Date(session.starts_at).getTime() - now.getTime()) / 60_000
-          if (minutesUntil <= 0 || minutesUntil > preference.reminder_minutes) return []
-
-          const minutes = preference.reminder_minutes
-          return [{
-            user_id: registration.user_id,
-            type: 'session_reminder',
-            title_ar: 'تذكير بالسيشن',
-            title_en: 'Session reminder',
-            body_ar: `تبدأ ${session.title} خلال ${minutes} دقيقة أو أقل.`,
-            body_en: `${session.title} starts in ${minutes} minutes or less.`,
-            href: `/sessions/${session.id}`,
-            dedupe_key: `session-reminder:${session.id}:${minutes}`,
-          }]
-        })
-
-        if (reminderRows.length) {
-          const { data: inserted, error: reminderError } = await ctx.supabaseAdmin
-            .from('notifications')
-            .upsert(reminderRows, { onConflict: 'user_id,dedupe_key', ignoreDuplicates: true })
-            .select('id')
-          if (reminderError) throw reminderError
-          remindersCreated = inserted?.length ?? 0
-        }
-      }
-
       const { data: deliveryData, error: deliveryError } = await ctx.supabaseAdmin
         .from('notification_push_deliveries')
         .select('notification_id, status, attempts')
@@ -239,7 +171,7 @@ export default {
             status: 'skipped',
             last_attempt_at: nowIso,
             delivered_at: nowIso,
-            last_error: 'disabled_by_user_preference',
+            last_error: notification.type === 'session_reminder' ? 'session_reminders_retired' : 'disabled_by_user_preference',
           }).eq('notification_id', notification.id)
           if (error) throw error
           skipped += 1
@@ -270,7 +202,7 @@ export default {
             await webpush.sendNotification({
               endpoint: subscription.endpoint,
               keys: { p256dh: subscription.p256dh, auth: subscription.auth },
-            }, payload, { TTL: notification.type === 'session_reminder' ? 60 * 60 : 24 * 60 * 60 })
+            }, payload, { TTL: 24 * 60 * 60 })
             successes += 1
           } catch (error) {
             const statusCode = statusCodeFrom(error)
