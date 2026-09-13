@@ -10,18 +10,15 @@ function isRecordingProvider(value: string): value is RecordingProvider {
   return ['youtube', 'google_drive', 'whatsapp', 'telegram'].includes(value)
 }
 
-type HomeView = 'pinned' | 'upcoming' | 'recent' | 'top-rated'
+type HomeView = 'pinned' | 'recent' | 'top-rated'
 
 function isHomeView(value: string | null): value is HomeView {
-  return value === 'pinned' || value === 'upcoming' || value === 'recent' || value === 'top-rated'
+  return value === 'pinned' || value === 'recent' || value === 'top-rated'
 }
 
 function applyHomeView(sessions: SearchSession[], view: HomeView | null) {
   const next = [...sessions]
   if (view === 'pinned') return next.filter((session) => Boolean(session.is_pinned))
-  if (view === 'upcoming') return next
-    .filter((session) => new Date(session.starts_at).getTime() >= Date.now())
-    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
   if (view === 'recent') return next.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   if (view === 'top-rated') return next
     .filter((session) => Number(session.rating_count || 0) > 0)
@@ -86,7 +83,7 @@ export function SessionsPage() {
       setSessions(enriched)
     } catch (err) {
       console.error('Could not load public sessions', err)
-      setError(ar ? 'تعذر تحميل السيشنات الآن. حاول التحديث مرة أخرى.' : 'Could not load sessions right now. Please refresh and try again.')
+      setError(ar ? 'تعذر تحميل الجلسات الآن. حاول التحديث مرة أخرى.' : 'Could not load sessions right now. Please refresh and try again.')
     } finally {
       setLoading(false)
     }
@@ -110,14 +107,12 @@ export function SessionsPage() {
 
   const visibleSessions = useMemo(() => applyHomeView(sessions, activeView), [sessions, activeView])
   const viewTitle = activeView === 'pinned'
-    ? (ar ? 'السيشنات المثبتة' : 'Pinned sessions')
-    : activeView === 'upcoming'
-      ? (ar ? 'السيشنات القريبة' : 'Upcoming sessions')
-      : activeView === 'recent'
-        ? (ar ? 'المضافة حديثًا للأرشيف' : 'Recently added')
-        : activeView === 'top-rated'
-          ? (ar ? 'أعلى السيشنات تقييمًا' : 'Top-rated sessions')
-          : t('sessions.title')
+    ? (ar ? 'الجلسات المثبتة' : 'Pinned sessions')
+    : activeView === 'recent'
+      ? (ar ? 'المضافة حديثًا للأرشيف' : 'Recently added')
+      : activeView === 'top-rated'
+        ? (ar ? 'أعلى الجلسات تقييمًا' : 'Top-rated sessions')
+        : t('sessions.title')
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -134,7 +129,7 @@ export function SessionsPage() {
     <section className="hero hero-v2"><div><div className="eyebrow">{t('sessions.eyebrow')}</div><h1>{viewTitle}</h1><p>{t('sessions.subtitle')}</p></div></section>
     <form className="search-panel panel search-panel-v2" onSubmit={submit}>
       <label className="form-field">
-        <span className="field-label">{ar ? 'البحث عن سيشن' : 'Search sessions'}</span>
+        <span className="field-label">{ar ? 'البحث عن جلسة' : 'Search sessions'}</span>
         <input placeholder={t('sessions.placeholder')} value={query} onChange={(e) => setQuery(e.target.value)} />
       </label>
       <label className="form-field">
@@ -148,7 +143,7 @@ export function SessionsPage() {
     {error && <p className="notice error">{error}</p>}
     {loading ? <div className="page-state">{t('sessions.loading')}</div> : <section className="card-grid">
       {visibleSessions.map((session) => <SessionCard key={session.id} session={session} />)}
-      {!visibleSessions.length && !error && <div className="empty-state">{activeView ? (ar ? 'لا توجد سيشنات في هذا القسم حاليًا.' : 'There are no sessions in this section right now.') : t('sessions.noResults')}</div>}
+      {!visibleSessions.length && !error && <div className="empty-state">{activeView ? (ar ? 'لا توجد جلسات في هذا القسم حاليًا.' : 'There are no sessions in this section right now.') : t('sessions.noResults')}</div>}
     </section>}
   </>
 }
