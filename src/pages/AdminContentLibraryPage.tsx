@@ -91,7 +91,7 @@ export function AdminContentLibraryPage() {
   return <section className="admin-content-library">
     <header className="content-library-hero"><div><span className="eyebrow">{ar?'مركز الإدارة':'Management hub'}</span><h1>{ar?'إدارة المحتوى':'Content management'}</h1><p>{ar?'اختاري نوع المحتوى أولاً، وبعدها ادخلي لكل ما يخصه من تعديل وإدارة.':'Choose a content area, then manage everything related to it.'}</p></div><Icon name="layers" /></header>
     <div className="management-hub-choices">
-      <button type="button" className={area==='sessions'?'active':''} onClick={()=>chooseArea('sessions')}><Icon name="video" /><span><strong>{ar?'السيشنات':'Sessions'}</strong><small>{ar?'السيشنات، التسجيلات، المتحدثون، التصنيفات والسلاسل':'Sessions, recordings, speakers, categories and series'}</small></span></button>
+      <button type="button" className={area==='sessions'?'active':''} onClick={()=>chooseArea('sessions')}><Icon name="play" /><span><strong>{ar?'السيشنات':'Sessions'}</strong><small>{ar?'السيشنات، التسجيلات، المتحدثون، التصنيفات والسلاسل':'Sessions, recordings, speakers, categories and series'}</small></span></button>
       <button type="button" className={area==='events'?'active':''} onClick={()=>chooseArea('events')}><Icon name="calendar" /><span><strong>{ar?'الفعاليات':'Events'}</strong><small>{ar?'الفعالية، الألبوم والمسابقات الأكاديمية':'Event details, albums and academic competitions'}</small></span></button>
     </div>
     {area === 'events' ? <div className="management-events-inside"><AdminEventsPanel /><AdminCompetitionsWorkspace /></div> : <>
