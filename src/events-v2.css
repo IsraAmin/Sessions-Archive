@@ -280,3 +280,22 @@
   .event-editorial-lead:hover .event-editorial-lead-visual > img,
   .event-memory-chapter:hover .event-memory-thumb img { transform: none; }
 }
+
+/* Mobile hardening for the featured event card. */
+.events-editorial-page,.event-editorial-lead,.event-editorial-lead-visual,.event-editorial-lead-copy{min-width:0;max-width:100%}
+.event-editorial-lead-copy h2,.event-editorial-lead-copy p{overflow-wrap:anywhere}
+@media(max-width:720px){
+ .events-editorial-page{width:100%;overflow-x:hidden}
+ .event-editorial-lead{display:flex;flex-direction:column;width:100%;min-height:0}
+ .event-editorial-lead-visual{width:100%;min-height:0;height:auto;aspect-ratio:16/10}
+ .event-editorial-lead-visual>img{position:absolute;inset:0}
+ .event-editorial-lead-copy{width:100%;padding:20px 16px 22px}
+ .event-editorial-lead-copy h2{font-size:clamp(24px,8vw,32px)}
+ .event-editorial-lead-copy p{font-size:12px}
+ .event-editorial-open{align-self:flex-start;margin-top:18px}
+ .events-editorial-search-link{justify-self:start}
+}
+@media(max-width:470px){
+ .event-editorial-lead-visual{min-height:0;aspect-ratio:4/3}
+ .event-editorial-date{width:56px;height:62px}
+}
