@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
+import { AdminEventsPanel } from '../components/AdminEventsPanel'
+import { AdminCompetitionsWorkspace } from '../components/AdminCompetitionsWorkspace'
 import { supabase } from '../lib/supabase'
 import type { Category, Session, SessionSeries, SessionVideo, Speaker } from '../types/domain'
 import type { Database } from '../types/database'
@@ -50,7 +52,7 @@ export function AdminContentLibraryPage() {
   }
   useEffect(() => { void load().catch(fail) }, [])
   function choose(next: LibraryType) { setType(next); setQuery(''); setParams({ area: area, type: next }, { replace: true }) }
-  function chooseArea(next: HubArea) { setArea(next); setQuery(''); if (next === 'sessions') { setType('sessions'); setParams({area:'sessions',type:'sessions'},{replace:true}) } else if (next === 'support') { setType('speakers'); setParams({area:'support',type:'speakers'},{replace:true}) } }
+  function chooseArea(next: HubArea) { setArea(next); setQuery(''); if (next === 'sessions') { setType('sessions'); setParams({area:'sessions',type:'sessions'},{replace:true}) } else if (next === 'support') { setType('speakers'); setParams({area:'support',type:'speakers'},{replace:true}) } else setParams({area:'events'},{replace:true}) }
   const q = query.trim().toLowerCase()
   const rows = useMemo(() => {
     if (type === 'sessions') return sessions.filter(x => !q || [x.title,x.description,x.location,x.status].some(v => String(v ?? '').toLowerCase().includes(q))).map(x => ({ id:x.id, title:x.title, meta:new Intl.DateTimeFormat(locale,{dateStyle:'medium'}).format(new Date(x.starts_at)), target:{type:'session',item:x} as EditTarget }))
@@ -92,13 +94,14 @@ export function AdminContentLibraryPage() {
     <header className="content-library-hero"><div><span className="eyebrow">{ar?'مركز الإدارة':'Management hub'}</span><h1>{ar?'إدارة المحتوى':'Content management'}</h1><p>{ar?'اختاري نوع المحتوى أولاً، وبعدها ادخلي لكل ما يخصه من تعديل وإدارة.':'Choose a content area, then manage everything related to it.'}</p></div><Icon name="layers" /></header>
     <div className="management-hub-choices">
       <button type="button" className={area==='sessions'?'active':''} onClick={()=>chooseArea('sessions')}><Icon name="video" /><span><strong>{ar?'السيشنات':'Sessions'}</strong><small>{ar?'السيشن، التسجيلات وكل ما يخصه':'Session details, recordings and related content'}</small></span></button>
-      <Link className="management-hub-choice" to="/admin/events-library"><Icon name="calendar" /><span><strong>{ar?'الفعاليات':'Events'}</strong><small>{ar?'الفعالية، الألبوم والمسابقات الأكاديمية':'Event details, albums and academic competitions'}</small></span></Link>
+      <button type="button" className={area==='events'?'active':''} onClick={()=>chooseArea('events')}><Icon name="calendar" /><span><strong>{ar?'الفعاليات':'Events'}</strong><small>{ar?'الفعالية، الألبوم والمسابقات الأكاديمية':'Event details, albums and academic competitions'}</small></span></button>
       <button type="button" className={area==='support'?'active':''} onClick={()=>chooseArea('support')}><Icon name="layers" /><span><strong>{ar?'بيانات مساعدة':'Supporting data'}</strong><small>{ar?'المتحدثون، التصنيفات والسلاسل':'Speakers, categories and series'}</small></span></button>
     </div>
+    {area === 'events' ? <div className="management-events-inside"><AdminEventsPanel /><AdminCompetitionsWorkspace /></div> : <>
     <nav className="content-library-tabs">{tabs.map(tab=><button key={tab.key} className={type===tab.key?'active':''} onClick={()=>choose(tab.key)}>{tab.label}</button>)}</nav>
     <div className="content-library-toolbar"><label><span>{ar?'بحث':'Search'}</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={ar?'اكتب الاسم أو أي كلمة للبحث…':'Search by name or keyword…'} /></label><strong>{rows.length} {ar?'نتيجة':'results'}</strong></div>
     <div className="content-library-grid">{rows.map(row=><article className="content-library-card" key={row.id}><div><strong>{row.title}</strong><small>{row.meta}</small></div><div className="content-library-actions"><button className="button button-ghost" onClick={()=>setEditing(row.target)}>{ar?'تعديل':'Edit'}</button><button className="button danger" onClick={()=>setConfirmation({title:ar?'تأكيد الحذف':'Confirm deletion',description:ar?`سيتم حذف «${row.title}» نهائيًا.`:`“${row.title}” will be permanently deleted.`,action:()=>remove(row.target)})}>{ar?'حذف':'Delete'}</button></div></article>)}</div>
-    {!rows.length && <div className="empty-state">{ar?'لا توجد نتائج مطابقة للبحث.':'No matching results.'}</div>}
+    {!rows.length && <div className="empty-state">{ar?'لا توجد نتائج مطابقة للبحث.':'No matching results.'}</div>}</>}
     <AdminEditorDialog target={editing} categories={categories} speakers={speakers} series={series} sessions={sessions} language={language} busy={editorBusy} onClose={()=>!editorBusy&&setEditing(null)} onSave={saveEdit} />
     <ConfirmDialog open={Boolean(confirmation)} title={confirmation?.title||''} description={confirmation?.description||''} confirmLabel={ar?'نعم، حذف':'Yes, delete'} cancelLabel={ar?'إلغاء':'Cancel'} tone="danger" busy={confirmBusy} onCancel={()=>!confirmBusy&&setConfirmation(null)} onConfirm={()=>{if(!confirmation)return;setConfirmBusy(true);void confirmation.action().then(()=>setConfirmation(null)).catch(fail).finally(()=>setConfirmBusy(false))}} />
   </section>
