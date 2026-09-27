@@ -15,7 +15,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Icon } from '../components/Icon'
 
 type LibraryType = 'sessions' | 'speakers' | 'categories' | 'series' | 'videos'
-type HubArea = 'sessions' | 'events' | 'support'
+type HubArea = 'sessions' | 'events'
 type Confirmation = { title: string; description: string; action: () => Promise<void> } | null
 
 export function AdminContentLibraryPage() {
@@ -25,7 +25,7 @@ export function AdminContentLibraryPage() {
   const [params, setParams] = useSearchParams()
   const requested = params.get('type') as LibraryType | null
   const requestedArea = params.get('area') as HubArea | null
-  const [area, setArea] = useState<HubArea>(requestedArea && ['sessions','events','support'].includes(requestedArea) ? requestedArea : (requested && requested !== 'sessions' && requested !== 'videos' ? 'support' : 'sessions'))
+  const [area, setArea] = useState<HubArea>(requestedArea && ['sessions','events'].includes(requestedArea) ? requestedArea : 'sessions')
   const [type, setType] = useState<LibraryType>(requested && ['sessions','speakers','categories','series','videos'].includes(requested) ? requested : 'sessions')
   const [query, setQuery] = useState('')
   const [categories, setCategories] = useState<Category[]>([])
@@ -52,7 +52,7 @@ export function AdminContentLibraryPage() {
   }
   useEffect(() => { void load().catch(fail) }, [])
   function choose(next: LibraryType) { setType(next); setQuery(''); setParams({ area: area, type: next }, { replace: true }) }
-  function chooseArea(next: HubArea) { setArea(next); setQuery(''); if (next === 'sessions') { setType('sessions'); setParams({area:'sessions',type:'sessions'},{replace:true}) } else if (next === 'support') { setType('speakers'); setParams({area:'support',type:'speakers'},{replace:true}) } else setParams({area:'events'},{replace:true}) }
+  function chooseArea(next: HubArea) { setArea(next); setQuery(''); if (next === 'sessions') { setType('sessions'); setParams({area:'sessions',type:'sessions'},{replace:true}) } else setParams({area:'events'},{replace:true}) }
   const q = query.trim().toLowerCase()
   const rows = useMemo(() => {
     if (type === 'sessions') return sessions.filter(x => !q || [x.title,x.description,x.location,x.status].some(v => String(v ?? '').toLowerCase().includes(q))).map(x => ({ id:x.id, title:x.title, meta:new Intl.DateTimeFormat(locale,{dateStyle:'medium'}).format(new Date(x.starts_at)), target:{type:'session',item:x} as EditTarget }))
@@ -85,17 +85,14 @@ export function AdminContentLibraryPage() {
     if (result.error) throw result.error
     success(ar ? 'تم الحذف.' : 'Deleted.'); await load()
   }
-  const tabs: {key:LibraryType;label:string}[] = area === 'sessions'
-    ? [{key:'sessions',label:ar?'السيشنات':'Sessions'},{key:'videos',label:ar?'التسجيلات':'Recordings'}]
-    : [{key:'speakers',label:ar?'المتحدثون':'Speakers'},{key:'categories',label:ar?'التصنيفات':'Categories'},{key:'series',label:ar?'السلاسل':'Series'}]
+  const tabs: {key:LibraryType;label:string}[] = [{key:'sessions',label:ar?'السيشنات':'Sessions'},{key:'videos',label:ar?'التسجيلات':'Recordings'},{key:'speakers',label:ar?'المتحدثون':'Speakers'},{key:'categories',label:ar?'التصنيفات':'Categories'},{key:'series',label:ar?'السلاسل':'Series'}]
 
 
   return <section className="admin-content-library">
     <header className="content-library-hero"><div><span className="eyebrow">{ar?'مركز الإدارة':'Management hub'}</span><h1>{ar?'إدارة المحتوى':'Content management'}</h1><p>{ar?'اختاري نوع المحتوى أولاً، وبعدها ادخلي لكل ما يخصه من تعديل وإدارة.':'Choose a content area, then manage everything related to it.'}</p></div><Icon name="layers" /></header>
     <div className="management-hub-choices">
-      <button type="button" className={area==='sessions'?'active':''} onClick={()=>chooseArea('sessions')}><Icon name="video" /><span><strong>{ar?'السيشنات':'Sessions'}</strong><small>{ar?'السيشن، التسجيلات وكل ما يخصه':'Session details, recordings and related content'}</small></span></button>
+      <button type="button" className={area==='sessions'?'active':''} onClick={()=>chooseArea('sessions')}><Icon name="video" /><span><strong>{ar?'السيشنات':'Sessions'}</strong><small>{ar?'السيشنات، التسجيلات، المتحدثون، التصنيفات والسلاسل':'Sessions, recordings, speakers, categories and series'}</small></span></button>
       <button type="button" className={area==='events'?'active':''} onClick={()=>chooseArea('events')}><Icon name="calendar" /><span><strong>{ar?'الفعاليات':'Events'}</strong><small>{ar?'الفعالية، الألبوم والمسابقات الأكاديمية':'Event details, albums and academic competitions'}</small></span></button>
-      <button type="button" className={area==='support'?'active':''} onClick={()=>chooseArea('support')}><Icon name="layers" /><span><strong>{ar?'بيانات مساعدة':'Supporting data'}</strong><small>{ar?'المتحدثون، التصنيفات والسلاسل':'Speakers, categories and series'}</small></span></button>
     </div>
     {area === 'events' ? <div className="management-events-inside"><AdminEventsPanel /><AdminCompetitionsWorkspace /></div> : <>
     <nav className="content-library-tabs">{tabs.map(tab=><button key={tab.key} className={type===tab.key?'active':''} onClick={()=>choose(tab.key)}>{tab.label}</button>)}</nav>
