@@ -57,11 +57,11 @@ export function AdminContentLibraryPage() {
     setEditorBusy(true)
     try {
       let result
-      if (target.type === 'category') result = await supabase.from('categories').update(values).eq('id', target.item.id)
-      else if (target.type === 'speaker') result = await supabase.from('speakers').update(values).eq('id', target.item.id)
-      else if (target.type === 'series') result = await supabase.from('session_series').update(values).eq('id', target.item.id)
-      else if (target.type === 'session') result = await supabase.from('sessions').update(values).eq('id', target.item.id)
-      else result = await supabase.from('session_videos').update(values).eq('id', target.item.id)
+      if (target.type === 'category') result = await supabase.from('categories').update(values as Partial<Category>).eq('id', target.item.id)
+      else if (target.type === 'speaker') result = await supabase.from('speakers').update(values as Partial<Speaker>).eq('id', target.item.id)
+      else if (target.type === 'series') result = await supabase.from('session_series').update(values as Partial<SessionSeries>).eq('id', target.item.id)
+      else if (target.type === 'session') result = await supabase.from('sessions').update(values as Partial<Session>).eq('id', target.item.id)
+      else result = await supabase.from('session_videos').update(values as Partial<SessionVideo>).eq('id', target.item.id)
       if (result.error) throw result.error
       success(ar ? 'تم حفظ التغييرات.' : 'Changes saved.'); setEditing(null); await load()
     } catch (error) { fail(error); throw error } finally { setEditorBusy(false) }
