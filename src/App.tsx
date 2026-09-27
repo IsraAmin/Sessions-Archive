@@ -19,7 +19,6 @@ import { AdminWorkspacePage } from './pages/AdminWorkspacePage'
 import { AdminContentLibraryPage } from './pages/AdminContentLibraryPage'
 import { AdminEventsLibraryPage } from './pages/AdminEventsLibraryPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
-import { AboutPage } from './pages/AboutPage'
 
 const routerBase = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 
@@ -31,7 +30,6 @@ export default function App() {
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<HomePage />} />
-              <Route path="about" element={<AboutPage />} />
               <Route path="explore" element={<ExplorePage />} />
               <Route path="sessions" element={<SessionsPage />} />
               <Route path="sessions/:id" element={<SessionDetailsPage />} />
