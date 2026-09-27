@@ -1,13 +1,13 @@
-const APP_CACHE = 'archive-repeat-app-v30'
-const RUNTIME_CACHE = 'archive-repeat-runtime-v30'
+const APP_CACHE = 'archive-repeat-app-v31'
+const RUNTIME_CACHE = 'archive-repeat-runtime-v31'
 const BASE_URL = new URL(self.registration.scope)
 const BASE_PATH = BASE_URL.pathname.endsWith('/') ? BASE_URL.pathname : `${BASE_URL.pathname}/`
 const APP_SHELL = [
   BASE_PATH,
-  `${BASE_PATH}manifest.webmanifest?v=9`,
-  `${BASE_PATH}icon-192.png?v=6`,
-  `${BASE_PATH}icon-512.svg?v=6`,
-  `${BASE_PATH}favicon-32x32.png?v=6`,
+  `${BASE_PATH}manifest.webmanifest?v=10`,
+  `${BASE_PATH}icon-192.png?v=10`,
+  `${BASE_PATH}icon-512.svg?v=10`,
+  `${BASE_PATH}archive-repeat-favicon.png?v=11`,
 ]
 
 self.addEventListener('install', (event) => {
@@ -33,7 +33,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  const isBrandAsset = /(?:manifest\.webmanifest|icon-192|icon-512|favicon-32x32|apple-touch-icon)/.test(requestUrl.pathname)
+  const isBrandAsset = /(?:manifest\.webmanifest|icon-192|icon-512|favicon-32x32|archive-repeat-favicon|apple-touch-icon)/.test(requestUrl.pathname)
   if (isBrandAsset) {
     event.respondWith(fetch(event.request).then((response) => {
       if (response.ok) event.waitUntil(caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, response.clone())))
@@ -63,8 +63,8 @@ self.addEventListener('push', (event) => {
   const target = appTarget(payload.url)
   event.waitUntil(self.registration.showNotification(payload.title, {
     body: payload.body,
-    icon: `${BASE_PATH}icon-192.png?v=6`,
-    badge: `${BASE_PATH}icon-192.png?v=6`,
+    icon: `${BASE_PATH}icon-192.png?v=10`,
+    badge: `${BASE_PATH}icon-192.png?v=10`,
     data: { url: target },
     tag: payload.url || 'archive-repeat-update',
   }))
