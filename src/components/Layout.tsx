@@ -17,7 +17,7 @@ export function Layout() {
   const [logoutBusy, setLogoutBusy] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const logoUrl = `${import.meta.env.BASE_URL}icon-192.png?v=6`
+  const logoUrl = `${import.meta.env.BASE_URL}icon-192.png?v=10`
   const ar = language === 'ar'
   const savedLabel = ar ? 'المحفوظات' : 'Saved'
   const homeLabel = ar ? 'الرئيسية' : 'Home'
