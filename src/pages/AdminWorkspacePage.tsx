@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { AdminPage } from './AdminPage'
 import { AdminUserDirectoryPanel } from '../components/AdminUserDirectoryPanel'
 import { AdminActivityLog } from '../components/AdminActivityLog'
@@ -78,7 +78,7 @@ export function AdminWorkspacePage() {
         <button type="button" role="tab" aria-selected={eventsMode === 'competitions'} className={eventsMode === 'competitions' ? 'active' : ''} onClick={() => chooseEventsMode('competitions')}><span>02</span><div><strong>{ar ? 'المسابقات الأكاديمية' : 'Academic competitions'}</strong><small>{ar ? 'التسجيل، المراحل والنتائج' : 'Registration, stages & results'}</small></div></button>
       </div>
       <AdminEventCreateWizard onCreated={handleEventCreated} />
-      {eventsMode === 'events' ? <AdminEventsPanel key={`events-${eventsVersion}`} /> : <AdminCompetitionsWorkspace key={`competitions-${eventsVersion}`} />}
+      <div className="admin-library-redirect"><span>{ar ? 'الفعاليات والمسابقات المحفوظة تُدار في صفحة مستقلة حتى تظل صفحة الإضافة خفيفة.' : 'Saved events and competitions are managed on a separate page so creation stays focused.'}</span><Link className="button button-ghost" to={eventsMode === 'competitions' ? '/admin/events-library?type=competitions' : '/admin/events-library?type=events'}>{ar ? 'إدارة الفعاليات المحفوظة' : 'Manage saved events'}</Link></div>
     </div>}
     {tab === 'system' && <div className="admin-system-stack" id="admin-system" role="tabpanel">
       {isSuperAdmin && <AdminBackupRestorePanel />}
