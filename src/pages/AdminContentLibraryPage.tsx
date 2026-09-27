@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Category, Session, SessionSeries, SessionVideo, Speaker } from '../types/domain'
 import type { Database } from '../types/database'
@@ -13,6 +13,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Icon } from '../components/Icon'
 
 type LibraryType = 'sessions' | 'speakers' | 'categories' | 'series' | 'videos'
+type HubArea = 'sessions' | 'events' | 'support'
 type Confirmation = { title: string; description: string; action: () => Promise<void> } | null
 
 export function AdminContentLibraryPage() {
@@ -21,6 +22,8 @@ export function AdminContentLibraryPage() {
   const ar = language === 'ar'
   const [params, setParams] = useSearchParams()
   const requested = params.get('type') as LibraryType | null
+  const requestedArea = params.get('area') as HubArea | null
+  const [area, setArea] = useState<HubArea>(requestedArea && ['sessions','events','support'].includes(requestedArea) ? requestedArea : (requested && requested !== 'sessions' && requested !== 'videos' ? 'support' : 'sessions'))
   const [type, setType] = useState<LibraryType>(requested && ['sessions','speakers','categories','series','videos'].includes(requested) ? requested : 'sessions')
   const [query, setQuery] = useState('')
   const [categories, setCategories] = useState<Category[]>([])
@@ -46,7 +49,8 @@ export function AdminContentLibraryPage() {
     setCategories((cat.data ?? []) as Category[]); setSpeakers((spk.data ?? []) as Speaker[]); setSessions((ses.data ?? []) as Session[]); setSeries((ser.data ?? []) as SessionSeries[]); setVideos((vid.data ?? []) as SessionVideo[])
   }
   useEffect(() => { void load().catch(fail) }, [])
-  function choose(next: LibraryType) { setType(next); setQuery(''); setParams({ type: next }, { replace: true }) }
+  function choose(next: LibraryType) { setType(next); setQuery(''); setParams({ area: area, type: next }, { replace: true }) }
+  function chooseArea(next: HubArea) { setArea(next); setQuery(''); if (next === 'sessions') { setType('sessions'); setParams({area:'sessions',type:'sessions'},{replace:true}) } else if (next === 'support') { setType('speakers'); setParams({area:'support',type:'speakers'},{replace:true}) } }
   const q = query.trim().toLowerCase()
   const rows = useMemo(() => {
     if (type === 'sessions') return sessions.filter(x => !q || [x.title,x.description,x.location,x.status].some(v => String(v ?? '').toLowerCase().includes(q))).map(x => ({ id:x.id, title:x.title, meta:new Intl.DateTimeFormat(locale,{dateStyle:'medium'}).format(new Date(x.starts_at)), target:{type:'session',item:x} as EditTarget }))
@@ -79,10 +83,18 @@ export function AdminContentLibraryPage() {
     if (result.error) throw result.error
     success(ar ? 'تم الحذف.' : 'Deleted.'); await load()
   }
-  const tabs: {key:LibraryType;label:string}[] = [{key:'sessions',label:ar?'السيشنات':'Sessions'},{key:'speakers',label:ar?'المتحدثون':'Speakers'},{key:'categories',label:ar?'التصنيفات':'Categories'},{key:'series',label:ar?'السلاسل':'Series'},{key:'videos',label:ar?'التسجيلات':'Recordings'}]
+  const tabs: {key:LibraryType;label:string}[] = area === 'sessions'
+    ? [{key:'sessions',label:ar?'السيشنات':'Sessions'},{key:'videos',label:ar?'التسجيلات':'Recordings'}]
+    : [{key:'speakers',label:ar?'المتحدثون':'Speakers'},{key:'categories',label:ar?'التصنيفات':'Categories'},{key:'series',label:ar?'السلاسل':'Series'}]
+
 
   return <section className="admin-content-library">
-    <header className="content-library-hero"><div><span className="eyebrow">{ar?'إدارة المحتوى المحفوظ':'Saved content management'}</span><h1>{ar?'مكتبة المحتوى':'Content library'}</h1><p>{ar?'ابحث عن أي عنصر محفوظ وعدّله من مكان واحد، بعيدًا عن صفحة الإضافة.':'Search and edit saved content in one place, separate from creation forms.'}</p></div><Icon name="layers" /></header>
+    <header className="content-library-hero"><div><span className="eyebrow">{ar?'مركز الإدارة':'Management hub'}</span><h1>{ar?'إدارة المحتوى':'Content management'}</h1><p>{ar?'اختاري نوع المحتوى أولاً، وبعدها ادخلي لكل ما يخصه من تعديل وإدارة.':'Choose a content area, then manage everything related to it.'}</p></div><Icon name="layers" /></header>
+    <div className="management-hub-choices">
+      <button type="button" className={area==='sessions'?'active':''} onClick={()=>chooseArea('sessions')}><Icon name="video" /><span><strong>{ar?'السيشنات':'Sessions'}</strong><small>{ar?'السيشن، التسجيلات وكل ما يخصه':'Session details, recordings and related content'}</small></span></button>
+      <Link className="management-hub-choice" to="/admin/events-library"><Icon name="calendar" /><span><strong>{ar?'الفعاليات':'Events'}</strong><small>{ar?'الفعالية، الألبوم والمسابقات الأكاديمية':'Event details, albums and academic competitions'}</small></span></Link>
+      <button type="button" className={area==='support'?'active':''} onClick={()=>chooseArea('support')}><Icon name="layers" /><span><strong>{ar?'بيانات مساعدة':'Supporting data'}</strong><small>{ar?'المتحدثون، التصنيفات والسلاسل':'Speakers, categories and series'}</small></span></button>
+    </div>
     <nav className="content-library-tabs">{tabs.map(tab=><button key={tab.key} className={type===tab.key?'active':''} onClick={()=>choose(tab.key)}>{tab.label}</button>)}</nav>
     <div className="content-library-toolbar"><label><span>{ar?'بحث':'Search'}</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={ar?'اكتب الاسم أو أي كلمة للبحث…':'Search by name or keyword…'} /></label><strong>{rows.length} {ar?'نتيجة':'results'}</strong></div>
     <div className="content-library-grid">{rows.map(row=><article className="content-library-card" key={row.id}><div><strong>{row.title}</strong><small>{row.meta}</small></div><div className="content-library-actions"><button className="button button-ghost" onClick={()=>setEditing(row.target)}>{ar?'تعديل':'Edit'}</button><button className="button danger" onClick={()=>setConfirmation({title:ar?'تأكيد الحذف':'Confirm deletion',description:ar?`سيتم حذف «${row.title}» نهائيًا.`:`“${row.title}” will be permanently deleted.`,action:()=>remove(row.target)})}>{ar?'حذف':'Delete'}</button></div></article>)}</div>
