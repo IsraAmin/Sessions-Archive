@@ -15,3 +15,6 @@
 .management-hub-choices>button.active,.management-hub-choice:hover{border-color:var(--v2-brand,#2563eb);box-shadow:var(--v2-shadow-soft)}
 .management-hub-choices svg{width:28px;flex:none;color:var(--v2-brand,#2563eb)}.management-hub-choices span{display:grid;gap:.25rem;min-width:0}.management-hub-choices small{color:var(--v2-muted,#64748b);line-height:1.5}
 @media(max-width:760px){.management-hub-choices{grid-template-columns:1fr}.management-hub-choices>button,.management-hub-choice{width:100%}}
+
+.management-hub-choices{grid-template-columns:repeat(2,minmax(0,1fr));max-width:900px}
+@media(max-width:620px){.management-hub-choices{grid-template-columns:1fr}}
