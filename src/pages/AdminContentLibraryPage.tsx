@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Category, Session, SessionSeries, SessionVideo, Speaker } from '../types/domain'
+import type { Database } from '../types/database'
+
+type SessionUpdate = Database['public']['Tables']['sessions']['Update']
 import { useUi } from '../hooks/useUi'
 import { useToast } from '../components/ToastProvider'
 import { errorMessage } from '../lib/errors'
@@ -60,7 +63,7 @@ export function AdminContentLibraryPage() {
       if (target.type === 'category') result = await supabase.from('categories').update(values as Partial<Category>).eq('id', target.item.id)
       else if (target.type === 'speaker') result = await supabase.from('speakers').update(values as Partial<Speaker>).eq('id', target.item.id)
       else if (target.type === 'series') result = await supabase.from('session_series').update(values as Partial<SessionSeries>).eq('id', target.item.id)
-      else if (target.type === 'session') result = await supabase.from('sessions').update(values as Partial<Session>).eq('id', target.item.id)
+      else if (target.type === 'session') result = await supabase.from('sessions').update(values as SessionUpdate).eq('id', target.item.id)
       else result = await supabase.from('session_videos').update(values as Partial<SessionVideo>).eq('id', target.item.id)
       if (result.error) throw result.error
       success(ar ? 'تم حفظ التغييرات.' : 'Changes saved.'); setEditing(null); await load()
