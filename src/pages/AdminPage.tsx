@@ -276,12 +276,29 @@ export function AdminPage() {
       status,
       is_pinned: values.get('is_pinned') === 'on',
     }
-    const created = await createAndReset(
-      form,
-      () => (supabase.from('sessions') as any).insert(payload).select('id').single(),
-      ar ? 'تم إنشاء السيشن.' : 'Session created.',
-    )
-    if (created) setSessionSpeakerSlots([0])
+    const cover = values.get('cover') as File | null
+    if (cover && cover.size && (!cover.type.startsWith('image/') || cover.size > 10 * 1024 * 1024)) {
+      fail(new Error(ar ? 'اختاري صورة غلاف لا تتجاوز 10 ميجابايت.' : 'Choose a cover image under 10 MB.'))
+      return
+    }
+    setSavingContent(true)
+    try {
+      const { data, error } = await (supabase.from('sessions') as any).insert(payload).select('id').single()
+      if (error) throw error
+      if (cover && cover.size) {
+        const ext = cover.name.split('.').pop()?.toLowerCase() || 'jpg'
+        const path = `${data.id}/cover-${Date.now()}.${ext}`
+        const uploaded = await supabase.storage.from('session-covers').upload(path, cover, { contentType: cover.type })
+        if (uploaded.error) throw uploaded.error
+        const updated = await supabase.from('sessions').update({ cover_path: path }).eq('id', data.id)
+        if (updated.error) throw updated.error
+      }
+      form.reset()
+      setSessionSpeakerSlots([0])
+      success(ar ? 'تم إنشاء السيشن مع الغلاف.' : 'Session created with cover.')
+      await load()
+    } catch (error) { fail(error) }
+    finally { setSavingContent(false) }
   }
 
   async function uploadSpeakerImage(speaker: Speaker, file: File) {
@@ -548,6 +565,7 @@ export function AdminPage() {
         <FormField label={t('admin.titleField')}><input name="title" minLength={3} maxLength={180} required /></FormField>
         <FormField label={ar ? 'Slug (اختياري)' : 'Slug (optional)'} hint={ar ? 'اتركه فارغًا لتوليده تلقائيًا.' : 'Leave blank to generate automatically.'}><input name="slug" inputMode="url" /></FormField>
         <FormField label={t('admin.description')} wide><textarea name="description" rows={4} required /></FormField>
+        <FormField label={ar ? 'صورة غلاف السيشن' : 'Session cover image'} hint={ar ? 'اختاري صورة من جهازك لتظهر على كارد السيشن. يمكنك تغييرها لاحقًا من التعديل.' : 'Choose an image for the session card. You can change it later.'} wide><input name="cover" type="file" accept="image/*" /></FormField>
         <FormField label={ar ? 'وقت البداية' : 'Start time'}><input name="starts_at" type="datetime-local" required /></FormField>
         <FormField label={ar ? 'وقت النهاية' : 'End time'}><input name="ends_at" type="datetime-local" /></FormField>
         <FormField label={ar ? 'المكان / رابط الحضور' : 'Location / meeting link'}><input name="location" /></FormField>
