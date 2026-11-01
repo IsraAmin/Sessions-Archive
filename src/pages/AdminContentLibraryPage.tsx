@@ -75,6 +75,23 @@ export function AdminContentLibraryPage() {
       success(ar ? 'تم حفظ التغييرات.' : 'Changes saved.'); setEditing(null); await load()
     } catch (error) { fail(error); throw error } finally { setEditorBusy(false) }
   }
+  async function uploadCover(session: Session, file: File) {
+    if (!file.type.startsWith('image/')) throw new Error(ar ? 'اختاري ملف صورة صالح.' : 'Choose a valid image.')
+    if (file.size > 10 * 1024 * 1024) throw new Error(ar ? 'حجم الصورة يجب ألا يتجاوز 10 ميجابايت.' : 'Image must be under 10 MB.')
+    setEditorBusy(true)
+    try {
+      const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const path = `${session.id}/cover-${Date.now()}.${extension}`
+      const uploaded = await supabase.storage.from('session-covers').upload(path, file, { contentType: file.type })
+      if (uploaded.error) throw uploaded.error
+      const updated = await supabase.from('sessions').update({ cover_path: path }).eq('id', session.id)
+      if (updated.error) throw updated.error
+      const nextSession = { ...session, cover_path: path }
+      setEditing({ type: 'session', item: nextSession })
+      success(ar ? 'تم رفع الغلاف. يمكنك الآن ضبط موضعه في الكارد.' : 'Cover uploaded. You can now adjust its position.')
+      await load()
+    } catch (error) { fail(error); throw error } finally { setEditorBusy(false) }
+  }
   async function remove(target: EditTarget) {
     let result
     if (target.type === 'category') result = await supabase.from('categories').delete().eq('id', target.item.id)
@@ -99,7 +116,7 @@ export function AdminContentLibraryPage() {
     <div className="content-library-toolbar"><label><span>{ar?'بحث':'Search'}</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={ar?'اكتب الاسم أو أي كلمة للبحث…':'Search by name or keyword…'} /></label><strong>{rows.length} {ar?'نتيجة':'results'}</strong></div>
     <div className="content-library-grid">{rows.map(row=><article className="content-library-card" key={row.id}><div><strong>{row.title}</strong><small>{row.meta}</small></div><div className="content-library-actions"><button className="button button-ghost" onClick={()=>setEditing(row.target)}>{ar?'تعديل':'Edit'}</button><button className="button danger" onClick={()=>setConfirmation({title:ar?'تأكيد الحذف':'Confirm deletion',description:ar?`سيتم حذف «${row.title}» نهائيًا.`:`“${row.title}” will be permanently deleted.`,action:()=>remove(row.target)})}>{ar?'حذف':'Delete'}</button></div></article>)}</div>
     {!rows.length && <div className="empty-state">{ar?'لا توجد نتائج مطابقة للبحث.':'No matching results.'}</div>}</>}
-    <AdminEditorDialog target={editing} categories={categories} speakers={speakers} series={series} sessions={sessions} language={language} busy={editorBusy} onClose={()=>!editorBusy&&setEditing(null)} onSave={saveEdit} />
+    <AdminEditorDialog target={editing} categories={categories} speakers={speakers} series={series} sessions={sessions} language={language} busy={editorBusy} onUploadCover={uploadCover} onClose={()=>!editorBusy&&setEditing(null)} onSave={saveEdit} />
     <ConfirmDialog open={Boolean(confirmation)} title={confirmation?.title||''} description={confirmation?.description||''} confirmLabel={ar?'نعم، حذف':'Yes, delete'} cancelLabel={ar?'إلغاء':'Cancel'} tone="danger" busy={confirmBusy} onCancel={()=>!confirmBusy&&setConfirmation(null)} onConfirm={()=>{if(!confirmation)return;setConfirmBusy(true);void confirmation.action().then(()=>setConfirmation(null)).catch(fail).finally(()=>setConfirmBusy(false))}} />
   </section>
 }
