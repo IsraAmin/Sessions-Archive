@@ -18,3 +18,79 @@
 
 .management-hub-choices{grid-template-columns:repeat(2,minmax(0,1fr));max-width:900px}
 @media(max-width:620px){.management-hub-choices{grid-template-columns:1fr}}
+
+/* Content library: consistent, accessible dark palette aligned with the rest of the app. */
+:root[data-theme='dark'] .admin-content-library {
+  color: var(--v2-text);
+}
+:root[data-theme='dark'] .admin-content-library :is(.content-library-hero,.content-library-toolbar,.content-library-card,.management-hub-choices > button,.management-hub-choice,.admin-library-redirect) {
+  background: var(--v2-surface);
+  color: var(--v2-text);
+  border-color: var(--v2-border);
+  box-shadow: none;
+}
+:root[data-theme='dark'] .admin-content-library .content-library-hero h1,
+:root[data-theme='dark'] .admin-content-library .content-library-card strong,
+:root[data-theme='dark'] .admin-content-library .management-hub-choices strong,
+:root[data-theme='dark'] .admin-content-library .content-library-toolbar strong {
+  color: var(--v2-heading);
+}
+:root[data-theme='dark'] .admin-content-library :is(.content-library-hero p,.content-library-card small,.management-hub-choices small,.admin-library-redirect span) {
+  color: var(--v2-muted);
+}
+:root[data-theme='dark'] .admin-content-library .content-library-tabs button {
+  background: var(--v2-surface);
+  color: var(--v2-text);
+  border-color: var(--v2-border);
+}
+:root[data-theme='dark'] .admin-content-library .content-library-tabs button.active,
+:root[data-theme='dark'] .admin-content-library .management-hub-choices > button.active {
+  background: var(--v2-brand-soft);
+  color: var(--v2-heading);
+  border-color: var(--v2-brand);
+}
+:root[data-theme='dark'] .admin-content-library .content-library-tabs button:hover,
+:root[data-theme='dark'] .admin-content-library .management-hub-choices > button:hover {
+  background: var(--v2-surface-2);
+  border-color: var(--v2-brand);
+}
+:root[data-theme='dark'] .admin-content-library .content-library-tabs button.active:hover,
+:root[data-theme='dark'] .admin-content-library .management-hub-choices > button.active:hover {
+  background: var(--v2-brand-soft);
+}
+:root[data-theme='dark'] .admin-content-library .management-hub-choices svg,
+:root[data-theme='dark'] .admin-content-library .content-library-hero > svg {
+  color: var(--v2-brand);
+}
+:root[data-theme='dark'] .admin-content-library .content-library-toolbar label {
+  color: var(--v2-text);
+}
+:root[data-theme='dark'] .admin-content-library .content-library-toolbar input {
+  background: var(--v2-surface-2);
+  color: var(--v2-heading);
+  border-color: var(--v2-border);
+}
+:root[data-theme='dark'] .admin-content-library .content-library-actions .button-ghost {
+  background: var(--v2-surface-2);
+  color: var(--v2-heading);
+  border: 1px solid var(--v2-border);
+}
+:root[data-theme='dark'] .admin-content-library .content-library-actions .button-ghost:hover {
+  background: var(--v2-surface-3);
+}
+:root[data-theme='dark'] .admin-content-library .content-library-actions .button.danger {
+  background: #8c2637;
+  border-color: #a83b4e;
+  color: #fff;
+}
+:root[data-theme='dark'] .admin-content-library .content-library-actions .button.danger:hover {
+  background: #a52e42;
+}
+:root[data-theme='dark'] .admin-content-library .content-library-card:hover {
+  border-color: #354861;
+  background: var(--v2-surface-2);
+}
+:root[data-theme='dark'] .admin-content-library :is(button,input):focus-visible {
+  outline: 2px solid var(--v2-brand);
+  outline-offset: 3px;
+}
